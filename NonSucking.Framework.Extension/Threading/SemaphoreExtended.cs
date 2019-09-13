@@ -74,9 +74,9 @@ namespace NonSucking.Framework.Extension.Threading
             => internalSemaphore.Release(releaseCount);
 
         /// <summary>
-        /// Blocks the current thread until it can enter the System.Threading.SemaphoreSlim.
+        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
         /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
         public SemaphoreLock Wait()
         {
@@ -88,74 +88,180 @@ namespace NonSucking.Framework.Extension.Threading
         /// while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> token to observe.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
         /// <exception cref="OperationCanceledException">cancellationToken was canceled.</exception>
         /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
         /// that created <paramref name="cancellationToken"/> has already been disposed.</exception>
         public SemaphoreLock Wait(CancellationToken cancellationToken)
         {
-
             internalSemaphore.Wait(cancellationToken);
             return new SemaphoreLock(internalSemaphore, true);
         }
         /// <summary>
-        /// Asynchronously waits to enter the System.Threading.SemaphoreSlim, using a 32-bit
+        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>, using a 32-bit
         /// signed integer to measure the time interval.
         /// </summary>
         /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
         /// wait indefinitely, or zero to test the state of the wait handle and return immediately.</param>
-        /// <returns>A task that will complete with a result of true if the current thread successfully
-        /// entered the System.Threading.SemaphoreSlim, otherwise with a result of false.</returns>
+        /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public SemaphoreLock Wait(int millisecondsTimeout)
         {
-            internalSemaphore.Wait(millisecondsTimeout);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = internalSemaphore.Wait(millisecondsTimeout);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
+        /// <summary>
+        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// using a 32-bit signed integer that specifies the timeout, while observing a <see cref="CancellationToken"/>.
+        /// </summary>
+        /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
+        /// wait indefinitely, or zero to test the state of the wait handle and return immediately.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe.</param>
+        /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
+        /// that created <paramref name="cancellationToken"/> has already been disposed.</exception>
+        /// <exception cref = "OperationCanceledException" > cancellationToken was canceled.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public SemaphoreLock Wait(int millisecondsTimeout, CancellationToken cancellationToken)
         {
-            internalSemaphore.Wait(millisecondsTimeout, cancellationToken);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = internalSemaphore.Wait(millisecondsTimeout, cancellationToken);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
+        /// <summary>
+        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// using a <see cref="TimeSpan"/> to specify the timeout.
+        /// </summary>
+        /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
+        ///  that represents -1 milliseconds to wait indefinitely, or a <see cref="TimeSpan"/> that represents 0 milliseconds 
+        ///  to test the wait handle and return immediately.</param>
+        /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public SemaphoreLock Wait(TimeSpan timeout)
         {
-            internalSemaphore.Wait(timeout);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = internalSemaphore.Wait(timeout);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
+        /// <summary>
+        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// using a <see cref="TimeSpan"/> to specify the timeout, while observing a <see cref="CancellationToken"/>.
+        /// </summary>
+        /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
+        ///  that represents -1 milliseconds to wait indefinitely, or a <see cref="TimeSpan"/> that represents 0 milliseconds 
+        ///  to test the wait handle and return immediately.</param>
+        ///  <param name="cancellationToken">The <see cref="CancellationToken"/> to observe.</param>
+        /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
+        /// that created <paramref name="cancellationToken"/> has already been disposed.</exception>
+        /// <exception cref="OperationCanceledException">cancellationToken was canceled.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public SemaphoreLock Wait(TimeSpan timeout, CancellationToken cancellationToken)
         {
-            internalSemaphore.Wait(timeout, cancellationToken);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = internalSemaphore.Wait(timeout, cancellationToken);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
 
+        /// <summary>
+        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>.
+        /// </summary>
+        /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
+        /// the blocking process.</returns>
         public async Task<SemaphoreLock> WaitAsync()
         {
             await internalSemaphore.WaitAsync();
             return new SemaphoreLock(internalSemaphore, true);
         }
+        /// <summary>
+        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// while observing a <see cref="CancellationToken"/>.
+        /// </summary>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe.</param>
+        /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
+        /// the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
+        /// that created <paramref name="cancellationToken"/> has already been disposed.</exception>
+        /// <exception cref="OperationCanceledException">cancellationToken was canceled.</exception>
         public async Task<SemaphoreLock> WaitAsync(CancellationToken cancellationToken)
         {
             await internalSemaphore.WaitAsync(cancellationToken);
             return new SemaphoreLock(internalSemaphore, true);
         }
+        /// <summary>
+        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// using a 32-bit signed integer that specifies the timeout.
+        /// </summary>
+        /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
+        /// wait indefinitely, or zero to test the state of the wait handle and return immediately.</param>
+        /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
+        /// the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public async Task<SemaphoreLock> WaitAsync(int millisecondsTimeout)
         {
-            await internalSemaphore.WaitAsync(millisecondsTimeout);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = await internalSemaphore.WaitAsync(millisecondsTimeout);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
+        /// <summary>
+        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// using a 32-bit signed integer that specifies the timeout, while observing a <see cref="CancellationToken"/>.
+        /// </summary>
+        /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
+        /// wait indefinitely, or zero to test the state of the wait handle and return immediately.</param>
+        /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe.</param>
+        /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
+        /// the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
+        /// that created <paramref name="cancellationToken"/> has already been disposed.</exception>
+        /// <exception cref="OperationCanceledException">cancellationToken was canceled.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public async Task<SemaphoreLock> WaitAsync(int millisecondsTimeout, CancellationToken cancellationToken)
         {
-            await internalSemaphore.WaitAsync(millisecondsTimeout, cancellationToken);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = await internalSemaphore.WaitAsync(millisecondsTimeout, cancellationToken);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
+        /// <summary>
+        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// using a <see cref="TimeSpan"/> to specify the timeout.
+        /// </summary>
+        /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
+        ///  that represents -1 milliseconds to wait indefinitely, or a <see cref="TimeSpan"/> that represents 0 milliseconds 
+        ///  to test the wait handle and return immediately.</param>
+        /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
+        /// the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public async Task<SemaphoreLock> WaitAsync(TimeSpan timeout)
         {
-            await internalSemaphore.WaitAsync(timeout);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = await internalSemaphore.WaitAsync(timeout);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
+        /// <summary>
+        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// using a <see cref="TimeSpan"/> to specify the timeout, while observing a <see cref="CancellationToken"/>.
+        /// </summary>
+        /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
+        ///  that represents -1 milliseconds to wait indefinitely, or a <see cref="TimeSpan"/> that represents 0 milliseconds 
+        ///  to test the wait handle and return immediately.</param>
+        ///  <param name="cancellationToken">The <see cref="CancellationToken"/> to observe.</param>
+        /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
+        /// the blocking process.</returns>
+        /// <exception cref="ObjectDisposedException">The current instance has already been disposed. -or- The <see cref="CancellationTokenSource"/>
+        /// that created <paramref name="cancellationToken"/> has already been disposed.</exception>
+        /// <exception cref="OperationCanceledException">cancellationToken was canceled.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">timeout is a negative number other than -1, which represents an infinite timeout
+        ///  -or- timeout is greater than <see cref="int.MaxValue"/></exception>
         public async Task<SemaphoreLock> WaitAsync(TimeSpan timeout, CancellationToken cancellationToken)
         {
-            await internalSemaphore.WaitAsync(timeout, cancellationToken);
-            return new SemaphoreLock(internalSemaphore, true);
+            var entered = await internalSemaphore.WaitAsync(timeout, cancellationToken);
+            return new SemaphoreLock(internalSemaphore, entered);
         }
 
         /// <summary>
