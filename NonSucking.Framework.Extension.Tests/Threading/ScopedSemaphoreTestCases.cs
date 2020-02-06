@@ -5,7 +5,7 @@ using System.Text;
 
 namespace NonSucking.Framework.Extension.Tests.Threading
 {
-    public static class SemaphoreExtendedTestCases
+    public static class ScopedSemaphoreTestCases
     {
     }
 }

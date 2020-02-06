@@ -7,8 +7,8 @@ using System.Text;
 namespace NonSucking.Framework.Extension.Tests.Threading
 {
     [TestFixture]
-    [TestOf(typeof(SemaphoreExtended))]
-    public sealed class SemaphoreExtendedTest
+    [TestOf(typeof(ScopedSemaphore))]
+    public sealed class ScopedSemaphoreTest
     {
        
     }

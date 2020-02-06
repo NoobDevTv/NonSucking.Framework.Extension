@@ -8,7 +8,7 @@ namespace NonSucking.Framework.Extension.Threading
     /// Represents a alternative to <see cref="SemaphoreSlim"/> that limits
     /// the number of threads that can access a resource or pool of resources concurrently.
     /// </summary>
-    public sealed class SemaphoreExtended : IDisposable
+    public sealed class ScopedSemaphore : IDisposable
     {
         /// <summary>
         /// Returns a <see cref="WaitHandle"/> that can be used to wait on the semaphore.
@@ -16,32 +16,32 @@ namespace NonSucking.Framework.Extension.Threading
         /// <exception cref="ObjectDisposedException">If the instance has been disposed</exception>
         public WaitHandle AvailableWaitHandle => internalSemaphore.AvailableWaitHandle;
         /// <summary>
-        /// Gets the number of remaining threads that can enter the <see cref="SemaphoreExtended"/>
+        /// Gets the number of remaining threads that can enter the <see cref="ScopedSemaphore"/>
         /// </summary>
         public int CurrentCount => internalSemaphore.CurrentCount;
 
         private readonly SemaphoreSlim internalSemaphore;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SemaphoreExtended"/> class, specifying
+        /// Initializes a new instance of the <see cref="ScopedSemaphore"/> class, specifying
         /// the initial number of requests that can be granted concurrently as 1.
         /// </summary>
-        public SemaphoreExtended()
+        public ScopedSemaphore()
         {
             internalSemaphore = new SemaphoreSlim(1, 1);
         }
         /// <summary>
-        /// Initializes a new instance of the <see cref="SemaphoreExtended"/> class, specifying
+        /// Initializes a new instance of the <see cref="ScopedSemaphore"/> class, specifying
         /// the initial number of requests that can be granted concurrently.
         /// </summary>
         /// <param name="initialCount">The initial number of requests for the semaphore that can be granted concurrently.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="initialCount"/> is less than 0.</exception>
-        public SemaphoreExtended(int initialCount)
+        public ScopedSemaphore(int initialCount)
         {
             internalSemaphore = new SemaphoreSlim(initialCount);
         }
         /// <summary>
-        /// Initializes a new instance of the <see cref="SemaphoreExtended"/> class, specifying
+        /// Initializes a new instance of the <see cref="ScopedSemaphore"/> class, specifying
         /// the initial and maximum number of requests that can be granted concurrently.
         /// </summary>
         /// <param name="initialCount">The initial number of requests for the semaphore that can be granted concurrently.</param>
@@ -49,32 +49,32 @@ namespace NonSucking.Framework.Extension.Threading
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="initialCount"/> is less than 0, 
         /// or <paramref name="initialCount"/> is greater than <paramref name="maxCount"/>, or <paramref name="maxCount"/> 
         /// is equal to or less than 0.</exception>
-        public SemaphoreExtended(int initialCount, int maxCount)
+        public ScopedSemaphore(int initialCount, int maxCount)
         {
             internalSemaphore = new SemaphoreSlim(initialCount, maxCount);
         }
 
         /// <summary>
-        /// Releases the <see cref="SemaphoreExtended"/> object once.
+        /// Releases the <see cref="ScopedSemaphore"/> object once.
         /// </summary>
-        /// <returns>The previous count of the <see cref="SemaphoreExtended"/></returns>
+        /// <returns>The previous count of the <see cref="ScopedSemaphore"/></returns>
         /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
-        /// <exception cref="SemaphoreFullException">The <see cref="SemaphoreExtended"/> has already reached its maximum size.</exception>
+        /// <exception cref="SemaphoreFullException">The <see cref="ScopedSemaphore"/> has already reached its maximum size.</exception>
         internal int Release()
             => internalSemaphore.Release();
         /// <summary>
-        /// Releases the <see cref="SemaphoreExtended"/> object a specified number of times.
+        /// Releases the <see cref="ScopedSemaphore"/> object a specified number of times.
         /// </summary>
         /// <param name="releaseCount">The number of times to exit the semaphore.</param>
-        /// <returns>The previous count of the <see cref="SemaphoreExtended"/></returns>
+        /// <returns>The previous count of the <see cref="ScopedSemaphore"/></returns>
         /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
-        /// <exception cref="SemaphoreFullException">The <see cref="SemaphoreExtended"/> has already reached its maximum size.</exception>
+        /// <exception cref="SemaphoreFullException">The <see cref="ScopedSemaphore"/> has already reached its maximum size.</exception>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="releaseCount"/> is less than 1.</exception>
         internal int Release(int releaseCount)
             => internalSemaphore.Release(releaseCount);
 
         /// <summary>
-        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>.
+        /// Blocks the current thread until it can enter the <see cref="ScopedSemaphore"/>.
         /// </summary>
         /// <returns>A <see cref="SemaphoreLock"/> object that monitors the blocking process.</returns>
         /// <exception cref="ObjectDisposedException">The current instance has already been disposed.</exception>
@@ -84,7 +84,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, true);
         }
         /// <summary>
-        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// Blocks the current thread until it can enter the <see cref="ScopedSemaphore"/>,
         /// while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> token to observe.</param>
@@ -98,7 +98,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, true);
         }
         /// <summary>
-        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>, using a 32-bit
+        /// Blocks the current thread until it can enter the <see cref="ScopedSemaphore"/>, using a 32-bit
         /// signed integer to measure the time interval.
         /// </summary>
         /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
@@ -113,7 +113,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, entered);
         }
         /// <summary>
-        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// Blocks the current thread until it can enter the <see cref="ScopedSemaphore"/>,
         /// using a 32-bit signed integer that specifies the timeout, while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
@@ -131,7 +131,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, entered);
         }
         /// <summary>
-        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// Blocks the current thread until it can enter the <see cref="ScopedSemaphore"/>,
         /// using a <see cref="TimeSpan"/> to specify the timeout.
         /// </summary>
         /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
@@ -147,7 +147,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, entered);
         }
         /// <summary>
-        /// Blocks the current thread until it can enter the <see cref="SemaphoreExtended"/>,
+        /// Blocks the current thread until it can enter the <see cref="ScopedSemaphore"/>,
         /// using a <see cref="TimeSpan"/> to specify the timeout, while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
@@ -167,7 +167,7 @@ namespace NonSucking.Framework.Extension.Threading
         }
 
         /// <summary>
-        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>.
+        /// Asynchronously waits to enter the <see cref="ScopedSemaphore"/>.
         /// </summary>
         /// <returns>A task that will complete with a result of an <see cref="SemaphoreLock"/> object that monitors 
         /// the blocking process.</returns>
@@ -177,7 +177,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, true);
         }
         /// <summary>
-        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// Asynchronously waits to enter the <see cref="ScopedSemaphore"/>,
         /// while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/> to observe.</param>
@@ -192,7 +192,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, true);
         }
         /// <summary>
-        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// Asynchronously waits to enter the <see cref="ScopedSemaphore"/>,
         /// using a 32-bit signed integer that specifies the timeout.
         /// </summary>
         /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
@@ -208,7 +208,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, entered);
         }
         /// <summary>
-        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// Asynchronously waits to enter the <see cref="ScopedSemaphore"/>,
         /// using a 32-bit signed integer that specifies the timeout, while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="millisecondsTimeout"> The number of milliseconds to wait, <see cref="Timeout.Infinite"/> (-1) to
@@ -227,7 +227,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, entered);
         }
         /// <summary>
-        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// Asynchronously waits to enter the <see cref="ScopedSemaphore"/>,
         /// using a <see cref="TimeSpan"/> to specify the timeout.
         /// </summary>
         /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
@@ -244,7 +244,7 @@ namespace NonSucking.Framework.Extension.Threading
             return new SemaphoreLock(internalSemaphore, entered);
         }
         /// <summary>
-        /// Asynchronously waits to enter the <see cref="SemaphoreExtended"/>,
+        /// Asynchronously waits to enter the <see cref="ScopedSemaphore"/>,
         /// using a <see cref="TimeSpan"/> to specify the timeout, while observing a <see cref="CancellationToken"/>.
         /// </summary>
         /// <param name="timeout">A <see cref="TimeSpan"/> that represents the number of milliseconds to wait, a <see cref="TimeSpan"/>
@@ -265,7 +265,7 @@ namespace NonSucking.Framework.Extension.Threading
         }
 
         /// <summary>
-        /// Releases all resources used by the current instance of the <see cref="SemaphoreExtended"/>
+        /// Releases all resources used by the current instance of the <see cref="ScopedSemaphore"/>
         /// </summary>
         public void Dispose()
             => internalSemaphore.Dispose();
