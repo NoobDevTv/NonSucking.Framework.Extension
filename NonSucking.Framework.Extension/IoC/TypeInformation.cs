@@ -1,29 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
+using System.Linq;
 
 namespace NonSucking.Framework.Extension.IoC
 {
     internal class TypeInformation
     {
-        public object Instance { get; internal set; }
+        public InstanceBehaviour Behaviour { get; set; }
+        public object Instance => CreateObject();
 
-        private readonly TypeResolver resolver;
+        public bool Completed { get; private set; }
+
+        private readonly TypeContainerBase typeContainer;
         private readonly Type type;
-        private readonly IEnumerable<CtorInformation> ctors;
+        private object singeltonInstance;
+        private readonly List<CtorInformation> ctors;
 
-        public TypeInformation(TypeResolver resolver, Type type)
+        public TypeInformation(TypeContainerBase container,
+            Type type, InstanceBehaviour instanceBehaviour, object instance = null)
         {
-            this.resolver = resolver;
             this.type = type;
-            ctors = CreateCtor(type.GetConstructors());
+            Behaviour = instanceBehaviour;
+            typeContainer = container;
+            singeltonInstance = instance;
+            ctors = container
+                .GetCtorInformations(type)
+                .OrderByDescending(ctor => ctor.Length)
+                .ToList();
+
+            Completed = !ctors.Any(c => !c.IsComplete);
         }
 
-        private IEnumerable<CtorInformation> CreateCtor(ConstructorInfo[] constructorInfo)
+        private object CreateObject()
         {
-            foreach (var ctor in constructorInfo)
-                yield return new CtorInformation(resolver, ctor);
+            if (Behaviour == InstanceBehaviour.Singleton && singeltonInstance != null)
+                return singeltonInstance;
+
+            var obj = ctors.FirstOrDefault(c => c.IsComplete)?.Invoke();
+
+            if (Behaviour == InstanceBehaviour.Singleton)
+            {
+                singeltonInstance = obj;
+                Completed = true;
+            }
+
+            return obj;
+        }
+
+        public void RecreateUncompleteCtors()
+        {
+            if (Completed)
+                return;
+
+            foreach (var ctor in ctors.Where(ctor => !ctor.IsComplete))
+                typeContainer.BuildCtorInformation(ctor);
+
+            Completed = !ctors.Any(c => !c.IsComplete);
         }
     }
+
 }

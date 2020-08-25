@@ -2,44 +2,66 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace NonSucking.Framework.Extension.IoC
 {
     internal class CtorInformation
     {
-        private readonly ConstructorInfo ctor;
-        private readonly TypeResolver resolver;
-        private Func<object>[] arguments;
+        public bool IsComplete { get; private set; }
+        public int Length => parameters.Count;
 
-        public CtorInformation(TypeResolver resolver, ConstructorInfo ctor)
+        private readonly ConstructorInfo constructor;
+        private readonly Dictionary<ParameterInfo, TypeInformation> parameters;
+
+        public CtorInformation(ConstructorInfo constructor)
         {
-            this.ctor = ctor;
-            this.resolver = resolver;
-            var parameterArray = ctor.GetParameters();
-
-            arguments = new Func<object>[parameterArray.Length];
-
-            foreach (var parameter in parameterArray)
-            {
-                var info = resolver.ResolveTypeAsInformation(parameter.ParameterType);
-
-                if (info != null)
-                {
-                    arguments[parameter.Position] = () => info.Instance;
-                }
-                else if (parameter.IsOptional)
-                {
-                    arguments[parameter.Position] = () => null;
-                }
-                else
-                {
-                    throw new KeyNotFoundException(); //TODO: own Exception
-                }
-            }
+            parameters = new Dictionary<ParameterInfo, TypeInformation>();
+            this.constructor = constructor;
+            IsComplete = true;
         }
 
-        public object Invoke() 
-            => ctor.Invoke(arguments.Select(a => a()).ToArray());
+        internal void Add(ParameterInfo parameter, TypeInformation typeInformation)
+        {
+            parameters.Add(parameter, typeInformation);
+
+            if (typeInformation == null && !parameter.IsOptional)
+                IsComplete = false;
+        }
+
+        internal void Update(ParameterInfo parameter, TypeInformation typeInformation)
+        {
+            parameters[parameter] = typeInformation;
+
+            if (typeInformation == null && !parameter.IsOptional)
+                IsComplete = false;
+            else
+                IsComplete = !parameters.Any(info => info.Value == null && !info.Key.IsOptional);
+        }
+
+        internal void Clear()
+        {
+            parameters.Clear();
+        }
+
+        internal IEnumerable<ParameterInfo> GetParameters()
+            => constructor.GetParameters();
+
+        internal object Invoke()
+        {
+            if (!IsComplete)
+                throw new InvalidOperationException();
+
+            return constructor.Invoke(parameters
+                .OrderBy(v => v.Key.Position)
+                .Select(v => v.Value)
+                .Select(info =>
+                {
+                    if (info == null)
+                        return null;
+                    else
+                        return info.Instance;
+                }).ToArray());
+        }
+
     }
 }
