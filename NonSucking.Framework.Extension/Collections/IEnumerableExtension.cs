@@ -11,55 +11,28 @@ namespace NonSucking.Framework.Extension.Collections
     /// </summary>
     public static class IEnumerableExtension
     {
-        /// <summary>
-        /// Executes the specified function for each object in the iteration.
-        /// </summary>
-        /// <typeparam name="T">The type of objects to enumerate</typeparam>
-        /// <param name="enumerable">The enumeration for which the function is to be executed.</param>
-        /// <param name="function">The function to be executed for each object</param>
-        /// <returns>An enumerator with the result of the function</returns>
-        public static IEnumerable<T> OnEach<T>(this IEnumerable<T> enumerable, Func<T, T> function)
-        {
-            if (enumerable == null)
-                throw new ArgumentNullException(nameof(enumerable));
-
-            foreach (var item in enumerable)
-                yield return function(item);
-        }
-        /// <summary>
-        /// Executes the specified action for each object in the iteration.
-        /// </summary>
-        /// <typeparam name="T">The type of objects to enumerate</typeparam>
-        /// <param name="enumerable">The enumeration for which the action is to be executed.</param>
-        /// <param name="action">The action to be executed for each object</param>
-        /// <returns>An enumerator with object of the <paramref name="enumerable"/></returns>
-        public static IEnumerable<T> OnEach<T>(this IEnumerable<T> enumerable, Action<T> action)
-        {
-            if (enumerable == null)
-                throw new ArgumentNullException(nameof(enumerable));
-
-            foreach (var item in enumerable)
-            {
-                action(item);
-                yield return item;
-            }
-        }
 
         /// <summary>
         /// Executes the specified action for each object in the iteration.
-        /// 
         /// Ends the linq chain.
         /// </summary>
         /// <typeparam name="T">The type of objects to enumerate</typeparam>
         /// <param name="enumerable">The enumeration for which the action is to be executed.</param>
-        /// <param name="action">The action to be executed for each object</param>
-        public static void ForEach<T>(this IEnumerable<T> enumerable, Action<T> action)
+        /// <param name="func">The function to execute for each item and pass the current Index. 
+        /// Return <see langword="false"/> to break the loop</param>
+        public static void For<T>(this IEnumerable<T> enumerable, Func<T, int, bool> func)
         {
             if (enumerable == null)
                 throw new ArgumentNullException(nameof(enumerable));
 
-            foreach (var item in enumerable)
-                action(item);
+            var index = 0;
+            foreach (T item in enumerable)
+            {
+                if (!func(item, index))
+                    return;
+
+                ++index;
+            }
         }
 
         /// <summary>
@@ -69,15 +42,62 @@ namespace NonSucking.Framework.Extension.Collections
         /// </summary>
         /// <typeparam name="T">The type of objects to enumerate</typeparam>
         /// <param name="enumerable">The enumeration for which the action is to be executed.</param>
-        /// <param name="action">The action to be executed for each object</param>
+        /// <param name="func">The action to be executed for each object</param>
         /// <returns>A task to wait for the operation</returns>
-        public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> action)
+        public static async Task ForEachAsync<T>(this IEnumerable<T> enumerable, Func<T, Task> func)
         {
             if (enumerable == null)
                 throw new ArgumentNullException(nameof(enumerable));
 
-            foreach (var item in enumerable)
-                await action(item);
+            foreach (T item in enumerable)
+                await func(item);
+        }
+
+        /// <summary>
+        /// Executes the specified action for each object async in the iteration.
+        /// 
+        /// Ends the linq chain.
+        /// </summary>
+        /// <typeparam name="T">The type of objects to enumerate</typeparam>
+        /// <param name="enumerable">The enumeration for which the action is to be executed.</param>
+        /// <param name="func">The action to be executed for each object. Pass the item and the index of the item</param>
+        /// <returns>A task to wait for the operation</returns>
+        public static async Task ForAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task> func)
+        {
+            if (enumerable == null)
+                throw new ArgumentNullException(nameof(enumerable));
+
+            var index = 0;
+            foreach (T item in enumerable)
+            {
+                await func(item, index);
+                ++index;
+            }
+        }
+
+        /// <summary>
+        /// Executes the specified action for each object async in the iteration.
+        /// 
+        /// Ends the linq chain.
+        /// </summary>
+        /// <typeparam name="T">The type of objects to enumerate</typeparam>
+        /// <param name="enumerable">The enumeration for which the action is to be executed.</param>
+        /// <param name="func">The function to execute for each item and pass the current Index. 
+        /// Return <see langword="false"/> to break the loop</param>
+        /// <returns>A task to wait for the operation</returns>
+        public static async Task ForAsync<T>(this IEnumerable<T> enumerable, Func<T, int, Task<bool>> func)
+        {
+            if (enumerable == null)
+                throw new ArgumentNullException(nameof(enumerable));
+
+            var index = 0;
+            foreach (T item in enumerable)
+            {
+                if (!await func(item, index))
+                    return;
+
+                ++index;
+            }
         }
     }
 }
