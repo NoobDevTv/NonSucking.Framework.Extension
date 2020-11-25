@@ -6,14 +6,13 @@ using System.Reflection;
 
 namespace NonSucking.Framework.Extension.IoC
 {
-    public  sealed class StandaloneTypeContainer : TypeContainerBase
+    public sealed class StandaloneTypeContainer : TypeContainerBase
     {
-
         private readonly Dictionary<Type, TypeInformation> typeInformationRegister;
         private readonly Dictionary<Type, Type> typeRegister;
         private readonly HashSet<TypeInformation> uncompletedList;
 
-        public  StandaloneTypeContainer()
+        public StandaloneTypeContainer()
         {
             typeInformationRegister = new Dictionary<Type, TypeInformation>();
             typeRegister = new Dictionary<Type, Type>();
@@ -32,7 +31,7 @@ namespace NonSucking.Framework.Extension.IoC
             typeRegister.Add(registrar, type);
 
             var removelist = new List<TypeInformation>();
-            foreach (var typeInformation in uncompletedList)
+            foreach (TypeInformation typeInformation in uncompletedList)
             {
                 typeInformation.RecreateUncompleteCtors();
                 if (typeInformation.Completed)
@@ -54,7 +53,7 @@ namespace NonSucking.Framework.Extension.IoC
 
             typeRegister.Add(registrar, type);
 
-            foreach (var typeInformation in typeInformationRegister.Values.Where(t => !t.Completed))
+            foreach (TypeInformation typeInformation in typeInformationRegister.Values.Where(t => !t.Completed))
             {
                 typeInformation.RecreateUncompleteCtors();
             }
@@ -84,9 +83,9 @@ namespace NonSucking.Framework.Extension.IoC
 
         public override object GetOrNull(Type type)
         {
-            if (typeRegister.TryGetValue(type, out var searchType))
+            if (typeRegister.TryGetValue(type, out Type searchType))
             {
-                if (typeInformationRegister.TryGetValue(searchType, out var typeInformation))
+                if (typeInformationRegister.TryGetValue(searchType, out TypeInformation typeInformation))
                     return typeInformation.Instance;
             }
             return null;
@@ -101,7 +100,7 @@ namespace NonSucking.Framework.Extension.IoC
 
         public override T GetUnregistered<T>() where T : class
             => (T)GetUnregistered(typeof(T));
-        
+
         public override void Dispose()
         {
             typeRegister.Clear();
@@ -114,7 +113,7 @@ namespace NonSucking.Framework.Extension.IoC
             typeInformationRegister.Clear();
         }
 
-        internal override void BuildCtorInformation(CtorInformation info) 
+        internal override void BuildCtorInformation(CtorInformation info)
             => BuildCtorInformation(typeRegister, typeInformationRegister, info);
     }
 }
