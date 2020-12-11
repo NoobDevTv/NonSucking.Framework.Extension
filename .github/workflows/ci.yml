@@ -35,12 +35,13 @@ jobs:
         with:
           dotnet-version: '3.1.x' # SDK Version to use.
       
+      # Set version numbers by replacing PlaceHolders in csproj
+      - name: Set Version number
+        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -branch develop
+        
       # Restore all dependecies
       - name: Restore dependencies
         run: dotnet restore
-
-      - name: Set Version number
-        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -branch develop
       
       # Build the hole solution
       - name: Build
