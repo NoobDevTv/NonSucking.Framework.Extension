@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.29209.152
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension", "NonSucking.Framework.Extension\NonSucking.Framework.Extension.csproj", "{757C7A5A-69FD-4304-8E97-2B3A76CA244D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.Tests", "NonSucking.Framework.Extension.Tests\NonSucking.Framework.Extension.Tests.csproj", "{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Tests", "NonSucking.Framework.Extension.Tests\NonSucking.Framework.Extension.Tests.csproj", "{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.Generators", "NonSucking.Framework.Extension.Generators\NonSucking.Framework.Extension.Generators.csproj", "{EF6A5F39-41A1-485E-85F3-D3ED415820B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
