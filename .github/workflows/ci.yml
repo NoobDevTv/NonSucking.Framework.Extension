@@ -63,5 +63,5 @@ jobs:
       # Push nuget packages
       - name: Publish packages
         if: github.event_name == 'push'
-        run: nuget push *.nupkg
+        run: nuget push *.nupkg -src https://api.nuget.org/v3/index.json
     
