@@ -25,7 +25,9 @@ jobs:
 
       # Setup powershell
       - name: Setup powershell
-        run: ./.github/scripts/install-powershell.sh
+        run: |
+        chmod +x ./.github/scripts/install-powershell.sh
+        sh ./.github/scripts/install-powershell.sh
 
       # setup dotnet with dotnet core 3.1
       - name: Setup .NET Core
