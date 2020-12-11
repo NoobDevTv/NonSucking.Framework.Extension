@@ -44,7 +44,7 @@ jobs:
       # Create nupkg
       - name: Pack extension
         if: github.event_name == 'push'
-        run: dotnet pack .\NonSucking.Framework.Extension\NonSucking.Framework.Extension.csproj -c Release --no-build 
+        run: dotnet pack ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -c Release --no-build 
       
       # Setup Nuget
       - name: Setup NuGet.exe
