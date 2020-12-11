@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>1.0.0-alpha.{NUM}-{HASH:SHORT}</Version>
+    <!--{VERSION}-->
     <Authors>NoobDevTv (Marcus Aurelius &amp; Susch19)</Authors>
     <Company>NoobDevTv</Company>
     <Description>This nuget package contains extensions and types that we often use in our projects and streams. We would like to reuse these things more consistently and make them available to other people.</Description>
@@ -15,8 +15,8 @@
     <PackageTags>Extension Useful IoC Semaphore Threading Activation for loop help helpfull</PackageTags>
     <PackageReleaseNotes>This is a first preview version and not intended for productive use. Not everything has been tested or commented yet.</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
-    <AssemblyVersion>0.0.0.{NUM}</AssemblyVersion>
-    <FileVersion>0.0.0.{NUM}</FileVersion>
+    <!--{ASSEMBLY:VERSION}-->
+    <!--{FILE:VERSION}-->
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
 
