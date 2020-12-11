@@ -13,7 +13,10 @@
     <RepositoryUrl>https://github.com/NoobDevTv/NonSucking.Framework.Extension.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>Extension Useful IoC Semaphore Threading Activation for loop help helpfull</PackageTags>
-    <PackageReleaseNotes>This is a first preview version and not intended for productive use. Not everything has been tested or commented yet.</PackageReleaseNotes>
+    <PackageReleaseNotes>This is a first preview version and not intended for productive use. Not everything has been tested or commented yet.
+
+New in this version:
+* Typecontainer and Standalone typecontainer added. In a slightly modified variant to ScotlandYard ML and OctoAwesome</PackageReleaseNotes>
     <NeutralLanguage>en</NeutralLanguage>
     <!--{ASSEMBLY:VERSION}-->
     <!--{FILE:VERSION}-->
