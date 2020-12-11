@@ -26,8 +26,8 @@ jobs:
       # Setup powershell
       - name: Setup powershell
         run: |
-        chmod +x ./.github/scripts/install-powershell.sh
-        sh ./.github/scripts/install-powershell.sh
+          chmod +x ./.github/scripts/install-powershell.sh
+          sh ./.github/scripts/install-powershell.sh
 
       # setup dotnet with dotnet core 3.1
       - name: Setup .NET Core
@@ -38,6 +38,9 @@ jobs:
       # Restore all dependecies
       - name: Restore dependencies
         run: dotnet restore
+
+      - name: Set Version number
+        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -branch develop
       
       # Build the hole solution
       - name: Build
