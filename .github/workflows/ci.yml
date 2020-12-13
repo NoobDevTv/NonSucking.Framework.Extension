@@ -39,7 +39,7 @@ jobs:
       
       # Set version numbers by replacing PlaceHolders in csproj
       - name: Set Version number
-        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -branch develop
+        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj
         
       # Restore all dependecies
       - name: Restore dependencies
