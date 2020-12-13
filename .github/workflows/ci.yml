@@ -39,6 +39,7 @@ jobs:
       
       # Set version numbers by replacing PlaceHolders in csproj
       - name: Set Version number
+        if: github.event_name == 'push' # Not required because we don't publish packages on PR's and other branches
         run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj
         
       # Restore all dependecies
