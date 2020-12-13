@@ -1,4 +1,4 @@
-param($file, $branch)
+param($file)
 
 $version = "<Version>1.0.0-alpha.{NUM}-{HASH:SHORT}</Version>"
 $assemblyVersion = "<AssemblyVersion>0.0.0.{NUM}</AssemblyVersion>"
@@ -8,6 +8,11 @@ Write-Host "setup version on" $file
 Write-Host "-----------------------------"
 
 git fetch
+Write-Host "-----------------------------"
+
+Write-Host "get current branch"
+$branch = git branch --show-current
+Write-Host $branch
 Write-Host "-----------------------------"
 
 Write-Host "get commit count"
