@@ -1,4 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
+//using Microsoft.CodeAnalysis.CSharp;
+//using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
@@ -19,8 +21,11 @@ namespace NonSucking.Framework.Extension.Generators
             builder.AppendLine("using System.Linq;");
             builder.AppendLine("using System.Reactive.Linq;");
             builder.AppendLine();
-            builder.AppendLine("namespace NonSucking.Framework.Extension.SumTypes");
+            builder.AppendLine("namespace NonSucking.Framework.Extension.Rx.SumTypes");
             builder.AppendLine("{");
+
+            GenerateTypeMismatch(builder);
+
             //for (int i = 2; i < generations; i++)
             //builder.AppendLine("public class Variant<T1>{}");
             for (var i = 2; i <= generations; i++)
@@ -78,8 +83,37 @@ namespace NonSucking.Framework.Extension.Generators
             }
 
             builder.AppendLine("}");
+
+            //HACK: This formatting logic has been commented out for the moment as it prevents the generator from producing code.
+            //When the assemlby used here is used, the code generation crashes with mysterious errors.
+            //However, we would like to have the formatting back as soon as it can be used again.
+
+            //var tree = CSharpSyntaxTree.ParseText(builder.ToString());
+            //var root = tree.GetCompilationUnitRoot();
+            //var treeContainer = tree.GetText().Container;
+
+            //using (var workspace = new AdhocWorkspace())
+            //{
+            //    workspace.AddSolution(SolutionInfo.Create(SolutionId.CreateNewId("formatter"), VersionStamp.Default));
+            //    var formatted = Formatter.Format(root, workspace);
+
+            //    context.AddSource("variantGenerator", SourceText.From(formatted.ToString(), Encoding.UTF8));
+            //}
+
             context.AddSource("variantGenerator", SourceText.From(builder.ToString(), Encoding.UTF8));
 
+        }
+
+        private void GenerateTypeMismatch(StringBuilder builder)
+        {
+            builder.AppendLine();
+            builder.AppendLine("    public class TypeMismatchException : Exception");
+            builder.AppendLine("    {");
+            builder.AppendLine("        public TypeMismatchException() : base($\"Unexpected Type\")");
+            builder.AppendLine("        {");
+            builder.AppendLine("        }");
+            builder.AppendLine("    }");
+            builder.AppendLine();
         }
 
         private void GenerateIEnumerableExtensions(StringBuilder builder, string[] typeParams)

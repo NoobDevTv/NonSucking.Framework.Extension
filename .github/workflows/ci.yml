@@ -36,6 +36,11 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '3.1.x' # SDK Version to use.
+
+      - name: Setup .NET 5.0
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x' # SDK Version to use.
       
       # Set version numbers by replacing PlaceHolders in csproj
       - name: Set Version number
@@ -58,6 +63,10 @@ jobs:
       - name: Pack extension
         if: github.event_name == 'push'
         run: dotnet pack ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -c Release --no-build 
+
+      - name: Pack RX extension
+        if: github.event_name == 'push'
+        run: dotnet pack ./NonSucking.Framework.Extension.Rx/NonSucking.Framework.Extension.Rx.csproj -c Release --no-build 
       
       # Setup Nuget
       - name: Setup NuGet.exe

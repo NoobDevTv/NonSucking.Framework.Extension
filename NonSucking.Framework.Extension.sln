@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extens
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Tests", "NonSucking.Framework.Extension.Tests\NonSucking.Framework.Extension.Tests.csproj", "{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.Generators", "NonSucking.Framework.Extension.Generators\NonSucking.Framework.Extension.Generators.csproj", "{EF6A5F39-41A1-485E-85F3-D3ED415820B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Rx.Generators", "NonSucking.Framework.Extension.Rx.Generators\NonSucking.Framework.Extension.Rx.Generators.csproj", "{EF6A5F39-41A1-485E-85F3-D3ED415820B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.Rx", "NonSucking.Framework.Extension.Rx\NonSucking.Framework.Extension.Rx.csproj", "{8028E195-0607-456A-8D03-6E3EAC2C7853}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF6A5F39-41A1-485E-85F3-D3ED415820B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8028E195-0607-456A-8D03-6E3EAC2C7853}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8028E195-0607-456A-8D03-6E3EAC2C7853}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8028E195-0607-456A-8D03-6E3EAC2C7853}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8028E195-0607-456A-8D03-6E3EAC2C7853}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
