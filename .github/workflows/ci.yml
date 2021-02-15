@@ -43,9 +43,14 @@ jobs:
           dotnet-version: '5.0.x' # SDK Version to use.
       
       # Set version numbers by replacing PlaceHolders in csproj
-      - name: Set Version number
+      - name: Set Version number on Extension
         if: github.event_name == 'push' # Not required because we don't publish packages on PR's and other branches
         run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj
+        
+      # Set version numbers by replacing PlaceHolders in csproj
+      - name: Set Version number on Rx extension
+        if: github.event_name == 'push' # Not required because we don't publish packages on PR's and other branches
+        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension.Rx/NonSucking.Framework.Extension.Rx.csproj
         
       # Restore all dependecies
       - name: Restore dependencies
