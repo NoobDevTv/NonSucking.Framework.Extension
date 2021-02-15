@@ -84,6 +84,10 @@ namespace NonSucking.Framework.Extension.Generators
 
             builder.AppendLine("}");
 
+            //HACK: This formatting logic has been commented out for the moment as it prevents the generator from producing code.
+            //When the assemlby used here is used, the code generation crashes with mysterious errors.
+            //However, we would like to have the formatting back as soon as it can be used again.
+
             //var tree = CSharpSyntaxTree.ParseText(builder.ToString());
             //var root = tree.GetCompilationUnitRoot();
             //var treeContainer = tree.GetText().Container;
