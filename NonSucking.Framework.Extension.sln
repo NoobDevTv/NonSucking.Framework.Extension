@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29209.152
@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extens
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Tests", "NonSucking.Framework.Extension.Tests\NonSucking.Framework.Extension.Tests.csproj", "{3C9BDD86-2DB6-4B5D-9D8A-800774ABC0CA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.Generators", "NonSucking.Framework.Extension.Generators\NonSucking.Framework.Extension.Generators.csproj", "{EF6A5F39-41A1-485E-85F3-D3ED415820B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Rx.Generators", "NonSucking.Framework.Extension.Rx.Generators\NonSucking.Framework.Extension.Rx.Generators.csproj", "{EF6A5F39-41A1-485E-85F3-D3ED415820B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
