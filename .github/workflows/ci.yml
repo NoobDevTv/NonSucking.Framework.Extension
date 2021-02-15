@@ -35,7 +35,12 @@ jobs:
       - name: Setup .NET Core
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: ['3.1.x', '5.0.x'] # SDK Version to use.
+          dotnet-version: '3.1.x' # SDK Version to use.
+
+      - name: Setup .NET 5.0
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '5.0.x' # SDK Version to use.
       
       # Set version numbers by replacing PlaceHolders in csproj
       - name: Set Version number
