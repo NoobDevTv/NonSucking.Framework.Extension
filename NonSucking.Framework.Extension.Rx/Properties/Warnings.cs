@@ -6,7 +6,7 @@ using System.Text;
 namespace NonSucking.Framework.Extension.Rx.SumTypes
 {
 
-    [Obsolete("This type is only aviable for .NET 5.0 and higher", true)]
+    [Obsolete("This type is only available for .NET 5.0 and higher", true)]
     public class Variant
     {
 
