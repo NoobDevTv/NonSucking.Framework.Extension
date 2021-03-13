@@ -1,4 +1,5 @@
 ﻿using NonSucking.Framework.Extension.Threading;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,12 +12,18 @@ namespace NonSucking.Framework.Extension.IoC
         private readonly Dictionary<Type, TypeInformation> typeInformationRegister;
         private readonly Dictionary<Type, Type> typeRegister;
         private readonly HashSet<TypeInformation> uncompletedList;
+        private readonly List<TypeInformation> removelist;
+        private readonly ScopedSemaphore typeInformationSemaphore;
+        private readonly ScopedSemaphore uncompletedListSemaphore;
 
         public StandaloneTypeContainer()
         {
             typeInformationRegister = new Dictionary<Type, TypeInformation>();
             typeRegister = new Dictionary<Type, Type>();
             uncompletedList = new HashSet<TypeInformation>();
+            removelist = new List<TypeInformation>();
+            typeInformationSemaphore = new ScopedSemaphore();
+            uncompletedListSemaphore = new ScopedSemaphore();
         }
 
         public override void Register(Type registrar, Type type, InstanceBehaviour instanceBehaviour)
@@ -25,20 +32,35 @@ namespace NonSucking.Framework.Extension.IoC
             if (!typeInformationRegister.ContainsKey(type))
             {
                 registerInfo = new TypeInformation(this, type, instanceBehaviour);
-                typeInformationRegister.Add(type, registerInfo);
+                using (var typeSemaphore = typeInformationSemaphore.Wait())
+                    typeInformationRegister.Add(type, registerInfo);
             }
 
             typeRegister.Add(registrar, type);
 
-            var removelist = new List<TypeInformation>();
+            bool somethingToRemove = false;
+
+            using var s = uncompletedListSemaphore.Wait();
+
             foreach (TypeInformation typeInformation in uncompletedList)
             {
                 typeInformation.RecreateUncompleteCtors();
                 if (typeInformation.Completed)
+                {
                     removelist.Add(typeInformation);
+                    somethingToRemove = true;
+                }
             }
 
-            uncompletedList.RemoveWhere(t => removelist.Contains(t));
+            if (somethingToRemove)
+            {
+                foreach (var toRemove in removelist)
+                {
+                    uncompletedList.Remove(toRemove);
+                }
+                removelist.Clear();
+            }
+
             if (registerInfo != null && !registerInfo.Completed)
                 uncompletedList.Add(registerInfo);
         }
@@ -48,14 +70,16 @@ namespace NonSucking.Framework.Extension.IoC
             => Register(typeof(TRegistrar), typeof(T), instanceBehaviour);
         public override void Register(Type registrar, Type type, object singelton)
         {
+            using var s = typeInformationSemaphore.Wait();
             if (!typeInformationRegister.ContainsKey(type))
                 typeInformationRegister.Add(type, new TypeInformation(this, type, InstanceBehaviour.Singleton, singelton));
 
             typeRegister.Add(registrar, type);
 
-            foreach (TypeInformation typeInformation in typeInformationRegister.Values.Where(t => !t.Completed))
+            foreach (TypeInformation typeInformation in typeInformationRegister.Values)
             {
-                typeInformation.RecreateUncompleteCtors();
+                if (!typeInformation.Completed)
+                    typeInformation.RecreateUncompleteCtors();
             }
         }
         public override void Register<T>(T singelton) where T : class
@@ -111,6 +135,8 @@ namespace NonSucking.Framework.Extension.IoC
                 .ForEach(i => i?.Dispose());
 
             typeInformationRegister.Clear();
+            typeInformationSemaphore.Dispose();
+            uncompletedListSemaphore.Dispose();
         }
 
         internal override void BuildCtorInformation(CtorInformation info)
