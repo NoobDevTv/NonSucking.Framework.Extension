@@ -1,109 +1,158 @@
-﻿//using Microsoft.CodeAnalysis;
-//using Microsoft.CodeAnalysis.CSharp;
-//using Microsoft.CodeAnalysis.CSharp.Syntax;
-//using Microsoft.CodeAnalysis.Text;
-//using System;
-//using System.Linq;
-//using System.Collections.Generic;
-//using System.Text;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Text;
+using System.Diagnostics;
 
-//namespace NonSucking.Framework.Extension.Generators
-//{
-//    [Generator]
-//    public class SerializerGenerator : ISourceGenerator
-//    {
-//        private const string attributeText = @"
-//using System;
-//namespace NonSucking.Framework.Extension.Serialization
-//{
-//    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-//    [System.Diagnostics.Conditional(""SerializerGenerator_DEBUG"")]
-//    public sealed class GenSerializationAttribute : Attribute
-//    {
-//        public GenSerializationAttribute()
-//        {
-//        }
+namespace NonSucking.Framework.Extension.Generators
+{
+    [Generator]
+    public class SerializerGenerator : ISourceGenerator
+    {
+        private const string attributeText = @"
+using System;
+namespace NonSucking.Framework.Extension.Serialization
+{
+    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
+    [System.Diagnostics.Conditional(""SerializerGenerator_DEBUG"")]
+    public sealed class GenSerializationAttribute : Attribute
+    {
+        public GenSerializationAttribute()
+        {
+        }
 
-//        public string PropertyName { get; set; }
-//    }
-//}
-//";
+        public string PropertyName { get; set; }
+    }
+}
+";
 
-//        public void Initialize(GeneratorInitializationContext context)
-//        {
-//            context.RegisterForPostInitialization(i => i.AddSource("GenSerializationAttribute", attributeText));
-//            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+        public void Initialize(GeneratorInitializationContext context)
+        {
+#if DEBUG
+            if (!Debugger.IsAttached)
+            {
+                //Debugger.Launch();
+            }
+#endif 
+            context.RegisterForPostInitialization(i => i.AddSource("GenSerializationAttribute", attributeText));
+            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
 
-//        }
+        }
 
-//        public void Execute(GeneratorExecutionContext context)
-//        {
-//            var builder = new StringBuilder();
-//            //context.AddSource("GenSerializationAttribute", SourceText.From(attributeText, Encoding.UTF8));
+        public void Execute(GeneratorExecutionContext context)
+        {
+            var builder = new StringBuilder();
+            //context.AddSource("GenSerializationAttribute", SourceText.From(attributeText, Encoding.UTF8));
 
-//            if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
-//                return;
+            if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
+                return;
 
-//            //var attributeSymbol
-//            //    = context
-//            //        .Compilation
-//            //        .GetTypeByMetadataName("NonSucking.Framework.Extension.Serialization.GenSerializationAttribute");
-//            int i = 0;
-//            foreach (var classToAugment in receiver.ClassesToAugment)
-//            {
-//                //var a
-//                //    = classToAugment
-//                //        .Item2
-//                //        .GetAttributes()
-//                //        .FirstOrDefault(x => x.AttributeClass?.ContainingSymbol.Equals(attributeSymbol.ContainingSymbol, SymbolEqualityComparer.Default) ?? false);
-//                //if (a != null)
-//                    context.AddSource($"user_serializer{i++}.autogen.cs", SourceText.From($@"
-//                namespace DEMO
-//                {{
+            var attributeSymbol
+                = context
+                    .Compilation
+                    .GetTypeByMetadataName("NonSucking.Framework.Extension.Serialization.GenSerializationAttribute");
 
-//                    public partial User
-//                    {{
-//                        public void Serialize(){{}}
-//                    }}
-//                }}
-//                "));
-//            }
+            foreach (var classToAugment in receiver.ClassesToAugment)
+            {
+                var sourceText
+                    = $@"
+                namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
+                {{
+                    public partial class {classToAugment.TypeSymbol.Name}
+                    {{
+                        public void SerializeThis(){{}}
+                    }}
+                }}
+                ";
+                var hintName
+                    = $"{classToAugment.TypeSymbol.Name}_autogenerated.cs";
+                context.AddSource(hintName, SourceText.From(sourceText, Encoding.UTF8));
+            }
 
-//            //context.AddSource("GenSerializationAttribute", SourceText.From(attributeText, Encoding.UTF8));
+            //context.AddSource("GenSerializationAttribute", SourceText.From(attributeText, Encoding.UTF8));
 
-//        }
+        }
 
-//        private class SyntaxReceiver : ISyntaxContextReceiver
-//        {
-//            public List<IFieldSymbol> Fields { get; } = new List<IFieldSymbol>();
+        private class SyntaxReceiver : ISyntaxContextReceiver
+        {
+            public List<IFieldSymbol> Fields { get; } = new List<IFieldSymbol>();
 
-//            public List<(ClassDeclarationSyntax, INamedTypeSymbol)> ClassesToAugment { get; } = new List<(ClassDeclarationSyntax, INamedTypeSymbol)>();
+            public List<VisitInfo> ClassesToAugment { get; } = new List<VisitInfo>();
 
-//            /// <summary>
-//            /// Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for generation
-//            /// </summary>
-//            public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
-//            {
-//                // any field with at least one attribute is a candidate for property generation
-//                if (context.Node is ClassDeclarationSyntax classDeclarationSyntax
-//                    && classDeclarationSyntax.AttributeLists.Count > 0)
-//                {
-//                    var typeSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax);
-//                    //if (typeSymbol.GetAttributes().Any(ad => ad.AttributeClass.ToDisplayString() == "NonSucking.Framework.Extension.Serialization.GenSerializationAttribute"))
-//                    {
-//                        ClassesToAugment.Add((classDeclarationSyntax, typeSymbol));
-//                    }
-//                    //foreach (VariableDeclaratorSyntax variable in fieldDeclarationSyntax.Declaration.Variables)
-//                    //{
-//                    //    // Get the symbol being declared by the field, and keep it if its annotated
-//                    //    IFieldSymbol fieldSymbol = context.SemanticModel.GetDeclaredSymbol(variable) as IFieldSymbol;
-//                    //    if (fieldSymbol.GetAttributes().Any(ad => ad.AttributeClass.ToDisplayString() == "AutoNotify.AutoNotifyAttribute"))
-//                    //    {
-//                    //        Fields.Add(fieldSymbol);
-//                    //    }
-//                    //}
-//                }
-//            }
-//        }
-//    }
-//}
+            /// <summary>
+            /// Called for every syntax node in the compilation, we can inspect the nodes and save any information useful for generation
+            /// </summary>
+            public void OnVisitSyntaxNode(GeneratorSyntaxContext context)
+            {
+                // any field with at least one attribute is a candidate for property generation
+                if (context.Node is ClassDeclarationSyntax classDeclarationSyntax
+                    && classDeclarationSyntax.AttributeLists.Count > 0)
+                {
+                    //classDeclarationSyntax.AttributeLists.FirstOrDefault(a => a.Attributes.FirstOrDefault(at => at.));
+
+                    var typeSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax);
+                    var attributes = typeSymbol.GetAttributes();
+                    var attribute = attributes.FirstOrDefault(d => d?.AttributeClass.ToDisplayString() == "NonSucking.Framework.Extension.Serialization.GenSerializationAttribute");
+
+                    if (attribute == default)
+                        return;
+
+                    ClassesToAugment.Add(new VisitInfo(classDeclarationSyntax, typeSymbol, attribute));
+
+                    //if (typeSymbol.GetAttributes().Any(ad => ad.AttributeClass.ToDisplayString() == "NonSucking.Framework.Extension.Serialization.GenSerializationAttribute"))
+                    //{
+                    //    ClassesToAugment.Add((classDeclarationSyntax, typeSymbol));
+                    //}
+                    //foreach (VariableDeclaratorSyntax variable in fieldDeclarationSyntax.Declaration.Variables)
+                    //{
+                    //    // Get the symbol being declared by the field, and keep it if its annotated
+                    //    IFieldSymbol fieldSymbol = context.SemanticModel.GetDeclaredSymbol(variable) as IFieldSymbol;
+                    //    if (fieldSymbol.GetAttributes().Any(ad => ad.AttributeClass.ToDisplayString() == "AutoNotify.AutoNotifyAttribute"))
+                    //    {
+                    //        Fields.Add(fieldSymbol);
+                    //    }
+                    //}
+                }
+            }
+        }
+    }
+
+    internal struct VisitInfo
+    {
+        public ClassDeclarationSyntax ClassDeclaration;
+        public INamedTypeSymbol TypeSymbol;
+        public AttributeData Attribute;
+
+        public VisitInfo(ClassDeclarationSyntax classDeclaration, INamedTypeSymbol typeSymbol, AttributeData attribute)
+        {
+            ClassDeclaration = classDeclaration;
+            TypeSymbol = typeSymbol;
+            Attribute = attribute;
+        }
+
+        public override bool Equals(object obj) => obj is VisitInfo other && EqualityComparer<ClassDeclarationSyntax>.Default.Equals(ClassDeclaration, other.ClassDeclaration) && EqualityComparer<INamedTypeSymbol>.Default.Equals(TypeSymbol, other.TypeSymbol) && EqualityComparer<AttributeData>.Default.Equals(Attribute, other.Attribute);
+
+        public override int GetHashCode()
+        {
+            var hashCode = 341329424;
+            hashCode = hashCode * -1521134295 + EqualityComparer<ClassDeclarationSyntax>.Default.GetHashCode(ClassDeclaration);
+            hashCode = hashCode * -1521134295 + EqualityComparer<INamedTypeSymbol>.Default.GetHashCode(TypeSymbol);
+            hashCode = hashCode * -1521134295 + EqualityComparer<AttributeData>.Default.GetHashCode(Attribute);
+            return hashCode;
+        }
+
+        public void Deconstruct(out ClassDeclarationSyntax item1, out INamedTypeSymbol item2, out AttributeData item3)
+        {
+            item1 = ClassDeclaration;
+            item2 = TypeSymbol;
+            item3 = Attribute;
+        }
+
+        public static implicit operator (ClassDeclarationSyntax, INamedTypeSymbol, AttributeData)(VisitInfo value) => (value.ClassDeclaration, value.TypeSymbol, value.Attribute);
+        public static implicit operator VisitInfo((ClassDeclarationSyntax, INamedTypeSymbol, AttributeData) value) => new VisitInfo(value.Item1, value.Item2, value.Item3);
+    }
+}

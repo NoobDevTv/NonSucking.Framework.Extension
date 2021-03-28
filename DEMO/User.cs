@@ -14,6 +14,8 @@ namespace DEMO
 {
     //[GenSerialization, JsonConverter(typeof(string))]
     //[Pure]
+    //[GenSerializationAttribute, JsonConverter(typeof(string))]
+    [NonSucking.Framework.Extension.Serialization.GenSerializationAttribute]
     public partial class User
     {
         public int Id { get; set; }
