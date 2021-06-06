@@ -5,15 +5,17 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace DEMO
 {
-    [GenSerialization]
+    [Nooson]
     public partial class SUTMessage
     {
-        //public int Type { get; set; }
-        //public string Text { get; set; }
+        [NoosonIgnore]
+        public int Type { get; set; }
+        public string Text { get; set; }
         //public List<User> Users { get; set; }
         //public List<short> Countings { get; set; }
         //public IReadOnlyList<short> ReadOnlyCountings { get; }
@@ -35,7 +37,7 @@ namespace DEMO
         {
         }
 
-        [GenSerialization]
+        [Nooson]
         public partial class ComplainBase
         {
             public string Complain { get; set; }

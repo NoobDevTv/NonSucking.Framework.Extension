@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections;
 using NonSucking.Framework.Extension.Generators.Attributes;
+using System.Reflection;
 
 namespace NonSucking.Framework.Extension.Generators
 {
@@ -26,16 +27,40 @@ namespace NonSucking.Framework.Extension.Generators
 
 
     [Generator]
-    public class SerializerGenerator : ISourceGenerator
+    public class NoosonGenerator : ISourceGenerator
     {
         private const string writerName = "writer";
         private readonly List<Diagnostic> diagnostics = new();
-        private static readonly GenSerializationAttributeTemplate genSerializationAttribute = new();
+        private static readonly NoosonAttributeTemplate genSerializationAttribute = new();
 
         public void Initialize(GeneratorInitializationContext context)
         {
-            context.RegisterForPostInitialization(i => i.AddSource(genSerializationAttribute.Name, genSerializationAttribute.ToString()));
-            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+            try
+            {
+                var templates
+                = Assembly
+                .GetAssembly(typeof(Template))
+                .GetTypes()
+                .Where(t => typeof(Template).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+                .Select(t => (Template)Activator.CreateInstance(t))
+                .ToList();
+
+
+                context.RegisterForPostInitialization(i =>
+                {
+                    foreach (var template in templates)
+                    {
+                        i.AddSource(template.Name, template.ToString());
+                    }
+                });
+
+                context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+            }
+            catch (Exception ex)
+            {
+                Debugger.Break();
+                throw;
+            }
         }
 
         public void Execute(GeneratorExecutionContext context)
@@ -89,16 +114,16 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
                 var sourceText = SourceText.From(rawSourceText, Encoding.UTF8);
 
 
-/*
-                            Schlachtplan
-1. IEnumerable => Not Supported (yet)
-3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
-4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
-5. Derserialize => Serialize Logik rückwärts aufrufen
-2. Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
-1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
-6. Fehler/Warnings ausgeben
- */
+                /*
+                                            Schlachtplan
+                1. IEnumerable => Not Supported (yet)
+                3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
+                4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
+                5. Derserialize => Serialize Logik rückwärts aufrufen
+                2. Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
+                1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
+                6. Fehler/Warnings ausgeben
+                 */
 
                 context.AddSource(hintName, sourceText);
 
@@ -131,14 +156,19 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
         private bool GenerateWriteForProps(StringBuilder builder, TypeGroupInfo typePropertiesGroup, string parentName = "this")
         {
             bool success = true;
+            var ignore = new NoosonIgnoreAttributeTemplate();
 
             foreach (var property in typePropertiesGroup.Properties)
             {
                 ITypeSymbol propertyType = property.PropertySymbol.Type;
+
                 string propertyName = property.PropertySymbol.Name;
                 var index = propertyName.IndexOf('.');
 
                 if (index >= 0)
+                    continue;
+
+                if (property.PropertySymbol.GetAttributes().Any(a => a.AttributeClass.ToDisplayString() == ignore.FullName))
                     continue;
 
                 success =
@@ -153,12 +183,12 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
 
         //Proudly stolen from https://github.com/mknejp/dotvariant/blob/c59599a079637e38c3471a13b6a0443e4e607058/src/dotVariant.Generator/Diagnose.cs#L234
         private static Diagnostic MakeDiagnostic(string id, string title, string message, Location location, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
-    => Diagnostic.Create(
+        => Diagnostic.Create(
         new DiagnosticDescriptor(
-            $"{nameof(SerializerGenerator)}.{id}",
+            $"{nameof(NoosonGenerator)}.{id}",
             title,
             message,
-            nameof(SerializerGenerator),
+            nameof(NoosonGenerator),
             severity,
             true,
             helpLinkUri: helpLinkurl,
@@ -281,7 +311,7 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
                 return false;
 
             var ienumerable = propertySymbol.Name == nameof(IEnumerable);
-            if(ienumerable)
+            if (ienumerable)
             {
                 //Diagnostic Error for not supported type
                 return true;

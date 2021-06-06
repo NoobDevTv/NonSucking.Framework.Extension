@@ -2,10 +2,10 @@
 
 namespace NonSucking.Framework.Extension.Generators.Attributes
 {
-    public class GenSerializationAttributeTemplate : Template
+    public class NoosonCustomAttributeTemplate : Template
     {
         public override string Namespace { get; } = "NonSucking.Framework.Extension.Serialization";
-        public override string Name { get; } = "GenSerializationAttribute";
-        public override TemplateKind Kind => TemplateKind.Attribute;
+        public override string Name { get; } = "NoosonCustomAttribute";
+        public override TemplateKind Kind { get; } = TemplateKind.Attribute;
     }
 }
