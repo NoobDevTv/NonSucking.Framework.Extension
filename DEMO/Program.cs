@@ -13,16 +13,16 @@ namespace DEMO
 
         static void Main(string[] args)
         {
-            var sut = new SUTMessage()
-            {
-                AlternativUser = new SUTMessage.User(),
-                Complain = new SUTMessage.ComplainBase(),
+            //var sut = new SUTMessage()
+            //{
+            //    AlternativUser = new SUTMessage.User(),
+            //    Complain = new SUTMessage.ComplainBase(),
 
-            };
+            //};
 
 
             //var count = GetAllIntsOfThisWorld().Count();
-            var serializedSut = JsonConvert.SerializeObject(sut, Formatting.Indented);
+            //var serializedSut = JsonConvert.SerializeObject(sut, Formatting.Indented);
             //var res = JsonConvert.DeserializeObject<SUTMessage>(serializedSut);
 
             //sut.Serialize(new BinaryWriter(new MemoryStream()));

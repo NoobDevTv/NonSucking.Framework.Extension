@@ -30,8 +30,14 @@ namespace NonSucking.Framework.Extension.Generators
     public class NoosonGenerator : ISourceGenerator
     {
         private const string writerName = "writer";
+        private const string readerName = "reader";
         private readonly List<Diagnostic> diagnostics = new();
         private static readonly NoosonAttributeTemplate genSerializationAttribute = new();
+
+        public NoosonGenerator()
+        {
+
+        }
 
         public void Initialize(GeneratorInitializationContext context)
         {
@@ -92,6 +98,7 @@ namespace NonSucking.Framework.Extension.Generators
                 var builder = new StringBuilder();
 
                 GenerateSerializeWithBinaryWriter(context, builder, classToAugment.Properties);
+                GenerateDeserializeWithBinaryWriter(context, builder, classToAugment.Properties, classToAugment.TypeSymbol.Name);
 
                 var rawSourceText
                     = $@"
@@ -116,11 +123,11 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
 
                 /*
                                             Schlachtplan
-                1. IEnumerable => Not Supported (yet)
-                3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
-                4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
+                0. IEnumerable => Not Supported (yet)
                 5. Derserialize => Serialize Logik rückwärts aufrufen
                 2. Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
+                3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
+                4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
                 1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
                 6. Fehler/Warnings ausgeben
                  */
@@ -139,21 +146,28 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
         {
             builder.AppendLine($"public void Serialize(BinaryWriter {writerName})");
             builder.AppendLine("{");
-            CreateWriterLinesForProperties(builder, typePropertiesGroups);
+            CreateLinesForProperties(builder, typePropertiesGroups, true);
+            builder.AppendLine("}");
+        }
+        private void GenerateDeserializeWithBinaryWriter(GeneratorExecutionContext context, StringBuilder builder, List<TypeGroupInfo> typePropertiesGroups, string typeName)
+        {
+            builder.AppendLine($"public static {typeName} Deserialize(BinaryReader {readerName})");
+            builder.AppendLine("{");
+            CreateLinesForProperties(builder, typePropertiesGroups, false);
             builder.AppendLine("}");
         }
 
-        private void CreateWriterLinesForProperties(StringBuilder builder, List<TypeGroupInfo> typePropertiesGroups)
+        private void CreateLinesForProperties(StringBuilder builder, List<TypeGroupInfo> typePropertiesGroups, bool serialize)
         {
             foreach (var typePropertiesGroup in typePropertiesGroups)
             {
                 var typeSymbol = typePropertiesGroup.TypeSymbol;
 
-                GenerateWriteForProps(builder, typePropertiesGroup);
+                GenerateLineForProps(builder, typePropertiesGroup, serialize);
             }
         }
 
-        private bool GenerateWriteForProps(StringBuilder builder, TypeGroupInfo typePropertiesGroup, string parentName = "this")
+        private bool GenerateLineForProps(StringBuilder builder, TypeGroupInfo typePropertiesGroup, bool serialize, string parentName = "this")
         {
             bool success = true;
             var ignore = new NoosonIgnoreAttributeTemplate();
@@ -171,8 +185,13 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
                 if (property.PropertySymbol.GetAttributes().Any(a => a.AttributeClass.ToDisplayString() == ignore.FullName))
                     continue;
 
-                success =
-                    TrySerializing(builder, propertyType, writerName, parentName + "." + propertyName);
+                if (serialize)
+                    success =
+                        TrySerializing(builder, propertyType, writerName, parentName + "." + propertyName);
+                else
+                    success =
+                        TryDeserializing(builder, propertyType, readerName, parentName + "." + propertyName);
+
 
                 if (!success)
                     return success;
@@ -200,7 +219,16 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
                 || TryEnumWriterCall(builder, propertyType, writerName, propertyName)
                 || TrySerializeWriterCall(builder, propertyType, writerName, propertyName)
                 || TrySerializeList(builder, propertyType, writerName, propertyName)
-                || TrySerializePublicProps(builder, propertyType, writerName, propertyName);
+                || TryGeneratePublicPropsLines(builder, propertyType, writerName, propertyName, true);
+
+        private bool TryDeserializing(StringBuilder builder, ITypeSymbol propertyType, string readerName, string propertyName)
+            => TrySpecialTypeReaderCall(builder, propertyType, readerName, propertyName)
+                || TryEnumReaderCall(builder, propertyType, readerName, propertyName)
+                || TryDeserializeReaderCall(builder, propertyType, readerName, propertyName)
+                || TryDeserializeList(builder, propertyType, readerName, propertyName)
+                || TryGeneratePublicPropsLines(builder, propertyType, readerName, propertyName, false);
+
+        #region Serialize
 
         private bool TrySpecialTypeWriterCall(StringBuilder builder, ITypeSymbol property, string writerName, string memberName)
         {
@@ -231,79 +259,6 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
 
         }
 
-
-        private bool TrySerializeWriterCall(StringBuilder builder, ITypeSymbol property, string writerName, string memberName)
-        {
-            var member
-                = property
-                    .GetMembers("Serialize")
-                    .OfType<IMethodSymbol>();
-
-            var shouldBeGenerated = property.GetAttributes().Any(x => x.ToString() == genSerializationAttribute.FullName);
-
-            var isUsable
-                = shouldBeGenerated || member
-                .Any(m =>
-                    m.Parameters.Length == 1
-                    && m.Parameters[0].ToDisplayString() == typeof(BinaryWriter).FullName
-                );
-
-            if (isUsable)
-                builder.AppendLine($"{memberName}.Serialize({writerName});");
-
-            return isUsable;
-        }
-
-        private bool TrySerializePublicProps(StringBuilder builder, ITypeSymbol typeNameSymbol, string writerName, string memberName)
-        {
-            if (typeNameSymbol.TypeKind == TypeKind.Interface)
-            {
-                var success = true;
-
-                //typeNameSymbol.Name == nameof(IEnumerable);
-
-                foreach (var interfaceType in typeNameSymbol.AllInterfaces)
-                {
-                    success = PropertieForSingleType(builder, interfaceType, memberName);
-                    //diagnostics.Add(MakeDiagnostic(
-                    //    "🤷", 
-                    //    "Unexpected error during generation", 
-                    //    $"Property {memberName} needs a name property, because it is a duplicate", 
-                    //    typeNameSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().GetLocation(), 
-                    //    DiagnosticSeverity.Error,
-                    //    "https://lmgtfy.app/?q=Property+c%23&iie=1"));
-
-                    if (!success)
-                        return success;
-                }
-
-                return success;
-            }
-            else
-            {
-                return PropertieForSingleType(builder, typeNameSymbol, memberName);
-            }
-        }
-
-        private bool PropertieForSingleType(StringBuilder builder, ITypeSymbol typeNameSymbol, string memberName)
-        {
-            var props = typeNameSymbol
-                            .GetMembers()
-                            .OfType<IPropertySymbol>()
-                            .Where(property => property.Name != "this[]");
-
-            return GenerateWriteForProps(builder,
-                new TypeGroupInfo(
-                    null,
-                    new SymbolInfo(),
-                    props
-                        .Select(x => new PropertyInfo(null, x))
-                        .ToArray()
-                ),
-                memberName
-            );
-        }
-
         private bool TrySerializeList(StringBuilder builder, ITypeSymbol propertySymbol, string writerName, string memberName)
         {
             var list = propertySymbol.AllInterfaces.Any(x => x.Name == typeof(IEnumerable).Name);
@@ -331,7 +286,7 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
 
             const string itemName = "item";
 
-            TrySerializePublicProps(builder, propertySymbol, writerName, memberName);
+            TryGeneratePublicPropsLines(builder, propertySymbol, writerName, memberName, true);
             builder.AppendLine($"foreach (var {itemName} in {memberName})");
             builder.AppendLine("{");
 
@@ -342,12 +297,223 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
                     .ToArray();
 
             if (props.Length > 0)
-                GenerateWriteForProps(builder, new TypeGroupInfo(null, default, props), itemName);
+                GenerateLineForProps(builder, new TypeGroupInfo(null, default, props), true, itemName);
             else
                 TrySerializing(builder, genericArgument, writerName, itemName);
 
             builder.AppendLine("}");
             return true;
+        }
+
+        private bool TrySerializeWriterCall(StringBuilder builder, ITypeSymbol property, string writerName, string memberName)
+        {
+            var member
+                = property
+                    .GetMembers("Serialize")
+                    .OfType<IMethodSymbol>();
+
+            var shouldBeGenerated = property.GetAttributes().Any(x => x.ToString() == genSerializationAttribute.FullName);
+
+            var isUsable
+                = shouldBeGenerated || member
+                .Any(m =>
+                    m.Parameters.Length == 1
+                    && m.Parameters[0].ToDisplayString() == typeof(BinaryWriter).FullName
+                );
+
+            if (isUsable)
+                builder.AppendLine($"{memberName}.Serialize({writerName});");
+
+            return isUsable;
+        }
+
+        #endregion
+
+        #region Deserialize
+
+        private bool TrySpecialTypeReaderCall(StringBuilder builder, ITypeSymbol property, string readerName, string memberName)
+        {
+            switch ((int)property.SpecialType)
+            {
+                case >= 7 and <= 20:
+                    if (!property.IsReadOnly)
+                        builder.Append($"var {memberName} = ");
+                    builder.AppendLine($"{readerName}.{GetReadMethodCallFrom(property.SpecialType)}();");
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private bool TryEnumReaderCall(StringBuilder builder, ITypeSymbol property, string readerName, string memberName)
+        {
+            if (property.TypeKind != TypeKind.Enum)
+                return false;
+
+            if (property is INamedTypeSymbol typeSymbol)
+            {
+                var specialType = typeSymbol.EnumUnderlyingType.SpecialType;
+                var typeName = typeSymbol.Name;
+                if (!property.IsReadOnly)
+                    builder.Append($"var {memberName} = ({typeName})");
+                builder.AppendLine($"{readerName}.{GetReadMethodCallFrom(specialType)}();");
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        private static string GetReadMethodCallFrom(SpecialType specialType)
+            => specialType switch
+            {
+                SpecialType.System_Boolean => nameof(BinaryReader.ReadBoolean),
+                SpecialType.System_Char => nameof(BinaryReader.ReadChar),
+                SpecialType.System_SByte => nameof(BinaryReader.ReadSByte),
+                SpecialType.System_Byte => nameof(BinaryReader.ReadByte),
+                SpecialType.System_Int16 => nameof(BinaryReader.ReadInt16),
+                SpecialType.System_UInt16 => nameof(BinaryReader.ReadUInt16),
+                SpecialType.System_Int32 => nameof(BinaryReader.ReadInt32),
+                SpecialType.System_UInt32 => nameof(BinaryReader.ReadUInt32),
+                SpecialType.System_Int64 => nameof(BinaryReader.ReadInt64),
+                SpecialType.System_UInt64 => nameof(BinaryReader.ReadUInt64),
+                SpecialType.System_Decimal => nameof(BinaryReader.ReadDecimal),
+                SpecialType.System_Single => nameof(BinaryReader.ReadSingle),
+                SpecialType.System_Double => nameof(BinaryReader.ReadDouble),
+                SpecialType.System_String => nameof(BinaryReader.ReadString),
+                _ => throw new NotSupportedException(),
+            };
+
+
+        private bool TryDeserializeReaderCall(StringBuilder builder, ITypeSymbol property, string readerName, string memberName)
+        {
+            var member
+                = property
+                    .GetMembers("Deserialize")
+                    .OfType<IMethodSymbol>();
+
+            var shouldBeGenerated = property.GetAttributes().Any(x => x.ToString() == genSerializationAttribute.FullName);
+
+            var isUsable
+                = shouldBeGenerated || member
+                .Any(m =>
+                    m.Parameters.Length == 1
+                    && m.Parameters[0].ToDisplayString() == typeof(BinaryReader).FullName
+                    && m.IsStatic
+                );
+
+            if (isUsable)
+            {
+
+                if (!property.IsReadOnly)
+                    builder.Append($"var {memberName} = ");
+                builder.AppendLine($"{property.Name}.Deserialize({readerName});");
+            }
+
+            return isUsable;
+        }
+
+        private bool TryDeserializeList(StringBuilder builder, ITypeSymbol propertySymbol, string writerName, string memberName)
+        {
+            var list = propertySymbol.AllInterfaces.Any(x => x.Name == typeof(IEnumerable).Name);
+            if (!list)
+                return false;
+
+            var ienumerable = propertySymbol.Name == nameof(IEnumerable);
+            if (ienumerable)
+            {
+                //Diagnostic Error for not supported type
+                return true;
+            }
+
+            ITypeSymbol genericArgument;
+            if (propertySymbol is INamedTypeSymbol nts)
+            {
+                genericArgument = nts.TypeArguments[0];
+            }
+            else if (propertySymbol is IArrayTypeSymbol ats)
+            {
+                genericArgument = ats.ElementType;
+            }
+            else
+                throw new NotSupportedException();
+
+            const string itemName = "item";
+
+            TryGeneratePublicPropsLines(builder, propertySymbol, writerName, memberName, false);
+            builder.AppendLine($"for(int i = 0; i < count; i++)");
+            builder.AppendLine("{");
+
+            var props = genericArgument
+                .GetMembers()
+                .OfType<IPropertySymbol>()
+                    .Select(x => new PropertyInfo(null, x))
+                    .ToArray();
+
+            if (props.Length > 0)
+                GenerateLineForProps(builder, new TypeGroupInfo(null, default, props), false, itemName);
+            else
+                TrySerializing(builder, genericArgument, writerName, itemName);
+
+            builder.AppendLine("}");
+            return true;
+        }
+
+
+
+        #endregion
+
+        private bool TryGeneratePublicPropsLines(StringBuilder builder, ITypeSymbol typeNameSymbol, string writerName, string memberName, bool serialize)
+        {
+            if (typeNameSymbol.TypeKind == TypeKind.Interface)
+            {
+                var success = true;
+
+                //typeNameSymbol.Name == nameof(IEnumerable);
+
+                foreach (var interfaceType in typeNameSymbol.AllInterfaces)
+                {
+                    success = PropertieForSingleType(builder, interfaceType, memberName, serialize);
+                    //diagnostics.Add(MakeDiagnostic(
+                    //    "🤷", 
+                    //    "Unexpected error during generation", 
+                    //    $"Property {memberName} needs a name property, because it is a duplicate", 
+                    //    typeNameSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().GetLocation(), 
+                    //    DiagnosticSeverity.Error,
+                    //    "https://lmgtfy.app/?q=Property+c%23&iie=1"));
+
+                    if (!success)
+                        return success;
+                }
+
+                return success;
+            }
+            else
+            {
+                return PropertieForSingleType(builder, typeNameSymbol, memberName, serialize);
+            }
+        }
+
+        private bool PropertieForSingleType(StringBuilder builder, ITypeSymbol typeNameSymbol, string memberName, bool serialize)
+        {
+            var props = typeNameSymbol
+                            .GetMembers()
+                            .OfType<IPropertySymbol>()
+                            .Where(property => property.Name != "this[]");
+
+            return GenerateLineForProps(builder,
+                new TypeGroupInfo(
+                    null,
+                    new SymbolInfo(),
+                    props
+                        .Select(x => new PropertyInfo(null, x))
+                        .ToArray()
+                ),
+                serialize,
+                memberName
+            );
         }
 
         private class SyntaxReceiver : ISyntaxContextReceiver

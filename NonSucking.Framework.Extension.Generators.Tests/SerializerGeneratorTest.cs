@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace NonSucking.Framework.Extension.Generators.Tests
 {
     [TestFixture]
-    public static class SeriaizerGeneratorTest
+    public static class SerializerGeneratorTest
     {
         [Test]
         public static void Debug()
@@ -23,7 +23,7 @@ namespace NonSucking.Framework.Extension.Generators.Tests
             {
                 { sutMessage, text}
             },
-            () => new SerializerGenerator());
+            () => new NoosonGenerator());
 
         }
     }

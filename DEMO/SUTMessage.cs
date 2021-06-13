@@ -16,17 +16,17 @@ namespace DEMO
         [NoosonIgnore]
         public int Type { get; set; }
         public string Text { get; set; }
-        //public List<User> Users { get; set; }
-        //public List<short> Countings { get; set; }
-        //public IReadOnlyList<short> ReadOnlyCountings { get; }
+        public List<User> Users { get; set; }
+        public List<short> Countings { get; set; }
+        public IReadOnlyList<short> ReadOnlyCountings { get; }
         public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
-        //public AccessRight Right { get; set; }
-        //public ComplainBase Complain { get; set; }
-        //public User AssignedUser { get; set; }
-        //public Point Position { get; set; }
-        //public Point[] Positions { get; set; }
-        //public IUser ContactUser { get; }
-        //public IUser AlternativUser { get; set;  }
+        public AccessRight Right { get; set; }
+        public ComplainBase Complain { get; set; }
+        public User AssignedUser { get; set; }
+        public Point Position { get; set; }
+        public Point[] Positions { get; set; }
+        public IUser ContactUser { get; }
+        public IUser AlternativUser { get; set; }
 
         public enum AccessRight
         {
@@ -53,6 +53,11 @@ namespace DEMO
             public void Serialize(BinaryWriter writer)
             {
 
+            }
+
+            public static User Deserialize(BinaryReader reader)
+            {
+                return new User();
             }
         }
 

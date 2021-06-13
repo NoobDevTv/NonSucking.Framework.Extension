@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace NonSucking.Framework.Extension.Serialization
 {
@@ -7,3 +8,5 @@ namespace NonSucking.Framework.Extension.Serialization
     {
     }
 }
+
+
