@@ -1,5 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Text;
 using NonSucking.Framework.Extension.Generators.Attributes;
 using System;
@@ -95,6 +97,7 @@ namespace NonSucking.Framework.Extension.Generators
                     .Compilation
                     .GetTypeByMetadataName(genSerializationAttribute.FullName);
 
+
             foreach (VisitInfo classToAugment in receiver.ClassesToAugment)
             {
                 StringBuilder builder = new StringBuilder();
@@ -121,7 +124,6 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
 
                 SourceText sourceText = SourceText.From(rawSourceText, Encoding.UTF8);
 
-
                 /*
                                             Schlachtplan
                 0. IEnumerable => Not Supported (yet)
@@ -133,6 +135,38 @@ namespace {classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString()}
                 6. Fehler/Warnings ausgeben
                 7. CleanUp and Refactor
                  */
+
+                //using var workspace = new AdhocWorkspace();
+
+                //var tree = CSharpSyntaxTree.ParseText(sourceText);
+                //var root = tree.GetCompilationUnitRoot();
+                //var options = workspace.Options;
+                //var formatted = Formatter.Format(root, workspace, options).ToFullString();
+
+                var parameter = SyntaxFactory.ParseParameterList("int a, int b, string c");
+
+                var expr = SyntaxFactory.ParseExpression("new ComplainBase()");
+
+                var declareAndAssing = Testura.Code.Generators.Common.BodyGenerator.Create(Testura.Code.Statements.Statement.Declaration.DeclareAndAssign("hugo", typeof(int), expr),
+                    Testura.Code.Statements.Statement.Iteration.ForEach("item", typeof(void), "Enumerable.Range(0,20)", Testura.Code.Generators.Common.BodyGenerator.Create()));
+
+                //public ForEachStatementSyntax ForEach(string variableName, VariableReference enumerableReference, BlockSyntax body)
+                var @class
+                    = new Testura.Code.Builders.ClassBuilder("Serializer", "Serialization")
+                    .WithModifiers(Testura.Code.Modifiers.Public, Testura.Code.Modifiers.Partial)
+                    .WithMethods(
+                        new Testura.Code.Builders.MethodBuilder("Serialize")
+                        .WithParameters(parameter.Parameters.ToArray())
+                        .WithBody(
+                            declareAndAssing
+                        )
+                        .Build()
+                    )
+                    .Build();
+
+                using var workspace = new AdhocWorkspace();
+                var options = workspace.Options;
+                var formatted = Formatter.Format(@class, workspace, options).ToFullString();
 
                 context.AddSource(hintName, sourceText);
 
