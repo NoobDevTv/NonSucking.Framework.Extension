@@ -6,6 +6,19 @@ using System.Text;
 
 namespace NonSucking.Framework.Extension.Generators
 {
+
+    /*
+     *          ToDo Refactor the Builder Pattern
+     * -------------------------------------------------
+     * 
+     *  * Mehr Typsicherheit verwenden
+     *  1.  BlockBuilder, Method, Assign etc....
+     *  2. Builder und Context sepearieren
+     *  3. More interfaces
+     *  4. Expression API als Context für Generierung?
+     */
+
+
     internal class CodeBuilder : Builder
     {
         public GeneratorExecutionContext ExecutionContext { get; }
