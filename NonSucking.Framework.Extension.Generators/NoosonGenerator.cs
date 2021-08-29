@@ -82,8 +82,9 @@ namespace NonSucking.Framework.Extension.Generators
             {
                 InternalExecute(context);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.Fail(ex.ToString());
                 Debugger.Break();
                 throw;
             }
@@ -99,9 +100,8 @@ namespace NonSucking.Framework.Extension.Generators
 
             INamedTypeSymbol attributeSymbol
                 = context
-                    .Compilation
-                    .GetTypeByMetadataName(genSerializationAttribute.FullName);
-
+                .Compilation
+                .GetTypeByMetadataName(genSerializationAttribute.FullName);
 
             foreach (VisitInfo classToAugment in receiver.ClassesToAugment)
             {
@@ -109,9 +109,9 @@ namespace NonSucking.Framework.Extension.Generators
                 var methods
                     = GenerateSerializeAndDeserializeMethods(classToAugment);
 
-
                 var sourceCode
                     = new ClassBuilder(classToAugment.TypeSymbol.Name, classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                    .WithUsings()
                     .WithModifiers(Modifiers.Public, Modifiers.Partial)
                     .WithMethods(methods)
                     .Build();
@@ -122,14 +122,14 @@ namespace NonSucking.Framework.Extension.Generators
 
                 /*
                                             Schlachtplan
-                0. IEnumerable => Not Supported (yet)
-                5. Derserialize => Serialize Logik rückwärts aufrufen
+                0. ✓ IEnumerable => Not Supported (yet)
+                5. ✓ Derserialize => Serialize Logik rückwärts aufrufen
+                7. ✓ CleanUp and Refactor
                 2. Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
                 3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
                 4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
                 1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
                 6. Fehler/Warnings ausgeben
-                7. CleanUp and Refactor
                  */
 
                 using var workspace = new AdhocWorkspace();
@@ -154,13 +154,13 @@ namespace NonSucking.Framework.Extension.Generators
 
         private static BaseMethodDeclarationSyntax GenerateSerializeMethod(VisitInfo visitInfo, string writerName)
         {
-            var parameter = SyntaxFactory.ParseParameterList($"BinaryWriter {writerName}");
+            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryWriter {writerName}");
             var body
                 = CreateBlock(visitInfo, MethodType.Serialize);
 
             return new MethodBuilder("Serialize")
                 .WithModifiers(Modifiers.Public)
-                .WithReturnType(typeof(void))
+                .WithReturnType(null)
                 .WithParameters(parameter.Parameters.ToArray())
                 .WithBody(body)
                 .Build();
@@ -168,13 +168,13 @@ namespace NonSucking.Framework.Extension.Generators
 
         private static BaseMethodDeclarationSyntax GenerateDeserializeMethod(VisitInfo visitInfo, string readerName)
         {
-            var parameter = SyntaxFactory.ParseParameterList($"BinaryReader {readerName}");
+            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryReader {readerName}");
             var body
                 = CreateBlock(visitInfo, MethodType.Deserialize);
 
             return new MethodBuilder("Deserialize")
                 .WithModifiers(Modifiers.Public, Modifiers.Static)
-                .WithReturnType(typeof(void)) //TODO: typename Testura overload hinzufügen type as string
+                .WithReturnType(null) //TODO: typename Testura overload hinzufügen type as string
                 .WithParameters(parameter.Parameters.ToArray())
                 .WithBody(body)
                 .Build();
@@ -187,30 +187,105 @@ namespace NonSucking.Framework.Extension.Generators
                 .Properties
                 .SelectMany(propertieTypeGroup => GenerateStatementsForProps(propertieTypeGroup, methodType))
                 .Where(statement => statement is not null)
-                .ToArray();
+                .ToList();
 
-            return BodyGenerator
-                .Create(statements);
+            if (methodType == MethodType.Deserialize)
+            {
+                var ret = CallCtorAndSetProps(visitInfo, statements);
+                statements.Add(ret);
+            }
+            return BodyGenerator.Create(statements.ToArray());
+        }
+
+        private static StatementSyntax CallCtorAndSetProps(VisitInfo visitInfo, ICollection<StatementSyntax> statements)
+        {
+            var constructors
+                = visitInfo
+                .ClassDeclaration
+                .Members
+                .OfType<ConstructorDeclarationSyntax>()
+                .OrderByDescending(constructor => constructor.ParameterList.Parameters.Count)
+                .ToList();
+
+            var localDeclarations
+                = statements
+                .OfType<LocalDeclarationStatementSyntax>()
+                .Concat(
+                    statements
+                    .OfType<BlockSyntax>()
+                    .SelectMany(x => x.Statements.OfType<LocalDeclarationStatementSyntax>())
+                 )
+                .SelectMany(declaration => declaration.Declaration.Variables)
+                .Select(variable => variable.Identifier.Text)
+                .Where(text => text.StartsWith("@"))
+                .Select(text => text.Substring(1))
+                .ToList();
+
+            if (constructors.Count == 0)
+            {
+                return Statement
+                        .Expression
+                        .Invoke("new " + visitInfo.TypeSymbol.Name)
+                        .AsStatement();
+            }
+
+            var ctorArguments = new List<ValueArgument>();
+            foreach (var constructor in constructors)
+            {
+                bool constructorMatch = true;
+
+                foreach (var parameter in constructor.ParameterList.Parameters)
+                {
+                    var matchedDeclaration
+                        = localDeclarations
+                        .FirstOrDefault(identifier => string.Equals(identifier, parameter.Identifier.Text, StringComparison.OrdinalIgnoreCase));
+
+                    if (string.IsNullOrWhiteSpace(matchedDeclaration))
+                    {
+                        constructorMatch = false;
+                        break;
+                    }
+
+                    ctorArguments.Add(new ValueArgument((object)matchedDeclaration));
+                }
+
+
+                if (constructorMatch)
+                {
+                    return Statement
+                        .Expression
+                        .Invoke("new " + visitInfo.TypeSymbol.Name, arguments: ctorArguments)
+                        .AsStatement();
+                }
+                else
+                {
+                    ctorArguments.Clear();
+                }
+            }
+
+            //TODO diagnostic
+            throw new NotSupportedException();
+            //GetCtorWithBestFittingParams
+
         }
 
         private static IEnumerable<StatementSyntax> GenerateStatementsForProps(TypeGroupInfo typeGroupInfo, MethodType methodType, string parentName = null)
         {
             NoosonIgnoreAttributeTemplate ignore = new NoosonIgnoreAttributeTemplate();
 
-            foreach (PropertyInfo property in typeGroupInfo.Properties)
+            foreach (MemberInfo property in typeGroupInfo.Properties)
             {
-                ITypeSymbol propertyType = property.PropertySymbol.Type;
+                ITypeSymbol propertyType = property.TypeSymbol;
 
-                string propertyName = property.PropertySymbol.Name;
+                string propertyName = property.Name;
                 int index = propertyName.IndexOf('.');
 
+                //if (index >= 0)
+                //{
+                //    continue;
+                //}
 
-                if (index >= 0)
-                {
-                    continue;
-                }
-
-                if (property.PropertySymbol.GetAttributes().Any(a => a.AttributeClass.ToDisplayString() == ignore.FullName))
+                if (property.Symbol.GetAttributes().Any(a => a.AttributeClass.ToDisplayString() == ignore.FullName))
                 {
                     continue;
                 }
@@ -243,7 +318,7 @@ namespace NonSucking.Framework.Extension.Generators
                    location);
         }
 
-        private static StatementSyntax CreateStatementForSerializing(PropertyInfo property, string writerName)
+        private static StatementSyntax CreateStatementForSerializing(MemberInfo property, string writerName)
         {
             StatementSyntax statement;
             var success
@@ -257,7 +332,7 @@ namespace NonSucking.Framework.Extension.Generators
             return statement;
         }
 
-        private static StatementSyntax CreateStatementForDeserializing(PropertyInfo property, string readerName)
+        private static StatementSyntax CreateStatementForDeserializing(MemberInfo property, string readerName)
         {
             StatementSyntax statement;
             var success
@@ -273,16 +348,16 @@ namespace NonSucking.Framework.Extension.Generators
 
         #region Serialize
 
-        private static bool TrySpecialTypeWriterCall(PropertyInfo property, string writerName, out StatementSyntax statement)
+        private static bool TrySpecialTypeWriterCall(MemberInfo property, string writerName, out StatementSyntax statement)
         {
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
             switch ((int)type.SpecialType)
             {
                 case >= 7 and <= 20:
                     statement
                         = Statement
                         .Expression
-                        .Invoke(writerName, "Write", arguments: new[] { new ValueArgument((object)property.PropertySymbol.Name) })
+                        .Invoke(writerName, "Write", arguments: new[] { new ValueArgument((object)property.Name) })
                         .AsStatement();
                     return true;
                 default:
@@ -291,11 +366,11 @@ namespace NonSucking.Framework.Extension.Generators
             }
         }
 
-        private static bool TryEnumWriterCall(PropertyInfo property, string writerName, out StatementSyntax statement)
+        private static bool TryEnumWriterCall(MemberInfo property, string writerName, out StatementSyntax statement)
         {
             statement = null;
 
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
 
             if (type.TypeKind != TypeKind.Enum)
             {
@@ -305,7 +380,7 @@ namespace NonSucking.Framework.Extension.Generators
             if (type is INamedTypeSymbol typeSymbol)
             {
                 object valueCall
-                    = $"({typeSymbol.EnumUnderlyingType}){property.PropertySymbol.Name}";
+                    = $"({typeSymbol.EnumUnderlyingType}){property.Name}";
 
                 statement
                         = Statement
@@ -321,10 +396,10 @@ namespace NonSucking.Framework.Extension.Generators
 
         }
 
-        private static bool TrySerializeList(PropertyInfo property, string writerName, out StatementSyntax statement)
+        private static bool TrySerializeList(MemberInfo property, string writerName, out StatementSyntax statement)
         {
             statement = null;
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
             bool isIEnumerable
                 = type
                 .AllInterfaces
@@ -335,7 +410,9 @@ namespace NonSucking.Framework.Extension.Generators
                 return false;
             }
 
-            bool isIEnumerableInterfaceSelf = type.Name == nameof(IEnumerable);
+            bool isIEnumerableInterfaceSelf
+                = type.Name == nameof(IEnumerable);
+
             if (isIEnumerableInterfaceSelf)
             {
                 //Diagnostic Error for not supported type
@@ -361,19 +438,63 @@ namespace NonSucking.Framework.Extension.Generators
             //TryGeneratePublicPropsLines(builder, writerName, true);
             //TODO
 
+            MemberInfo[] props = genericArgument
+             .GetMembers()
+             .OfType<IPropertySymbol>()
+                 .Select(x => new MemberInfo(x.Type, x, $"{itemName}.{x.Name}"))
+                 .ToArray();
 
-            //MethodBuilder mb = builder.AppendToParent();
-            //LoopBuilder loop = mb
-            //    .ForEach(itemName, builder.InstanceName)
-            //    .Open();
+            StatementSyntax[] statements = Array.Empty<StatementSyntax>();
+
+            if (props.Length > 0)
+            {
+                statements
+                    = GenerateStatementsForProps(new TypeGroupInfo(null, default, props), MethodType.Serialize, itemName)
+                    .ToArray();
+            }
+            else //List<string>, List<int>
+            {
+                //InstanceCallBuilder instanceBuilder = mb.GetInstance(genericArgument, itemName);
+                statements
+                    = new[]{
+                        CreateStatementForSerializing(
+                            new MemberInfo(genericArgument, genericArgument, itemName),
+                            writerName
+                        )
+                    };
+            }
 
 
-            //PropertyInfo[] props = genericArgument
-            //    .GetMembers()
-            //    .OfType<IPropertySymbol>()
-            //        .Select(x => new PropertyInfo(null, x))
-            //        .ToArray();
+            var memberReference
+                = new MemberReference(
+                type.TypeKind == TypeKind.Array
+                    ? "Length"
+                    : "Count");
+            var countRefernce = new ReferenceArgument(new VariableReference(property.Name, memberReference));
 
+
+            var invocationExpression
+                        = Statement
+                        .Expression
+                        .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] { countRefernce })
+                        .AsStatement();
+
+
+            var iterationStatement
+                = Statement
+                .Iteration
+                 .ForEach(itemName, typeof(void), property.Name, BodyGenerator.Create(statements), useVar: true);
+
+            var openEmpty = SyntaxFactory.Token(default, SyntaxKind.OpenBraceToken, "", "", default);
+            var closeEmpty = SyntaxFactory.Token(default, SyntaxKind.CloseBraceToken, "", "", default);
+
+            statement
+                = SyntaxFactory.Block(openEmpty, SyntaxFactory.List(new StatementSyntax[] { invocationExpression, iterationStatement }), closeEmpty);
+
+
+            //TODO Create list to add these things to
+
+            return true;
 
             //StatementSyntax[] bodySyntax;
             //if (props.Length > 0)
@@ -393,15 +514,15 @@ namespace NonSucking.Framework.Extension.Generators
             //statement
             //    = Statement
             //    .Iteration
-            //    .ForEach(itemName, typeof(void), property.PropertySymbol.Name, loopBlock, useVar: true);
+            //    .ForEach(itemName, typeof(void), property.Name, loopBlock, useVar: true);
 
             return true;
         }
 
-        private static bool TrySerializeWriterCall(PropertyInfo property, string writerName, out StatementSyntax statement)
+        private static bool TrySerializeWriterCall(MemberInfo property, string writerName, out StatementSyntax statement)
         {
             statement = null;
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
 
             IEnumerable<IMethodSymbol> member
                 = type
@@ -425,7 +546,7 @@ namespace NonSucking.Framework.Extension.Generators
                 statement
                         = Statement
                         .Expression
-                        .Invoke(property.PropertySymbol.Name, "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
+                        .Invoke(property.Name, "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
 
@@ -436,14 +557,14 @@ namespace NonSucking.Framework.Extension.Generators
 
         #region Deserialize
 
-        private static bool TrySpecialTypeReaderCall(PropertyInfo property, string readerName, out StatementSyntax statement)
+        private static bool TrySpecialTypeReaderCall(MemberInfo property, string readerName, out StatementSyntax statement)
         {
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
 
             switch ((int)type.SpecialType)
             {
                 case >= 7 and <= 20:
-                    string memberName = property.PropertySymbol.Name;
+                    string memberName = "@" + property.Name;
 
                     var invocationExpression
                         = Statement
@@ -462,10 +583,10 @@ namespace NonSucking.Framework.Extension.Generators
                     return false;
             }
         }
-        private static bool TryEnumReaderCall(PropertyInfo property, string readerName, out StatementSyntax statement)
+        private static bool TryEnumReaderCall(MemberInfo property, string readerName, out StatementSyntax statement)
         {
             statement = null;
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
 
             if (type.TypeKind != TypeKind.Enum)
             {
@@ -475,7 +596,7 @@ namespace NonSucking.Framework.Extension.Generators
             if (type is INamedTypeSymbol typeSymbol)
             {
                 SpecialType specialType = typeSymbol.EnumUnderlyingType.SpecialType;
-                string typeName = typeSymbol.Name;
+                string typeName = "@" + typeSymbol.Name;
 
                 ExpressionSyntax invocationExpression
                         = Statement
@@ -527,10 +648,10 @@ namespace NonSucking.Framework.Extension.Generators
             };
         }
 
-        private static bool TryDeserializeReaderCall(PropertyInfo property, string readerName, out StatementSyntax statement)
+        private static bool TryDeserializeReaderCall(MemberInfo property, string readerName, out StatementSyntax statement)
         {
             statement = null;
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
 
             IEnumerable<IMethodSymbol> member
                 = type
@@ -556,22 +677,22 @@ namespace NonSucking.Framework.Extension.Generators
                 var invocationExpression
                         = Statement
                         .Expression
-                        .Invoke(type.Name, "Deserialize")
+                        .Invoke(type.ToString(), "Deserialize", arguments: new[] { new ValueArgument((object)readerName) })
                         .AsExpression();
 
                 statement
                         = Statement
                         .Declaration
-                        .DeclareAndAssign(property.PropertySymbol.Name, typeof(void), invocationExpression);
+                        .DeclareAndAssign("@" + property.Name, typeof(void), invocationExpression);
             }
 
             return isUsable;
         }
 
-        private static bool TryDeserializeList(PropertyInfo property, string readerName, out StatementSyntax statement)
+        private static bool TryDeserializeList(MemberInfo property, string readerName, out StatementSyntax statement)
         {
             statement = null;
-            var type = property.PropertySymbol.Type;
+            var type = property.TypeSymbol;
 
             bool isEnumerable
                 = type
@@ -605,18 +726,12 @@ namespace NonSucking.Framework.Extension.Generators
             }
 
             const string itemName = "item";
-            //TODO
+            const string variableSuffix = "_LocalVariable";
 
-            //TryGeneratePublicPropsLines(builder, writerName, false);
-            //MethodBuilder mb = builder.AppendToParent();
-            //LoopBuilder loop = mb
-            //    .For("int i = 0", "i < count", "i++")
-            //    .Open();
-
-            PropertyInfo[] props = genericArgument
+            MemberInfo[] props = genericArgument
                 .GetMembers()
                 .OfType<IPropertySymbol>()
-                    .Select(x => new PropertyInfo(null, x))
+                    .Select(x => new MemberInfo(x.Type, x, $"{x.Name}{variableSuffix}"))
                     .ToArray();
 
             StatementSyntax[] statements = Array.Empty<StatementSyntax>();
@@ -630,60 +745,98 @@ namespace NonSucking.Framework.Extension.Generators
             else //List<string>, List<int>
             {
                 //InstanceCallBuilder instanceBuilder = mb.GetInstance(genericArgument, itemName);
-                //CreateStatementForDeserializing(props[0], readerName);
+                statements
+                    = new[]{
+                        CreateStatementForDeserializing(
+                            new MemberInfo(genericArgument, genericArgument, $"{genericArgument.Name}{variableSuffix}"),
+                            readerName
+                        )
+                    };
             }
 
             var start = new VariableReference("0");
-            var end = new VariableReference("count");
+            var end = new VariableReference("count" + property.Name);
 
-            statement
+
+            ExpressionSyntax invocationExpression
+                        = Statement
+                        .Expression
+                        .Invoke(readerName, nameof(BinaryReader.ReadInt32))
+                        .AsExpression();
+
+            var countStatement
+                = Statement
+                .Declaration
+                .DeclareAndAssign(end.Name, typeof(void), invocationExpression);
+
+            ExpressionSyntax ctorInvocationExpression
+                        = Statement
+                        .Expression
+                        .Invoke($"new System.Collections.Generic.List<{genericArgument}>", arguments: new[] { new ValueArgument((object)end.Name) })
+                        .AsExpression();
+            var listStatement
+                = Statement
+                .Declaration
+                .DeclareAndAssign("@" + property.Name, typeof(void), ctorInvocationExpression);
+
+            var iterationStatement
                 = Statement
                 .Iteration
                 .For(start, end, "i", BodyGenerator.Create(statements));
+
+            var openEmpty = SyntaxFactory.Token(default, SyntaxKind.OpenBraceToken, "", "", default);
+            var closeEmpty = SyntaxFactory.Token(default, SyntaxKind.CloseBraceToken, "", "", default);
+
+            statement
+                = SyntaxFactory.Block(openEmpty, SyntaxFactory.List(new StatementSyntax[] { countStatement, listStatement, iterationStatement }), closeEmpty);
+
+
+            //TODO Create list to add these things to
 
             return true;
         }
 
 
 
+
         #endregion
 
-        //private static bool TryGeneratePublicPropsLines(InstanceCallBuilder builder, bool serialize)
+        //private static bool TryGeneratePublicPropsLines(MemberInfo member, bool serialize)
         //{
-        //    if (builder.TypeInformation.TypeKind == TypeKind.Interface)
+        //if (member.TypeSymbol.TypeKind == TypeKind.Interface)
+        //{
+        //    var success = true;
+        //    //message.Test = asd;
+        //    //message.ABC = 123;
+
+
+        //    //typeNameSymbol.Name == nameof(IEnumerable);
+
+        //    foreach (var interfaceType in member.TypeSymbol.AllInterfaces)
         //    {
-        //        var success = true;
-        //        //message.Test = asd;
-        //        //message.ABC = 123;
 
+        //        success = PropertiesForSingleType(builder, interfaceType, builder.InstanceName, serialize);
+        //        //diagnostics.Add(MakeDiagnostic(
+        //        //    "🤷", 
+        //        //    "Unexpected error during generation", 
+        //        //    $"Property {memberName} needs a name property, because it is a duplicate", 
+        //        //    typeNameSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().GetLocation(), 
+        //        //    DiagnosticSeverity.Error,
+        //        //    "https://lmgtfy.app/?q=Property+c%23&iie=1"));
 
-        //        //typeNameSymbol.Name == nameof(IEnumerable);
-
-        //        foreach (var interfaceType in builder.TypeInformation.AllInterfaces)
-        //        {
-
-        //            success = PropertiesForSingleType(builder, interfaceType, builder.InstanceName, serialize);
-        //            //diagnostics.Add(MakeDiagnostic(
-        //            //    "🤷", 
-        //            //    "Unexpected error during generation", 
-        //            //    $"Property {memberName} needs a name property, because it is a duplicate", 
-        //            //    typeNameSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().GetLocation(), 
-        //            //    DiagnosticSeverity.Error,
-        //            //    "https://lmgtfy.app/?q=Property+c%23&iie=1"));
-
-        //            if (!success)
-        //                return success;
-        //        }
-
-        //        return success;
+        //        if (!success)
+        //            return success;
         //    }
-        //    else
-        //    {
-        //        return PropertiesForSingleType(builder, typeNameSymbol, memberName, serialize);
-        //    }
+
+        //    return success;
+        //}
+        //else
+        //{
+        //return PropertiesForSingleType(builder, typeNameSymbol, memberName, serialize);
+        //}
         //}
 
-        //private bool PropertiesForSingleType(InstanceCallBuilder builder, bool serialize)
+        //private bool PropertiesForSingleType(MemberInfo memberInfo, bool serialize)
         //{
         //    var props = builder.TypeInformation
         //                    .GetMembers()
@@ -711,4 +864,5 @@ namespace NonSucking.Framework.Extension.Generators
 
 
     }
+
 }

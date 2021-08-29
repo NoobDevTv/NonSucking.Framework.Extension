@@ -33,7 +33,7 @@ namespace NonSucking.Framework.Extension.Generators
 
                 INamedTypeSymbol typeSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax);
                 System.Collections.Immutable.ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
-                var attribute 
+                var attribute
                     = attributes
                     .FirstOrDefault(d => d?.AttributeClass.ToDisplayString() == attributeTemplate.FullName);
 
@@ -51,9 +51,14 @@ namespace NonSucking.Framework.Extension.Generators
                         .Select(
                             group =>
                             {
-                                PropertyInfo[] propertyInfos
+                                MemberInfo[] propertyInfos
                                 = group
-                                .Select(p => new PropertyInfo(p, context.SemanticModel.GetDeclaredSymbol(p)))
+                                .Select(p =>
+                                    {
+                                        var prop = context.SemanticModel.GetDeclaredSymbol(p);
+                                        return new MemberInfo(prop.Type, prop, prop.Name);
+                                    }
+                                )
                                 .ToArray();
 
                                 return new TypeGroupInfo(group.Key, context.SemanticModel.GetSymbolInfo(group.Key), propertyInfos);
