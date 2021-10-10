@@ -12,13 +12,25 @@ using static DEMO.SUTMessage;
 namespace DEMO
 {
     [Nooson]
+    public partial class SinglePropTest
+    {
+        public Point Position { get; set; }
+        public Point Position2 { get; set; }
+        public bool IsEmpty { get; set; }
+    }
+
+    [Nooson]
     public partial class ComplainBaseWithCtor
     {
         public string Complain { get; set; }
         public string First { get; set; }
         public string Second { get; set; }
         public string Last { get; set; }
+        public string Origin { get;  }
+        public string Never { set => valueNever = value; }
+        public string Ultimate { get; private set; }
 
+        private string valueNever;
         public ComplainBaseWithCtor(string complain)
         {
             Complain = complain;
@@ -130,7 +142,7 @@ namespace DEMO
     //}
 
 
-    [Nooson]
+    //[Nooson]
     public partial class ComplainBase
     {
         public string Complain { get; set; }

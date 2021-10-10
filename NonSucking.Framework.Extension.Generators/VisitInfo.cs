@@ -13,7 +13,7 @@ namespace NonSucking.Framework.Extension.Generators
 
         public List<TypeGroupInfo> Properties { get; }
 
-        public VisitInfo(ClassDeclarationSyntax classDeclaration, INamedTypeSymbol typeSymbol, AttributeData attribute, List<TypeGroupInfo> properties)
+        public VisitInfo(ClassDeclarationSyntax classDeclaration = default, INamedTypeSymbol typeSymbol = default, AttributeData attribute = default, List<TypeGroupInfo> properties = default)
         {
             ClassDeclaration = classDeclaration;
             TypeSymbol = typeSymbol;
@@ -21,8 +21,13 @@ namespace NonSucking.Framework.Extension.Generators
             Properties = properties;
         }
 
-        public override bool Equals(object obj) => obj is VisitInfo info && Equals(info);
-        public bool Equals(VisitInfo other) => EqualityComparer<ClassDeclarationSyntax>.Default.Equals(ClassDeclaration, other.ClassDeclaration) && EqualityComparer<INamedTypeSymbol>.Default.Equals(TypeSymbol, other.TypeSymbol) && EqualityComparer<AttributeData>.Default.Equals(Attribute, other.Attribute) && EqualityComparer<List<TypeGroupInfo>>.Default.Equals(Properties, other.Properties);
+        public override bool Equals(object obj) 
+            => obj is VisitInfo info && Equals(info);
+        public bool Equals(VisitInfo other) 
+            => EqualityComparer<ClassDeclarationSyntax>.Default.Equals(ClassDeclaration, other.ClassDeclaration) 
+            && EqualityComparer<INamedTypeSymbol>.Default.Equals(TypeSymbol, other.TypeSymbol) 
+            && EqualityComparer<AttributeData>.Default.Equals(Attribute, other.Attribute) 
+            && EqualityComparer<List<TypeGroupInfo>>.Default.Equals(Properties, other.Properties);
 
         public override int GetHashCode()
         {
