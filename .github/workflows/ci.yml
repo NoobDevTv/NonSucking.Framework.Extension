@@ -4,9 +4,9 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the develop branch
   push:
-    branches: [ develop ]
+    branches: [ stable, productive, deploy, develop, master ]
   pull_request:
-    branches: [ develop ]
+    branches: [ stable, productive, deploy, develop, master ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -18,18 +18,36 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
+    # Set environment variables
+    env:
+      isProductive: ${{ github.ref == 'refs/heads/productive' }}
+      isDeploy:  ${{ github.ref == 'refs/heads/deploy' }}
+      isStable:  ${{ github.ref == 'refs/heads/stable' }}
+      isPush: ${{ github.event_name == 'push' }}
+      debug: true
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+
+      # Set dynamic environment variables
+      - name: Set dynamic environment variables
+        run: |
+          isAlpha=${{ env.isProductive == 'false' && env.isDeploy == 'false'}}
+          publish=${{ env.isPush == 'true' && env.isProductive == 'false' && env.isDeploy == 'false'}}
+          suffix="${{ (env.isProductive == 'false' && env.isDeploy == 'false' && '-alpha') || (env.isProductive == 'false' && env.isDeploy == 'true' && '-beta') || '' }}"
+          echo "isAlpha=$isAlpha" >> $GITHUB_ENV
+          echo "publish=$publish" >> $GITHUB_ENV
+          echo "suffix=$suffix" >> $GITHUB_ENV
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0 #to ensure to retrive everything for version lookup
+          fetch-depth: 0 #to ensure to retrieve everything for version lookup
+          lfs: true
 
       # Setup powershell
       - name: Setup powershell
-        run: |
-          chmod +x ./.github/scripts/install-powershell.sh
-          sh ./.github/scripts/install-powershell.sh
+        run: sh ./.github/scripts/install-powershell.sh
 
       # setup dotnet with dotnet core 3.1
       - name: Setup .NET Core
@@ -37,21 +55,24 @@ jobs:
         with:
           dotnet-version: '3.1.x' # SDK Version to use.
 
+      # setup dotnet with .NET 5.0
       - name: Setup .NET 5.0
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '5.0.x' # SDK Version to use.
-      
-      # Set version numbers by replacing PlaceHolders in csproj
-      - name: Set Version number on Extension
-        if: github.event_name == 'push' # Not required because we don't publish packages on PR's and other branches
-        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj
-        
-      # Set version numbers by replacing PlaceHolders in csproj
-      - name: Set Version number on Rx extension
-        if: github.event_name == 'push' # Not required because we don't publish packages on PR's and other branches
-        run: pwsh ./.github/scripts/set-version.ps1 -file ./NonSucking.Framework.Extension.Rx/NonSucking.Framework.Extension.Rx.csproj
-        
+
+      # Print current suffix
+      - name: Print suffix
+        run: echo "${{env.suffix}}"
+
+      # Parse LitGit templates
+      - name: Set Version Suffix
+        uses: jvbsl/litgit-action@master
+        id: litgit
+        with:
+          templates: '**/*.template'
+          parameters: '-p VERSION_ADDITIONAL="${{env.suffix}}" -c ./.github/configs/**/*.config'
+
       # Restore all dependecies
       - name: Restore dependencies
         run: dotnet restore
@@ -66,16 +87,20 @@ jobs:
       
       # Create nupkg
       - name: Pack extension
-        if: github.event_name == 'push'
-        run: dotnet pack ./NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj -c Release --no-build 
+        if: env.isPush == 'true'
+        run: pwsh -File ./.github/scripts/pack-files.ps1 -path './*'
 
-      - name: Pack RX extension
-        if: github.event_name == 'push'
-        run: dotnet pack ./NonSucking.Framework.Extension.Rx/NonSucking.Framework.Extension.Rx.csproj -c Release --no-build 
-      
+      # Artifact for testing purpose
+      - name: upload artifacts      
+        uses: actions/upload-artifact@v2
+        if: env.debug == 'true'
+        with:
+          name: test-result
+          path: '**/*.nupkg'
+
       # Setup Nuget
       - name: Setup NuGet.exe
-        if: github.event_name == 'push'
+        if: env.publish == 'true'
         # You may pin to the exact commit or the version.
         # uses: NuGet/setup-nuget@04b0c2b8d1b97922f67eca497d7cf0bf17b8ffe1
         uses: NuGet/setup-nuget@v1.0.5
@@ -89,5 +114,5 @@ jobs:
 
       # Push nuget packages
       - name: Publish packages
-        if: github.event_name == 'push'
+        if: env.publish == 'true'
         run: nuget push "**/*.nupkg" -src https://api.nuget.org/v3/index.json
