@@ -87,7 +87,7 @@ jobs:
       
       # Create nupkg
       - name: Pack extension
-        if: env.isPush == 'true'
+        if: env.isPush == 'true' || env.debug == 'true'
         run: pwsh -File ./.github/scripts/pack-files.ps1 -path './*'
 
       # Artifact for testing purpose
