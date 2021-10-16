@@ -24,7 +24,7 @@ jobs:
       isDeploy:  ${{ github.ref == 'refs/heads/deploy' }}
       isStable:  ${{ github.ref == 'refs/heads/stable' }}
       isPush: ${{ github.event_name == 'push' }}
-      debug: true
+      debug: false
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
