@@ -3,7 +3,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Text;
+
 using NonSucking.Framework.Extension.Generators.Attributes;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,6 +16,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
+
 using VaVare;
 using VaVare.Builders;
 using VaVare.Generators.Common;
@@ -46,7 +49,9 @@ namespace NonSucking.Framework.Extension.Generators
 
         private const string writerName = "writer";
         private const string readerName = "reader";
-        private const string localVariableSuffix = "___NossonLocalVariable___";
+        private const string localVariableSuffix = "___";
+        //private const string localVariableSuffix = "___NossonLocalVariable___";
+        private Random rand = new Random();
         private readonly List<Diagnostic> diagnostics = new();
         private static readonly NoosonAttributeTemplate genSerializationAttribute = new();
 
@@ -87,6 +92,8 @@ namespace NonSucking.Framework.Extension.Generators
 
         public void Execute(GeneratorExecutionContext context)
         {
+            //Debugger.Launch();
+
             try
             {
                 InternalExecute(context);
@@ -107,10 +114,6 @@ namespace NonSucking.Framework.Extension.Generators
                 return;
             }
 
-            INamedTypeSymbol attributeSymbol
-                = context
-                .Compilation
-                .GetTypeByMetadataName(genSerializationAttribute.FullName);
 
             foreach (VisitInfo classToAugment in receiver.ClassesToAugment)
             {
@@ -137,6 +140,7 @@ namespace NonSucking.Framework.Extension.Generators
                 2. ✓ Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
                 3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
                 4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
+                8. Support for Dictionaries
                 1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
                 6. Fehler/Warnings ausgeben
                  */
@@ -144,9 +148,8 @@ namespace NonSucking.Framework.Extension.Generators
                 using var workspace = new AdhocWorkspace();
                 var options = workspace.Options;
                 var formattedText = Formatter.Format(sourceCode, workspace, options).ToFullString();
-
+                
                 context.AddSource(hintName, formattedText);
-
             }
 
             foreach (Diagnostic diagnostic in diagnostics)
@@ -189,6 +192,7 @@ namespace NonSucking.Framework.Extension.Generators
                 .Build();
         }
 
+        static string returnValue = "returnValue" + GetRandomGuidSuffix();
         private static BlockSyntax CreateBlock(VisitInfo visitInfo, MethodType methodType)
         {
             var statements
@@ -200,10 +204,9 @@ namespace NonSucking.Framework.Extension.Generators
 
             if (methodType == MethodType.Deserialize)
             {
-                const string returnValue = "returnValue";
                 var ret = CallCtorAndSetProps(visitInfo.TypeSymbol, statements, returnValue, DeclareOrAndAssign.DeclareAndAssign);
                 statements.Add(ret);
-
+                
                 var returnStatement
                     = SyntaxFactory
                     .ParseStatement($"return {returnValue};");
@@ -220,9 +223,6 @@ namespace NonSucking.Framework.Extension.Generators
                 .Constructors
                 .OrderByDescending(constructor => constructor.Parameters.Length)
                 .ToList();
-
-
-            //IMethodSymbol.Parameters
 
             var localDeclarations
                 = statements
@@ -241,25 +241,33 @@ namespace NonSucking.Framework.Extension.Generators
             var currentType
                 = SyntaxFactory
                 .ParseTypeName(typeSymbol.Name);
+
+
+            if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
+            {
+                return Statement
+                 .Declaration
+                 .Assign(instanceName, SyntaxFactory.ParseTypeName(" default"));
+            }
+
             var ctorCallStatement
                 = GetStatementForCtorCall(constructors, localDeclarations, currentType, instanceName, declareAndAssign, out var ctorArguments);
-            //GetCtorWithBestFittingParams
 
-            //BlockSyntax(ctorCallStatement,...)
             var propertyAssignments
                 = AssignMissingSetterProperties(typeSymbol, localDeclarations, ctorArguments, instanceName);
-
 
             return GetBlockWithoutBraces(new StatementSyntax[] { ctorCallStatement, propertyAssignments });
         }
 
+
         private static StatementSyntax AssignMissingSetterProperties(ITypeSymbol typeSymbol, List<string> localDeclarations, List<string> ctorArguments, string variableName)
         {
+
             //TODO Set Public props which have a set method via !IPropertySymbol.IsReadOnly
             localDeclarations
                 = localDeclarations
                 .Where(declaration =>
-                    !ctorArguments.Any(argument => string.Equals(argument.Replace(localVariableSuffix, ""), declaration, StringComparison.OrdinalIgnoreCase))
+                    !ctorArguments.Any(argument => MatchIdentifierWithPropName(argument, declaration))
                 )
                 .ToList();
 
@@ -270,7 +278,7 @@ namespace NonSucking.Framework.Extension.Generators
                 .Where(property =>
                     !property.IsReadOnly
                     && property.SetMethod is not null
-                    && !ctorArguments.Any(argument => string.Equals(argument, property.Name, StringComparison.OrdinalIgnoreCase))
+                    && !ctorArguments.Any(argument => MatchIdentifierWithPropName(argument, property.Name))
                 );
 
             var blockStatements = new List<StatementSyntax>();
@@ -279,10 +287,11 @@ namespace NonSucking.Framework.Extension.Generators
             {
                 var variableReference
                      = new VariableReference(variableName, new MemberReference(property.Name));
+                //TODO: Add .ToArray() for Array Targets
 
                 var declaration
                     = localDeclarations
-                    .FirstOrDefault(declaration => string.Equals(declaration, property.Name, StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(declaration => MatchIdentifierWithPropName(declaration, property.Name));
 
                 if (declaration is null)
                 {
@@ -318,9 +327,11 @@ namespace NonSucking.Framework.Extension.Generators
 
                 foreach (var parameter in constructor.Parameters)
                 {
+
+
                     var matchedDeclaration
                         = localDeclarations
-                        .FirstOrDefault(identifier => string.Equals(identifier.Replace(localVariableSuffix, ""), parameter.Name, StringComparison.OrdinalIgnoreCase));
+                        .FirstOrDefault(identifier => MatchIdentifierWithPropName(identifier, parameter.Name));
 
                     if (string.IsNullOrWhiteSpace(matchedDeclaration))
                     {
@@ -669,7 +680,7 @@ namespace NonSucking.Framework.Extension.Generators
             switch ((int)type.SpecialType)
             {
                 case >= 7 and <= 20:
-                    string memberName = "@" + property.Name;
+                    string memberName = $"@{property.Name}{GetRandomGuidSuffix()}";
 
                     var invocationExpression
                         = Statement
@@ -701,7 +712,7 @@ namespace NonSucking.Framework.Extension.Generators
             if (type is INamedTypeSymbol typeSymbol)
             {
                 SpecialType specialType = typeSymbol.EnumUnderlyingType.SpecialType;
-                string localName = "@" + property.Name;
+                string localName = $"@{property.Name}{GetRandomGuidSuffix()}";
 
                 ExpressionSyntax invocationExpression
                         = Statement
@@ -788,7 +799,7 @@ namespace NonSucking.Framework.Extension.Generators
                 statement
                         = Statement
                         .Declaration
-                        .DeclareAndAssign("@" + property.Name, invocationExpression);
+                        .DeclareAndAssign($"@{property.Name}{GetRandomGuidSuffix()}", invocationExpression);
             }
 
             return isUsable;
@@ -831,33 +842,45 @@ namespace NonSucking.Framework.Extension.Generators
             }
 
             const string itemName = "item";
-
+            var randomForThisScope = GetRandomGuidSuffix();
 
             MemberInfo[] props = genericArgument
                 .GetMembers()
                 .OfType<IPropertySymbol>()
-                    .Select(x => new MemberInfo(x.Type, x, $"{x.Name}{localVariableSuffix}"))
+                    .Select(x => new MemberInfo(x.Type, x, $"{x.Name}"))
                     .ToArray();
 
-            StatementSyntax[] statements = Array.Empty<StatementSyntax>();
+            List<StatementSyntax> statements = new();
+            var listVariableName = $"{genericArgument.Name}{localVariableSuffix}{randomForThisScope}";
 
             if (props.Length > 0)
             {
-                statements
-                    = GenerateStatementsForProps(props, MethodType.Deserialize, itemName)
-                    .ToArray();
+                var gsfp = GenerateStatementsForProps(props, MethodType.Deserialize, itemName);
+                statements.AddRange(gsfp);
+
+                //Declare and Assign temp variable
+                statements.Add(CallCtorAndSetProps((INamedTypeSymbol)genericArgument, statements, listVariableName, DeclareOrAndAssign.DeclareAndAssign));
             }
             else //List<string>, List<int>
             {
                 //InstanceCallBuilder instanceBuilder = mb.GetInstance(genericArgument, itemName);
-                statements
-                    = new[]{
-                        CreateStatementForDeserializing(
-                            new MemberInfo(genericArgument, genericArgument, $"{genericArgument.Name}{localVariableSuffix}"),
+                statements.Add(CreateStatementForDeserializing(
+                            new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
                             readerName
-                        )
-                    };
+                        ));
+                var localDeclerationSyntax = statements[0] as LocalDeclarationStatementSyntax;
+                listVariableName = localDeclerationSyntax.Declaration.Variables.First().Identifier.ToFullString();
             }
+
+            var listName = $"@{property.Name}{GetRandomGuidSuffix()}";
+
+            var addStatement
+                = Statement
+                .Expression
+                .Invoke(listName, $"Add", arguments: new[] { new ValueArgument((object)listVariableName) })
+                .AsStatement();
+
+            statements.Add(addStatement);
 
             var start = new VariableReference("0");
             var end = new VariableReference("count" + property.Name);
@@ -883,12 +906,14 @@ namespace NonSucking.Framework.Extension.Generators
             var listStatement
                 = Statement
                 .Declaration
-                .DeclareAndAssign("@" + property.Name, ctorInvocationExpression);
+                .DeclareAndAssign(listName, ctorInvocationExpression);
 
             var iterationStatement
                 = Statement
                 .Iteration
-                .For(start, end, "i", BodyGenerator.Create(statements));
+                .For(start, end, "i", BodyGenerator.Create(statements.ToArray()));
+
+            //CallCtorAndSetProps((INamedTypeSymbol)type, )
 
             statement
                 = GetBlockWithoutBraces(new StatementSyntax[] { countStatement, listStatement, iterationStatement });
@@ -898,41 +923,12 @@ namespace NonSucking.Framework.Extension.Generators
             return true;
         }
 
+        private static string GetRandomGuidSuffix()
+        {
+            return localVariableSuffix + Guid.NewGuid().ToString("N");
+        }
+
         #endregion
-        //private static bool TryGeneratePublicPropsLines(MemberInfo property, string readerName, out StatementSyntax statement)
-        //{
-        //if (member.TypeSymbol.TypeKind == TypeKind.Interface)
-        //{
-        //    var success = true;
-        //    //message.Test = asd;
-        //    //message.ABC = 123;
-
-
-        //    //typeNameSymbol.Name == nameof(IEnumerable);
-
-        //    foreach (var interfaceType in member.TypeSymbol.AllInterfaces)
-        //    {
-
-        //        success = PropertiesForSingleType(builder, interfaceType, builder.InstanceName, serialize);
-        //        //diagnostics.Add(MakeDiagnostic(
-        //        //    "🤷", 
-        //        //    "Unexpected error during generation", 
-        //        //    $"Property {memberName} needs a name property, because it is a duplicate", 
-        //        //    typeNameSymbol.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax().GetLocation(), 
-        //        //    DiagnosticSeverity.Error,
-        //        //    "https://lmgtfy.app/?q=Property+c%23&iie=1"));
-
-        //        if (!success)
-        //            return success;
-        //    }
-
-        //    return success;
-        //}
-        //else
-        //{
-        //return PropertiesForSingleType(property, readerName, out statement);
-        //}
-        //}
 
         private static bool TrySerializePublicProps(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
         {
@@ -965,17 +961,17 @@ namespace NonSucking.Framework.Extension.Generators
                 .GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(property => property.Name != "this[]");
-
+            string randomForThisScope = GetRandomGuidSuffix();
             var statements
                 = GenerateStatementsForProps(
                     props
-                        .Select(x => new MemberInfo(x.Type, x, $"{x.Name}{localVariableSuffix}"))
+                        .Select(x => new MemberInfo(x.Type, x, $"{x.Name}"))
                         .ToArray(),
                     MethodType.Deserialize,
                     memberInfo.Name + "."
                 ).ToList();
 
-            string memberName = "@" + memberInfo.Name;
+            string memberName = $"@{memberInfo.Name}{GetRandomGuidSuffix()}";
 
             var declaration
                 = Statement
@@ -983,14 +979,12 @@ namespace NonSucking.Framework.Extension.Generators
                 .Declare(memberName, SyntaxFactory.ParseTypeName(memberInfo.TypeSymbol.ToDisplayString()));
 
 
-            if (memberInfo.TypeSymbol.TypeKind != TypeKind.Interface && !memberInfo.TypeSymbol.IsAbstract)
-            {
-                var ctorSyntax = CallCtorAndSetProps((INamedTypeSymbol)memberInfo.TypeSymbol, statements.ToArray(), memberName, DeclareOrAndAssign.DeclareOnly);
-                statements.Add(ctorSyntax);
-            }
+            var ctorSyntax = CallCtorAndSetProps((INamedTypeSymbol)memberInfo.TypeSymbol, statements.ToArray(), memberName, DeclareOrAndAssign.DeclareOnly);
+            statements.Add(ctorSyntax);
             statement = GetBlockWithoutBraces(new StatementSyntax[] { declaration, SyntaxFactory.Block(SyntaxFactory.List(statements)), });
             return true;
         }
+
 
         static SyntaxToken openEmpty = SyntaxFactory.Token(default, SyntaxKind.OpenBraceToken, "", "", default);
         static SyntaxToken closeEmpty = SyntaxFactory.Token(default, SyntaxKind.CloseBraceToken, "", "", default);
@@ -1008,6 +1002,14 @@ namespace NonSucking.Framework.Extension.Generators
             Deserialize
         }
 
+        private static bool MatchIdentifierWithPropName(string identifier, string parameterName)
+        {
+            var index = identifier.IndexOf(localVariableSuffix);
+            if (index > -1)
+                identifier = identifier.Remove(index);
+
+            return string.Equals(identifier, parameterName, StringComparison.OrdinalIgnoreCase);
+        }
 
     }
 

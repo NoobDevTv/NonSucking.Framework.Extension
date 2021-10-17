@@ -48,6 +48,16 @@ namespace DEMO
             }
         }
 
+        public abstract class ABear
+        {
+            public bool IsIceBear { get; }
+            public bool IsGummyBear { get; }
+            public Rectangle TestPoint { get; set; }
+
+            public IReadOnlyDictionary<short, short> TestDict { get; set; }
+            public IReadOnlyList<short> TestEnum { get; set; }
+        }
+
         public class Bear
         {
             public Bear(bool isGummyBear, bool isIceBear)

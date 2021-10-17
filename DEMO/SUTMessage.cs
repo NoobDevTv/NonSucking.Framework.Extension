@@ -11,7 +11,7 @@ using static DEMO.SUTMessage;
 
 namespace DEMO
 {
-    [Nooson]
+    //[Nooson]
     public partial class SinglePropTest
     {
         public Point Position { get; set; }
@@ -19,7 +19,7 @@ namespace DEMO
         public bool IsEmpty { get; set; }
     }
 
-    [Nooson]
+    //[Nooson]
     public partial class ComplainBaseWithCtor
     {
         public string Complain { get; set; }
@@ -54,6 +54,7 @@ namespace DEMO
         public string Text { get; set; }
         public List<User> Users { get; set; }
         public List<short> Countings { get; set; }
+        //public Dictionary<short, short> CountingDic { get; set; }
         public IReadOnlyList<short> ReadOnlyCountings { get; }
         public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
         public AccessRight Right { get; set; }
@@ -65,6 +66,8 @@ namespace DEMO
         public IUser AlternativUser { get; set; }
         public int X { get; set; }
 
+        public int countPositions { get; set; }
+
         public enum AccessRight
         {
             A, B, C
@@ -74,7 +77,7 @@ namespace DEMO
         {
         }
 
-      
+
 
         public class User : IUser
         {
@@ -93,9 +96,8 @@ namespace DEMO
                 return new User();
             }
         }
-
-
     }
+  
 
 
     //public partial class SUTMessage
