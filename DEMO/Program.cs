@@ -13,7 +13,20 @@ namespace DEMO
 
         static void Main(string[] args)
         {
-            //var sut = new SUTMessage()
+            var sut = new SinglePropTest
+            {
+                IsEmpty = true,
+                Position = new Point(12,3),
+                Position2 = new Point(45,9)
+            };
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms);
+            sut.Serialize(bw);
+
+            ms.Position = 0;
+            using var reader = new BinaryReader(ms);
+            var singleProp = SinglePropTest.Deserialize(reader);
+
             //{
             //    AlternativUser = new SUTMessage.User(),
             //    Complain = new SUTMessage.ComplainBase(),

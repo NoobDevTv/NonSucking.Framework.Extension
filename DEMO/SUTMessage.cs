@@ -11,7 +11,7 @@ using static DEMO.SUTMessage;
 
 namespace DEMO
 {
-    //[Nooson]
+    [Nooson]
     public partial class SinglePropTest
     {
         public Point Position { get; set; }
@@ -49,10 +49,12 @@ namespace DEMO
     [Nooson]
     public partial class SUTMessage
     {
+        public Point[] Positions { get; set; }
         [NoosonIgnore]
         public int Type { get; set; }
         public string Text { get; set; }
         public List<User> Users { get; set; }
+        public List<ComplainBase> ComplainsBases { get; set; }
         public List<short> Countings { get; set; }
         //public Dictionary<short, short> CountingDic { get; set; }
         public IReadOnlyList<short> ReadOnlyCountings { get; }
@@ -61,7 +63,6 @@ namespace DEMO
         public ComplainBase Complain { get; set; }
         public User AssignedUser { get; set; }
         public Point Position { get; set; }
-        public Point[] Positions { get; set; }
         public IUser ContactUser { get; }
         public IUser AlternativUser { get; set; }
         public int X { get; set; }
@@ -148,5 +149,6 @@ namespace DEMO
     public partial class ComplainBase
     {
         public string Complain { get; set; }
+        public List<string> Complains { get; set; }
     }
 }

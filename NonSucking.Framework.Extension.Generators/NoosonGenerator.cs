@@ -15,6 +15,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 using VaVare;
@@ -54,6 +55,14 @@ namespace NonSucking.Framework.Extension.Generators
         private Random rand = new Random();
         private readonly List<Diagnostic> diagnostics = new();
         private static readonly NoosonAttributeTemplate genSerializationAttribute = new();
+        private static readonly Regex endsWithOurSuffixAndGuid;
+        private static readonly string returnValue;
+
+        static NoosonGenerator()
+        {
+            endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            returnValue = GetRandomNameFor("returnValue");
+        }
 
         public NoosonGenerator()
         {
@@ -107,12 +116,15 @@ namespace NonSucking.Framework.Extension.Generators
 
         }
 
+        private static GeneratorExecutionContext cont;
+
         private void InternalExecute(GeneratorExecutionContext context)
         {
             if (!(context.SyntaxContextReceiver is SyntaxReceiver receiver))
             {
                 return;
             }
+            cont = context;
 
 
             foreach (VisitInfo classToAugment in receiver.ClassesToAugment)
@@ -143,12 +155,18 @@ namespace NonSucking.Framework.Extension.Generators
                 8. Support for Dictionaries
                 1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
                 6. Fehler/Warnings ausgeben
+
+                *: ✓ Serialize bzw. Deserialize auf List Items aufrufen wenn möglich
+                *: ✓ Randomize der count variable beim Deserialize
+                *: ✓ Serialize Member access
+                *: ✓ Randomize var item name
+                *: ✓ List filter indexer
                  */
 
                 using var workspace = new AdhocWorkspace();
                 var options = workspace.Options;
                 var formattedText = Formatter.Format(sourceCode, workspace, options).ToFullString();
-                
+
                 context.AddSource(hintName, formattedText);
             }
 
@@ -192,7 +210,6 @@ namespace NonSucking.Framework.Extension.Generators
                 .Build();
         }
 
-        static string returnValue = "returnValue" + GetRandomGuidSuffix();
         private static BlockSyntax CreateBlock(VisitInfo visitInfo, MethodType methodType)
         {
             var statements
@@ -206,7 +223,7 @@ namespace NonSucking.Framework.Extension.Generators
             {
                 var ret = CallCtorAndSetProps(visitInfo.TypeSymbol, statements, returnValue, DeclareOrAndAssign.DeclareAndAssign);
                 statements.Add(ret);
-                
+
                 var returnStatement
                     = SyntaxFactory
                     .ParseStatement($"return {returnValue};");
@@ -240,7 +257,7 @@ namespace NonSucking.Framework.Extension.Generators
 
             var currentType
                 = SyntaxFactory
-                .ParseTypeName(typeSymbol.Name);
+                .ParseTypeName(typeSymbol.ToDisplayString());
 
 
             if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
@@ -287,7 +304,6 @@ namespace NonSucking.Framework.Extension.Generators
             {
                 var variableReference
                      = new VariableReference(variableName, new MemberReference(property.Name));
-                //TODO: Add .ToArray() for Array Targets
 
                 var declaration
                     = localDeclarations
@@ -298,10 +314,22 @@ namespace NonSucking.Framework.Extension.Generators
                     continue;
                 }
 
+                VariableReference declarationReference;
+
+                if (property.Type.TypeKind == TypeKind.Array)
+                {
+                    var method = new MethodReference("ToArray");
+                    declarationReference = new MemberReference(declaration, method);
+                }
+                else
+                {
+                    declarationReference = new VariableReference(declaration);
+                }
+
                 var statement
                     = Statement
                     .Declaration
-                    .Assign(variableReference, new VariableReference(declaration));
+                    .Assign(variableReference, declarationReference);
 
                 blockStatements.Add(statement);
             }
@@ -352,6 +380,11 @@ namespace NonSucking.Framework.Extension.Generators
                         = SyntaxFactory
                         .ParseArgumentList($"({ctorArgumentsString})");
 
+                    //var semanticModel = cont.Compilation.GetSemanticModel(currentType.SyntaxTree);
+
+                    //var symb = semanticModel.GetSymbolInfo(currentType);
+
+                    //var text = currentType.GetText();
                     return DeclareAssignCtor(currentType, instanceName, declareAndAssign, arguments);
 
                 }
@@ -386,7 +419,7 @@ namespace NonSucking.Framework.Extension.Generators
             }
         }
 
-        private static IEnumerable<StatementSyntax> GenerateStatementsForProps(ICollection<MemberInfo> properties, MethodType methodType, string parentName = null)
+        private static IEnumerable<StatementSyntax> GenerateStatementsForProps(ICollection<MemberInfo> properties, MethodType methodType)
         {
             NoosonIgnoreAttributeTemplate ignore = new NoosonIgnoreAttributeTemplate();
 
@@ -474,10 +507,12 @@ namespace NonSucking.Framework.Extension.Generators
             switch ((int)type.SpecialType)
             {
                 case >= 7 and <= 20:
+                    ValueArgument argument = GetValueArgumentFrom(property);
+
                     statement
                         = Statement
                         .Expression
-                        .Invoke(writerName, "Write", arguments: new[] { new ValueArgument((object)property.Name) })
+                        .Invoke(writerName, "Write", arguments: new[] { argument })
                         .AsStatement();
                     return true;
                 default:
@@ -485,6 +520,8 @@ namespace NonSucking.Framework.Extension.Generators
                     return false;
             }
         }
+
+       
 
         private static bool TryEnumWriterCall(MemberInfo property, string writerName, out StatementSyntax statement)
         {
@@ -499,13 +536,12 @@ namespace NonSucking.Framework.Extension.Generators
 
             if (type is INamedTypeSymbol typeSymbol)
             {
-                object valueCall
-                    = $"({typeSymbol.EnumUnderlyingType}){property.Name}";
+                ValueArgument argument = GetValueArgumentFrom(property, typeSymbol.EnumUnderlyingType);
 
                 statement
                         = Statement
                         .Expression
-                        .Invoke(writerName, "Write", arguments: new[] { new ValueArgument(valueCall) })
+                        .Invoke(writerName, "Write", arguments: new[] { argument })
                         .AsStatement();
                 return true;
             }
@@ -553,28 +589,16 @@ namespace NonSucking.Framework.Extension.Generators
                 throw new NotSupportedException();
             }
 
-            const string itemName = "item";
+            string itemName = GetRandomNameFor("item");
 
             //TryGeneratePublicPropsLines(builder, writerName, true);
             //TODO
 
-            MemberInfo[] props = genericArgument
-             .GetMembers()
-             .OfType<IPropertySymbol>()
-                 .Select(x => new MemberInfo(x.Type, x, $"{itemName}.{x.Name}"))
-                 .ToArray();
-
             StatementSyntax[] statements = Array.Empty<StatementSyntax>();
 
-            if (props.Length > 0)
+
+            if ((int)genericArgument.SpecialType is >= 7 and <= 20) //List<string>, List<int>
             {
-                statements
-                    = GenerateStatementsForProps(props, MethodType.Serialize, itemName)
-                    .ToArray();
-            }
-            else //List<string>, List<int>
-            {
-                //InstanceCallBuilder instanceBuilder = mb.GetInstance(genericArgument, itemName);
                 statements
                     = new[]{
                         CreateStatementForSerializing(
@@ -583,6 +607,13 @@ namespace NonSucking.Framework.Extension.Generators
                         )
                     };
             }
+            else
+            {
+                var genericInfo = new[] { new MemberInfo(genericArgument, genericArgument, itemName) };
+                statements
+                    = GenerateStatementsForProps(genericInfo, MethodType.Serialize)
+                    .ToArray();
+            }
 
 
             var memberReference
@@ -590,7 +621,7 @@ namespace NonSucking.Framework.Extension.Generators
                 type.TypeKind == TypeKind.Array
                     ? "Length"
                     : "Count");
-            var countRefernce = new ReferenceArgument(new VariableReference(property.Name, memberReference));
+            var countRefernce = new ReferenceArgument(new VariableReference(GetMemberAccessString(property), memberReference));
 
 
             var invocationExpression
@@ -603,34 +634,11 @@ namespace NonSucking.Framework.Extension.Generators
             var iterationStatement
                 = Statement
                 .Iteration
-                 .ForEach(itemName, typeof(void), property.Name, BodyGenerator.Create(statements), useVar: true);
+                 .ForEach(itemName, typeof(void), GetMemberAccessString(property), BodyGenerator.Create(statements), useVar: true);
 
 
             statement = GetBlockWithoutBraces(new StatementSyntax[] { invocationExpression, iterationStatement });
 
-            //TODO Create list to add these things to
-
-            return true;
-
-            //StatementSyntax[] bodySyntax;
-            //if (props.Length > 0)
-            //{
-            //    GenerateLineForProps(mb, new TypeGroupInfo(null, default, props), itemName);
-            //}
-            //else //List<string>, List<int>
-            //{
-            //    InstanceCallBuilder instanceBuilder = mb.GetInstance(genericArgument, itemName);
-            //    TrySerializing(instanceBuilder, writerName);
-            //}
-
-            //var loopBlock
-            //     = BodyGenerator
-            //     .Create(bodySyntax);
-
-            //statement
-            //    = Statement
-            //    .Iteration
-            //    .ForEach(itemName, typeof(void), property.Name, loopBlock, useVar: true);
 
             return true;
         }
@@ -662,11 +670,33 @@ namespace NonSucking.Framework.Extension.Generators
                 statement
                         = Statement
                         .Expression
-                        .Invoke(property.Name, "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
+                        .Invoke(GetMemberAccessString(property), "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
 
             return isUsable;
+        }
+
+        private static bool TrySerializePublicProps(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
+        {
+            var props
+                = memberInfo
+                .TypeSymbol
+                .GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(property => property.Name != "this[]");
+
+            var statements
+                = GenerateStatementsForProps(
+                    props
+                        .Select(x => new MemberInfo(x.Type, x, x.Name, memberInfo.Name))
+                        .ToArray(),
+                    MethodType.Serialize
+
+                );
+            statement = GetBlockWithoutBraces(statements);
+            return true;
+
         }
 
         #endregion
@@ -680,7 +710,7 @@ namespace NonSucking.Framework.Extension.Generators
             switch ((int)type.SpecialType)
             {
                 case >= 7 and <= 20:
-                    string memberName = $"@{property.Name}{GetRandomGuidSuffix()}";
+                    string memberName = $"@{GetRandomNameFor(property.Name)}";
 
                     var invocationExpression
                         = Statement
@@ -712,7 +742,7 @@ namespace NonSucking.Framework.Extension.Generators
             if (type is INamedTypeSymbol typeSymbol)
             {
                 SpecialType specialType = typeSymbol.EnumUnderlyingType.SpecialType;
-                string localName = $"@{property.Name}{GetRandomGuidSuffix()}";
+                string localName = $"@{GetRandomNameFor(property.Name)}";
 
                 ExpressionSyntax invocationExpression
                         = Statement
@@ -799,7 +829,7 @@ namespace NonSucking.Framework.Extension.Generators
                 statement
                         = Statement
                         .Declaration
-                        .DeclareAndAssign($"@{property.Name}{GetRandomGuidSuffix()}", invocationExpression);
+                        .DeclareAndAssign($"@{GetRandomNameFor(property.Name)}", invocationExpression);
             }
 
             return isUsable;
@@ -841,29 +871,13 @@ namespace NonSucking.Framework.Extension.Generators
                 throw new NotSupportedException();
             }
 
-            const string itemName = "item";
-            var randomForThisScope = GetRandomGuidSuffix();
-
-            MemberInfo[] props = genericArgument
-                .GetMembers()
-                .OfType<IPropertySymbol>()
-                    .Select(x => new MemberInfo(x.Type, x, $"{x.Name}"))
-                    .ToArray();
+            var randomForThisScope = GetRandomNameFor("");
 
             List<StatementSyntax> statements = new();
             var listVariableName = $"{genericArgument.Name}{localVariableSuffix}{randomForThisScope}";
 
-            if (props.Length > 0)
+            if ((int)genericArgument.SpecialType is >= 7 and <= 20) //List<string>, List<int>
             {
-                var gsfp = GenerateStatementsForProps(props, MethodType.Deserialize, itemName);
-                statements.AddRange(gsfp);
-
-                //Declare and Assign temp variable
-                statements.Add(CallCtorAndSetProps((INamedTypeSymbol)genericArgument, statements, listVariableName, DeclareOrAndAssign.DeclareAndAssign));
-            }
-            else //List<string>, List<int>
-            {
-                //InstanceCallBuilder instanceBuilder = mb.GetInstance(genericArgument, itemName);
                 statements.Add(CreateStatementForDeserializing(
                             new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
                             readerName
@@ -871,8 +885,14 @@ namespace NonSucking.Framework.Extension.Generators
                 var localDeclerationSyntax = statements[0] as LocalDeclarationStatementSyntax;
                 listVariableName = localDeclerationSyntax.Declaration.Variables.First().Identifier.ToFullString();
             }
+            else
+            {
+                var genericInfo = new[] { new MemberInfo(genericArgument, genericArgument, listVariableName) };
+                var gsfp = GenerateStatementsForProps(genericInfo, MethodType.Deserialize);
+                statements.AddRange(gsfp);
+            }
 
-            var listName = $"@{property.Name}{GetRandomGuidSuffix()}";
+            var listName = $"@{GetRandomNameFor(property.Name)}";
 
             var addStatement
                 = Statement
@@ -883,7 +903,7 @@ namespace NonSucking.Framework.Extension.Generators
             statements.Add(addStatement);
 
             var start = new VariableReference("0");
-            var end = new VariableReference("count" + property.Name);
+            var end = new VariableReference(GetRandomNameFor("count" + property.Name));
 
 
             ExpressionSyntax invocationExpression
@@ -911,47 +931,13 @@ namespace NonSucking.Framework.Extension.Generators
             var iterationStatement
                 = Statement
                 .Iteration
-                .For(start, end, "i", BodyGenerator.Create(statements.ToArray()));
-
-            //CallCtorAndSetProps((INamedTypeSymbol)type, )
+                .For(start, end, GetRandomNameFor("i"), BodyGenerator.Create(statements.ToArray()));
 
             statement
                 = GetBlockWithoutBraces(new StatementSyntax[] { countStatement, listStatement, iterationStatement });
 
-            //TODO Create list to add these things to
-
             return true;
         }
-
-        private static string GetRandomGuidSuffix()
-        {
-            return localVariableSuffix + Guid.NewGuid().ToString("N");
-        }
-
-        #endregion
-
-        private static bool TrySerializePublicProps(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
-        {
-            var props
-                = memberInfo
-                .TypeSymbol
-                .GetMembers()
-                .OfType<IPropertySymbol>()
-                .Where(property => property.Name != "this[]");
-
-            var statements
-                = GenerateStatementsForProps(
-                    props
-                        .Select(x => new MemberInfo(x.Type, x, x.Name))
-                        .ToArray(),
-                    MethodType.Serialize,
-                    memberInfo.Name + "."
-                );
-            statement = GetBlockWithoutBraces(statements);
-            return true;
-
-        }
-
 
         private static bool TryDeserializePublicProps(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
         {
@@ -961,17 +947,16 @@ namespace NonSucking.Framework.Extension.Generators
                 .GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(property => property.Name != "this[]");
-            string randomForThisScope = GetRandomGuidSuffix();
+            string randomForThisScope = GetRandomNameFor("");
             var statements
                 = GenerateStatementsForProps(
                     props
                         .Select(x => new MemberInfo(x.Type, x, $"{x.Name}"))
                         .ToArray(),
-                    MethodType.Deserialize,
-                    memberInfo.Name + "."
+                    MethodType.Deserialize
                 ).ToList();
 
-            string memberName = $"@{memberInfo.Name}{GetRandomGuidSuffix()}";
+            string memberName = $"@{GetRandomNameFor(memberInfo.Name)}";
 
             var declaration
                 = Statement
@@ -985,6 +970,7 @@ namespace NonSucking.Framework.Extension.Generators
             return true;
         }
 
+        #endregion
 
         static SyntaxToken openEmpty = SyntaxFactory.Token(default, SyntaxKind.OpenBraceToken, "", "", default);
         static SyntaxToken closeEmpty = SyntaxFactory.Token(default, SyntaxKind.CloseBraceToken, "", "", default);
@@ -1011,6 +997,39 @@ namespace NonSucking.Framework.Extension.Generators
             return string.Equals(identifier, parameterName, StringComparison.OrdinalIgnoreCase);
         }
 
+        private static string GetRandomNameFor(string variableName)
+        {
+            if (endsWithOurSuffixAndGuid.IsMatch(variableName))
+                return variableName;
+
+            return $"{variableName}{localVariableSuffix}{Guid.NewGuid().ToString("N")}";
+        }
+
+        private static ValueArgument GetValueArgumentFrom(MemberInfo memberInfo, ITypeSymbol castTo = null)
+        {
+            object referenceValue = GetMemberAccessString(memberInfo, castTo);
+            return new ValueArgument(referenceValue);
+        }
+
+        private static string GetMemberAccessString(MemberInfo memberInfo, ITypeSymbol castTo = null)
+        {
+            if (string.IsNullOrEmpty(memberInfo.Parent))
+            {
+                return Cast(memberInfo.Name, castTo?.ToDisplayString());
+            }
+            else
+            {
+                return Cast($"{memberInfo.Parent}.{memberInfo.Name}", castTo?.ToDisplayString());
+            }
+        }
+
+        private static string Cast(string value, string castType = null)
+        {
+            if (!string.IsNullOrWhiteSpace(castType))
+                return $"({castType}){value}";
+
+            return value;
+        }
     }
 
 }
