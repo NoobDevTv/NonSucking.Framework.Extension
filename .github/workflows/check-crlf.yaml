@@ -1,0 +1,25 @@
+name: Check CRLF
+
+on: pull_request
+
+jobs:
+  check-crlf:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v2
+
+      - name: check line endings
+        uses: erclu/check-crlf@v1
+
+      - name: notify 
+        if: failure()
+        uses: thollander/actions-comment-pull-request@main
+        with:
+          message: |
+            Incorrect line endings detected. Run the following command on a clean working tree in the repository root and commit the changes:
+            ```
+            git add . --renormalize
+            ```
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
