@@ -2,7 +2,7 @@
   "profiles": {
     "NonSucking.Framework.Extension.Generators": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\Demo\\Demo.csproj"
+      "targetProject": "..\\DEMO\\DEMO.csproj"
     }
   }
 }
