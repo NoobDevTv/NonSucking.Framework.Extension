@@ -18,20 +18,36 @@ namespace NonSucking.Framework.Extension.Generators
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo memberInfo, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
         {
             var props
                 = memberInfo
                 .TypeSymbol
                 .GetMembers()
                 .OfType<IPropertySymbol>()
-                .Where(property => property.Name != "this[]");
+                .Where(property =>
+                    property.Name != "this[]");
+
+
+            var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
+            foreach (var onlyWrite in writeOnlies)
+            {
+                context.AddDiagnostic("0007",
+                       "",
+                       "Properties who are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                       memberInfo.TypeSymbol,
+                       DiagnosticSeverity.Error
+                       );
+            }
+
+            props = props.Where(x => !x.IsWriteOnly && x.GetMethod is not null);
 
             var statements
                 = GenerateStatementsForProps(
                     props
                         .Select(x => new MemberInfo(x.Type, x, x.Name, memberInfo.FullName))
                         .ToArray(),
+                    context,
                     MethodType.Serialize
 
                 );
@@ -40,20 +56,37 @@ namespace NonSucking.Framework.Extension.Generators
 
         }
 
-        internal static bool TryDeserialize(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo memberInfo, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
         {
             var props
                 = memberInfo
                 .TypeSymbol
                 .GetMembers()
-                .OfType<IPropertySymbol>()
-                .Where(property => property.Name != "this[]");
+                .OfType<IPropertySymbol>()                
+                .Where(property => 
+                    property.Name != "this[]");
+
+            var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
+            foreach (var onlyWrite in writeOnlies)
+            {
+                context.AddDiagnostic("0007",
+                       "",
+                       "Properties who are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                       memberInfo.TypeSymbol,
+                       DiagnosticSeverity.Error
+                       );
+            }
+
+            props = props.Where(x => !x.IsWriteOnly && x.GetMethod is not null);
+           
+
             string randomForThisScope = Helper.GetRandomNameFor("");
             var statements
                 = GenerateStatementsForProps(
                     props
                         .Select(x => new MemberInfo(x.Type, x, $"{x.Name}"))
                         .ToArray(),
+                    context,
                     MethodType.Deserialize
                 ).ToList();
 
@@ -73,7 +106,7 @@ namespace NonSucking.Framework.Extension.Generators
             }
             catch (NotSupportedException)
             {
-                MakeDiagnostic("0006",
+                context.AddDiagnostic("0006",
                    "",
                    "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
                    memberInfo.Symbol,

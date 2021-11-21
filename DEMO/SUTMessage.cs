@@ -12,17 +12,8 @@ using static DEMO.SUTMessage;
 
 namespace DEMO
 {
+
     [Nooson]
-    public partial class SinglePropTest
-    {
-        public Point Position { get; set; }
-        public Point Position2 { get; set; }
-        public bool IsEmpty { get; set; }
-
-     
-    }
-
-    //[Nooson]
     public partial class ComplainBaseWithCtor
     {
         public string Complain { get; set; }
@@ -30,7 +21,7 @@ namespace DEMO
         public string Second { get; set; }
         public string Last { get; set; }
         public string Origin { get;  }
-        public string Never { set => valueNever = value; }
+        //public string Never { set => valueNever = value; }
         public string Ultimate { get; private set; }
 
         private string valueNever;
@@ -61,8 +52,8 @@ namespace DEMO
         public List<short> Countings { get; set; }
         public Dictionary<short, ComplainBase> CountingDic { get; set; }
         public IReadOnlyList<short> ReadOnlyCountings { get; }
-        public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
-        public IEnumerable ThisIsNotSupportedIEnumerable { get; }
+        //public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
+        //public IEnumerable ThisIsNotSupportedIEnumerable { get; }
         public AccessRight Right { get; set; }
         public ComplainBase Complain { get; set; }
         public User AssignedUser { get; set; }
@@ -102,7 +93,7 @@ namespace DEMO
             }
         }
     }
-  
+
 
 
     //public partial class SUTMessage
@@ -155,9 +146,9 @@ namespace DEMO
         public string Complain { get; set; }
         public List<string> Complains { get; set; }
 
-        public ComplainBase(string abc)
-        {
+        //public ComplainBase(string abc)
+        //{
 
-        }
+        //}
     }
 }

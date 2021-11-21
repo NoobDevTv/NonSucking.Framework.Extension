@@ -17,7 +17,7 @@ namespace NonSucking.Framework.Extension.Generators
     internal static class DictionarySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out StatementSyntax statement)
         {
             statement = null;
             ITypeSymbol type = property.TypeSymbol;
@@ -61,7 +61,7 @@ namespace NonSucking.Framework.Extension.Generators
 
                 IEnumerable<StatementSyntax> generatedStatements
                     = NoosonGenerator
-                    .GenerateStatementsForProps(genericInfos, MethodType.Serialize);
+                    .GenerateStatementsForProps(genericInfos, context, MethodType.Serialize);
 
                 statements.AddRange(generatedStatements);
             }
@@ -97,7 +97,7 @@ namespace NonSucking.Framework.Extension.Generators
             return true;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
         {
             statement = null;
             ITypeSymbol type = property.TypeSymbol;
@@ -140,7 +140,7 @@ namespace NonSucking.Framework.Extension.Generators
 
                 IEnumerable<StatementSyntax> statementsForProps
                     = NoosonGenerator
-                    .GenerateStatementsForProps(genericInfos, MethodType.Deserialize);
+                    .GenerateStatementsForProps(genericInfos, context, MethodType.Deserialize);
 
                 statements.AddRange(statementsForProps);
             }

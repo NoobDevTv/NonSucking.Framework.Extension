@@ -7,6 +7,8 @@ namespace NonSucking.Framework.Extension.Generators
 {
     internal struct VisitInfo : IEquatable<VisitInfo>
     {
+        public static readonly VisitInfo Empty = default;
+
         public ClassDeclarationSyntax ClassDeclaration { get; private set; }
         public INamedTypeSymbol TypeSymbol { get; private set; }
         public AttributeData Attribute { get; private set; }

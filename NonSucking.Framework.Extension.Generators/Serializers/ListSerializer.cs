@@ -20,7 +20,7 @@ namespace NonSucking.Framework.Extension.Generators
 {
     internal static class ListSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out StatementSyntax statement)
         {
             statement = null;
             var type = property.TypeSymbol;
@@ -41,7 +41,7 @@ namespace NonSucking.Framework.Extension.Generators
             if (isIEnumerableInterfaceSelf)
             {
                 //Diagnostic Error for not supported type
-                NoosonGenerator.MakeDiagnostic("0005",
+                context.AddDiagnostic("0005",
                     "",
                     "IEnumerable is not supported for serialization, implement own serializer or this value will be lost.",
                     property.Symbol,
@@ -78,6 +78,7 @@ namespace NonSucking.Framework.Extension.Generators
                     = new[]{
                         NoosonGenerator.CreateStatementForSerializing(
                             new MemberInfo(genericArgument, genericArgument, itemName),
+                            context,
                             writerName
                         )
                     };
@@ -86,7 +87,7 @@ namespace NonSucking.Framework.Extension.Generators
             {
                 var genericInfo = new[] { new MemberInfo(genericArgument, genericArgument, itemName) };
                 statements
-                    = NoosonGenerator.GenerateStatementsForProps(genericInfo, MethodType.Serialize)
+                    = NoosonGenerator.GenerateStatementsForProps(genericInfo, context, MethodType.Serialize)
                     .ToArray();
             }
 
@@ -118,7 +119,7 @@ namespace NonSucking.Framework.Extension.Generators
             return true;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
         {
             statement = null;
             var type = property.TypeSymbol;
@@ -138,7 +139,7 @@ namespace NonSucking.Framework.Extension.Generators
             if (isIEnumerableSelf)
             {
                 //Diagnostic Error for not supported type
-                NoosonGenerator.MakeDiagnostic("0005",
+                context.AddDiagnostic("0005",
                     "",
                     "IEnumerable is not supported for deserialization, implement own deserializer or this value will be lost.",
                     property.Symbol,
@@ -170,6 +171,7 @@ namespace NonSucking.Framework.Extension.Generators
             {
                 statements.Add(NoosonGenerator.CreateStatementForDeserializing(
                             new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
+                            context,
                             readerName
                         ));
                 var localDeclerationSyntax = statements[0] as LocalDeclarationStatementSyntax;
@@ -178,7 +180,9 @@ namespace NonSucking.Framework.Extension.Generators
             else
             {
                 var genericInfo = new[] { new MemberInfo(genericArgument, genericArgument, listVariableName) };
-                var gsfp = NoosonGenerator.GenerateStatementsForProps(genericInfo, MethodType.Deserialize);
+                var gsfp 
+                    = NoosonGenerator
+                    .GenerateStatementsForProps(genericInfo, context, MethodType.Deserialize);
                 statements.AddRange(gsfp);
             }
 
