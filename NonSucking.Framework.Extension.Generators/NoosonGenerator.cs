@@ -19,16 +19,24 @@ using VaVare.Generators.Common;
 
 namespace NonSucking.Framework.Extension.Generators
 {
-    /*
-     Unsere Attribute:
-    1. Ignore
-    2. Property name for ctor / Ctor Attribute for property name
-    3. PrefferedCtor
-    4. Custom Serialize/Deserialize
-    
-    Future:
-    5. BinaryWriter / Span Switch/Off/On
-     */
+    public record NoosonGeneratorContext(GeneratorExecutionContext GeneratorContext, string ReaderWriterName)
+    {
+        const string Category = "SerializationGenerator";
+        const string IdPrefix = "NSG";
+        public void AddDiagnostic(string id, LocalizableString message, DiagnosticSeverity severity, int warningLevel, Location location)
+        {
+            GeneratorContext.ReportDiagnostic(
+                Diagnostic.Create(
+                    $"{IdPrefix}{id}",
+                    Category,
+                    message,
+                    severity,
+                    severity,
+                    true,
+                    warningLevel,
+                    location: location));
+        }
+    }
 
 
     [Generator]
@@ -36,7 +44,7 @@ namespace NonSucking.Framework.Extension.Generators
     {
         internal const string writerName = "writer";
         internal const string readerName = "reader";
-        internal readonly List<Diagnostic> diagnostics = new();
+        internal static readonly List<Diagnostic> diagnostics = new();
         internal static readonly NoosonAttributeTemplate genSerializationAttribute = new();
         private static readonly string returnValue;
 
@@ -107,8 +115,13 @@ namespace NonSucking.Framework.Extension.Generators
             foreach (VisitInfo classToAugment in receiver.ClassesToAugment)
             {
                 StringBuilder builder = new StringBuilder();
-                var methods
-                    = GenerateSerializeAndDeserializeMethods(classToAugment);
+                NoosonGeneratorContext serializeContext = new(context, writerName);
+                NoosonGeneratorContext deserializeContext = new(context, readerName);
+                var methods =
+                    new[] {
+                        GenerateSerializeMethod(classToAugment, serializeContext),
+                        GenerateDeserializeMethod(classToAugment, deserializeContext)
+                    };
 
                 var sourceCode
                     = new ClassBuilder(classToAugment.TypeSymbol.Name, classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
@@ -127,18 +140,30 @@ namespace NonSucking.Framework.Extension.Generators
                 5. ✓ Derserialize => Serialize Logik rückwärts aufrufen
                 7. ✓ CleanUp and Refactor
                 2. ✓ Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
+                8. ✓ Support for Dictionaries 
+                6. Fehler/Warnings ausgeben
                 3. Attributes => Überschreiben von Property Namen zu Ctor Parameter
                 4. Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
-                8. Support for Dictionaries
                 1. Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
-                6. Fehler/Warnings ausgeben
 
                 *: ✓ Serialize bzw. Deserialize auf List Items aufrufen wenn möglich
                 *: ✓ Randomize der count variable beim Deserialize
                 *: ✓ Serialize Member access
                 *: ✓ Randomize var item name
                 *: ✓ List filter indexer
-                 */
+                *: ✓: item Accessor Dictionary serialize
+                *: X: Dictionary doesnt have add for KeyValuePair
+               
+
+                Unsere Attribute:
+                1. Ignore
+                2. Property name for ctor / Ctor Attribute for property name
+                3. PrefferedCtor
+                4. Custom Serialize/Deserialize
+                Future:
+                5. BinaryWriter / Span Switch/Off/On
+   
+                */
 
                 using var workspace = new AdhocWorkspace();
                 var options = workspace.Options;
@@ -153,15 +178,10 @@ namespace NonSucking.Framework.Extension.Generators
             }
         }
 
-        internal static BaseMethodDeclarationSyntax[] GenerateSerializeAndDeserializeMethods(VisitInfo visitInfo)
-            => new[] {
-                GenerateSerializeMethod(visitInfo, writerName),
-                GenerateDeserializeMethod(visitInfo, readerName)
-            };
 
-        internal static BaseMethodDeclarationSyntax GenerateSerializeMethod(VisitInfo visitInfo, string writerName)
+        internal static BaseMethodDeclarationSyntax GenerateSerializeMethod(VisitInfo visitInfo, NoosonGeneratorContext context)
         {
-            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryWriter {writerName}");
+            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryWriter {context.ReaderWriterName}");
             var body
                 = CreateBlock(visitInfo, MethodType.Serialize);
 
@@ -173,9 +193,9 @@ namespace NonSucking.Framework.Extension.Generators
                 .Build();
         }
 
-        internal static BaseMethodDeclarationSyntax GenerateDeserializeMethod(VisitInfo visitInfo, string readerName)
+        internal static BaseMethodDeclarationSyntax GenerateDeserializeMethod(VisitInfo visitInfo, NoosonGeneratorContext context)
         {
-            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryReader {readerName}");
+            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryReader {context.ReaderWriterName}");
             var body
                 = CreateBlock(visitInfo, MethodType.Deserialize);
 
@@ -198,8 +218,21 @@ namespace NonSucking.Framework.Extension.Generators
 
             if (methodType == MethodType.Deserialize)
             {
-                var ret = CtorSerializer.CallCtorAndSetProps(visitInfo.TypeSymbol, statements, returnValue, DeclareOrAndAssign.DeclareAndAssign);
-                statements.Add(ret);
+                try
+                {
+                    var ret = CtorSerializer.CallCtorAndSetProps(visitInfo.TypeSymbol, statements, returnValue, DeclareOrAndAssign.DeclareAndAssign);
+                    statements.Add(ret);
+                }
+                catch (NotSupportedException)
+                {
+                    MakeDiagnostic("0006",
+                       "",
+                       "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                       visitInfo.TypeSymbol,
+                       DiagnosticSeverity.Error
+                       );
+                }
+                
 
                 var returnStatement
                     = SyntaxFactory
@@ -210,7 +243,7 @@ namespace NonSucking.Framework.Extension.Generators
             return BodyGenerator.Create(statements.ToArray());
         }
 
-      
+
 
         internal static IEnumerable<StatementSyntax> GenerateStatementsForProps(ICollection<MemberInfo> properties, MethodType methodType)
         {
@@ -247,31 +280,46 @@ namespace NonSucking.Framework.Extension.Generators
 
 
         //Proudly stolen from https://github.com/mknejp/dotvariant/blob/c59599a079637e38c3471a13b6a0443e4e607058/src/dotVariant.Generator/Diagnose.cs#L234
-        private static Diagnostic MakeDiagnostic(string id, string title, string message, Location location, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
+        internal static void MakeDiagnostic(string id, string title, string message, Location location, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
         {
-            return Diagnostic.Create(
-                   new DiagnosticDescriptor(
-                       $"{nameof(NoosonGenerator)}.{id}",
-                       title,
-                       message,
-                       nameof(NoosonGenerator),
-                       severity,
-                       true,
-                       helpLinkUri: helpLinkurl,
-                       customTags: customTags),
-                   location);
+            diagnostics.Add(Diagnostic.Create(
+                 new DiagnosticDescriptor(
+                     $"NSG{id}",
+                     title,
+                     message,
+                     nameof(NoosonGenerator),
+                     severity,
+                     true,
+                     helpLinkUri: helpLinkurl,
+                     customTags: customTags),
+                 location));
+        }
+        internal static void MakeDiagnostic(string id, string title, string message, ISymbol symbolForLocation, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
+        {
+            MakeDiagnostic(
+                id,
+                title,
+                message,
+                Location.Create(
+                    symbolForLocation.DeclaringSyntaxReferences[0].SyntaxTree, 
+                    symbolForLocation.DeclaringSyntaxReferences[0].Span),
+                severity,
+                helpLinkurl,
+                customTags);
         }
 
         internal static StatementSyntax CreateStatementForSerializing(MemberInfo property, string writerName)
         {
             StatementSyntax statement;
             var success
-                        = SpecialTypeSerializer.TrySpecialTypeWriterCall(property, writerName, out statement)
-                           || EnumSerializer.TryEnumWriterCall(property, writerName, out statement)
-                           || MethodCallSerializer.TrySerializeWriterCall(property, writerName, out statement)
-                           || ListSerializer.TrySerializeList(property, writerName, out statement)
-                           || PublicPropertySerializer.TrySerializePublicProps(property, writerName, out statement)
+                        = SpecialTypeSerializer.TrySerialize(property, writerName, out statement)
+                           || EnumSerializer.TrySerialize(property, writerName, out statement)
+                           || MethodCallSerializer.TrySerialize(property, writerName, out statement)
+                           || DictionarySerializer.TrySerialize(property, writerName, out statement)
+                           || ListSerializer.TrySerialize(property, writerName, out statement)
+                           || PublicPropertySerializer.TrySerialize(property, writerName, out statement)
                            ;
+
 
             return statement;
         }
@@ -280,22 +328,19 @@ namespace NonSucking.Framework.Extension.Generators
         {
             StatementSyntax statement;
             var success
-                        = SpecialTypeSerializer.TrySpecialTypeReaderCall(property, readerName, out statement)
-                           || EnumSerializer.TryEnumReaderCall(property, readerName, out statement)
-                           || MethodCallSerializer.TryDeserializeReaderCall(property, readerName, out statement)
-                           || ListSerializer.TryDeserializeList(property, readerName, out statement)
-                           || PublicPropertySerializer.TryDeserializePublicProps(property, readerName, out statement)
+                        = SpecialTypeSerializer.TryDeserialize(property, readerName, out statement)
+                           || EnumSerializer.TryDeserialize(property, readerName, out statement)
+                           || MethodCallSerializer.TryDeserialize(property, readerName, out statement)
+                           || DictionarySerializer.TryDeserialize(property, readerName, out statement)
+                           || ListSerializer.TryDeserialize(property, readerName, out statement)
+                           || PublicPropertySerializer.TryDeserialize(property, readerName, out statement)
                            ;
 
             return statement;
         }
 
-
-
-
-
-
     }
+
     public enum MethodType
     {
         Serialize,

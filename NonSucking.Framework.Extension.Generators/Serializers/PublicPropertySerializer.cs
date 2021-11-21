@@ -18,7 +18,7 @@ namespace NonSucking.Framework.Extension.Generators
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerializePublicProps(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
         {
             var props
                 = memberInfo
@@ -30,7 +30,7 @@ namespace NonSucking.Framework.Extension.Generators
             var statements
                 = GenerateStatementsForProps(
                     props
-                        .Select(x => new MemberInfo(x.Type, x, x.Name, memberInfo.Name))
+                        .Select(x => new MemberInfo(x.Type, x, x.Name, memberInfo.FullName))
                         .ToArray(),
                     MethodType.Serialize
 
@@ -40,7 +40,7 @@ namespace NonSucking.Framework.Extension.Generators
 
         }
 
-        internal static bool TryDeserializePublicProps(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo memberInfo, string readerName, out StatementSyntax statement)
         {
             var props
                 = memberInfo
@@ -64,9 +64,22 @@ namespace NonSucking.Framework.Extension.Generators
                 .Declaration
                 .Declare(memberName, SyntaxFactory.ParseTypeName(memberInfo.TypeSymbol.ToDisplayString()));
 
+            try
+            {
 
-            var ctorSyntax =CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)memberInfo.TypeSymbol, statements.ToArray(), memberName, DeclareOrAndAssign.DeclareOnly);
-            statements.Add(ctorSyntax);
+                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)memberInfo.TypeSymbol, statements.ToArray(), memberName, DeclareOrAndAssign.DeclareOnly);
+                statements.Add(ctorSyntax);
+
+            }
+            catch (NotSupportedException)
+            {
+                MakeDiagnostic("0006",
+                   "",
+                   "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                   memberInfo.Symbol,
+                   DiagnosticSeverity.Error
+                   );
+            }
             statement = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { declaration, SyntaxFactory.Block(SyntaxFactory.List(statements)), });
             return true;
         }

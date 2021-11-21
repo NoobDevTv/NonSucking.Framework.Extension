@@ -183,7 +183,6 @@ namespace NonSucking.Framework.Extension.Generators.Serializers
                 }
             }
 
-            //TODO diagnostic
             throw new NotSupportedException();
         }
 

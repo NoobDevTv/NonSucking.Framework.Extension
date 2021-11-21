@@ -12,7 +12,7 @@ namespace NonSucking.Framework.Extension.Generators
 {
     internal static class SpecialTypeSerializer
     {
-        internal static bool TrySpecialTypeWriterCall(MemberInfo property, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, string writerName, out StatementSyntax statement)
         {
             var type = property.TypeSymbol;
             switch ((int)type.SpecialType)
@@ -32,7 +32,7 @@ namespace NonSucking.Framework.Extension.Generators
             }
         }
 
-        internal static bool TrySpecialTypeReaderCall(MemberInfo property, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, string readerName, out StatementSyntax statement)
         {
             var type = property.TypeSymbol;
 

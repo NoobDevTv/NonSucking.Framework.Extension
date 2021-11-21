@@ -20,14 +20,15 @@ namespace NonSucking.Framework.Extension.Generators
 {
     internal static class ListSerializer
     {
-        internal static bool TrySerializeList(MemberInfo property, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, string writerName, out StatementSyntax statement)
         {
             statement = null;
             var type = property.TypeSymbol;
             bool isIEnumerable
                 = type
                 .AllInterfaces
-                .Any(x => x.Name == typeof(IEnumerable).Name);
+                .Any(x => x.Name == typeof(IEnumerable).Name)
+                || property.TypeSymbol.Name == typeof(IEnumerable).Name;
 
             if (!isIEnumerable)
             {
@@ -40,6 +41,12 @@ namespace NonSucking.Framework.Extension.Generators
             if (isIEnumerableInterfaceSelf)
             {
                 //Diagnostic Error for not supported type
+                NoosonGenerator.MakeDiagnostic("0005",
+                    "",
+                    "IEnumerable is not supported for serialization, implement own serializer or this value will be lost.",
+                    property.Symbol,
+                    DiagnosticSeverity.Error
+                    );
                 return true;
             }
 
@@ -111,7 +118,7 @@ namespace NonSucking.Framework.Extension.Generators
             return true;
         }
 
-        internal static bool TryDeserializeList(MemberInfo property, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, string readerName, out StatementSyntax statement)
         {
             statement = null;
             var type = property.TypeSymbol;
@@ -119,7 +126,8 @@ namespace NonSucking.Framework.Extension.Generators
             bool isEnumerable
                 = type
                 .AllInterfaces
-                .Any(x => x.Name == typeof(IEnumerable).Name);
+                .Any(x => x.Name == typeof(IEnumerable).Name)
+                || property.TypeSymbol.Name == typeof(IEnumerable).Name;
 
             if (!isEnumerable)
             {
@@ -130,6 +138,12 @@ namespace NonSucking.Framework.Extension.Generators
             if (isIEnumerableSelf)
             {
                 //Diagnostic Error for not supported type
+                NoosonGenerator.MakeDiagnostic("0005",
+                    "",
+                    "IEnumerable is not supported for deserialization, implement own deserializer or this value will be lost.",
+                    property.Symbol,
+                    DiagnosticSeverity.Error
+                    );
                 return true;
             }
 

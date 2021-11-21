@@ -1,5 +1,6 @@
 ﻿using NonSucking.Framework.Extension.Serialization;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -17,6 +18,8 @@ namespace DEMO
         public Point Position { get; set; }
         public Point Position2 { get; set; }
         public bool IsEmpty { get; set; }
+
+     
     }
 
     //[Nooson]
@@ -56,9 +59,10 @@ namespace DEMO
         public List<User> Users { get; set; }
         public List<ComplainBase> ComplainsBases { get; set; }
         public List<short> Countings { get; set; }
-        //public Dictionary<short, short> CountingDic { get; set; }
+        public Dictionary<short, ComplainBase> CountingDic { get; set; }
         public IReadOnlyList<short> ReadOnlyCountings { get; }
         public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
+        public IEnumerable ThisIsNotSupportedIEnumerable { get; }
         public AccessRight Right { get; set; }
         public ComplainBase Complain { get; set; }
         public User AssignedUser { get; set; }
@@ -150,5 +154,10 @@ namespace DEMO
     {
         public string Complain { get; set; }
         public List<string> Complains { get; set; }
+
+        public ComplainBase(string abc)
+        {
+
+        }
     }
 }

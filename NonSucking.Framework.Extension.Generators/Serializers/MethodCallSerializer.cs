@@ -14,7 +14,7 @@ namespace NonSucking.Framework.Extension.Generators
 {
     internal static class MethodCallSerializer
     {
-        internal static bool TryDeserializeReaderCall(MemberInfo property, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, string readerName, out StatementSyntax statement)
         {
             statement = null;
             var type = property.TypeSymbol;
@@ -57,7 +57,7 @@ namespace NonSucking.Framework.Extension.Generators
 
 
 
-        internal static bool TrySerializeWriterCall(MemberInfo property, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, string writerName, out StatementSyntax statement)
         {
             statement = null;
             var type = property.TypeSymbol;
