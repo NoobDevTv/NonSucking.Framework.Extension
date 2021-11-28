@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NonSucking.Framework.Extension.Generators\NonSucking.Framework.Extension.Generators.csproj" />
+    <ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

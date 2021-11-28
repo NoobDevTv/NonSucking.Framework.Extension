@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NonSucking.Framework.Extension.Generators.Tests
+namespace NonSucking.Framework.Serialization.Tests
 {
     [TestFixture]
     public static class SerializerGeneratorTest
@@ -15,7 +15,7 @@ namespace NonSucking.Framework.Extension.Generators.Tests
         [Test]
         public static void Debug()
         {
-            var sutMessage = @"D:\Projekte\Visual 2019\NonSucking.Framework.Extension\DEMO\SUTMessage.cs";
+            var sutMessage = @"..\..\..\..\DEMO\SUTMessage.cs";
             var text = File.ReadAllText(sutMessage);
 
             var compilate

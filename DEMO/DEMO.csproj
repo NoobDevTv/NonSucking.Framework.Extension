@@ -10,7 +10,8 @@
   </ItemGroup>
 
   <ItemGroup>
-	  <ProjectReference Include="..\NonSucking.Framework.Extension.Generators\NonSucking.Framework.Extension.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+	  <ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+	  <ProjectReference Include="..\NonSucking.Framework.Extension\NonSucking.Framework.Extension.csproj" />
 
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
-﻿using NonSucking.Framework.Extension.Serialization;
+﻿using NonSucking.Framework.Serialization;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,30 +9,54 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+
 using static DEMO.SUTMessage;
 
 namespace DEMO
 {
-
     [Nooson]
+
     public partial class ComplainBaseWithCtor
     {
+        //[NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor))]
+        //public User ComplainUser { get; set; }
         public string Complain { get; set; }
-        public string First { get; set; }
+        //[NoosonCustom(SerializeMethodName = "FirstSerialize",  DeserializeMethodName = "FirstDeserialize")]
+        public string FirstCustom { get; set; }
+        [NoosonOrder(0)]
         public string Second { get; set; }
+        [NoosonOrder(2)]
         public string Last { get; set; }
-        public string Origin { get;  }
+        public string Origin { get; }
         //public string Never { set => valueNever = value; }
+        [NoosonOrder(5)]
         public string Ultimate { get; private set; }
 
-        private string valueNever;
-        public ComplainBaseWithCtor(string complain)
+        private readonly string valueNever;
+        public ComplainBaseWithCtor(string complain, string valueNever)
         {
             Complain = complain;
+            this.valueNever = valueNever;
+        }
+
+        public void FirstSerialize(BinaryWriter bw)
+        {
+            bw.Write(FirstCustom);
+        }
+
+        public static void FirstSerialize(BinaryWriter bw, string first)
+        {
+            bw.Write(first);
+        }
+
+        public static string FirstDeserialize(BinaryReader br)
+        {
+            return br.ReadString();
         }
 
 
-        public ComplainBaseWithCtor(string first, string second, string last)
+        [NoosonPreferredCtor]
+        public ComplainBaseWithCtor([NoosonParameter(nameof(Ultimate))] string first, string second, string last)
         {
             Complain = first + second + last;
         }
@@ -74,6 +99,7 @@ namespace DEMO
         }
 
 
+        [NoosonCustom(SerializeMethodName ="SerializeMe")]
 
         public class User : IUser
         {
@@ -83,6 +109,11 @@ namespace DEMO
                 => 12;
 
             public void Serialize(BinaryWriter writer)
+            {
+
+            }
+
+            public void SerializeMe(BinaryWriter bw)
             {
 
             }
