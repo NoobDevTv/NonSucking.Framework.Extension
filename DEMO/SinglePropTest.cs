@@ -3,8 +3,13 @@ using NonSucking.Framework.Serialization;
 
 namespace DEMO
 {
+    public class SinglePropFirst
+    {
+        public int Test2 { get; set; }
+    }
+
     [Nooson]
-    public partial class SinglePropTest
+    public partial class SinglePropTest : SinglePropFirst
     {
         //[NoosonOrder(2)]
         public bool IsEmpty { get; set; }

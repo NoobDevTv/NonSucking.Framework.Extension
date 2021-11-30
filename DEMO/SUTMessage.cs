@@ -21,7 +21,7 @@ namespace DEMO
         //[NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor))]
         //public User ComplainUser { get; set; }
         public string Complain { get; set; }
-        //[NoosonCustom(SerializeMethodName = "FirstSerialize",  DeserializeMethodName = "FirstDeserialize")]
+        [NoosonCustom(SerializeMethodName = "FirstSerialize", DeserializeMethodName = "FirstDeserialize")]
         public string FirstCustom { get; set; }
         [NoosonOrder(0)]
         public string Second { get; set; }
@@ -72,11 +72,12 @@ namespace DEMO
         [NoosonIgnore]
         public int Type { get; set; }
         public string Text { get; set; }
-        public List<User> Users { get; set; }
+        public List<User> UsersList { get; set; }
         public List<ComplainBase> ComplainsBases { get; set; }
         public List<short> Countings { get; set; }
         public Dictionary<short, ComplainBase> CountingDic { get; set; }
         public IReadOnlyList<short> ReadOnlyCountings { get; }
+        public IReadOnlyList<short> ReadOnlyCountingsButSetable { get; set; }
         //public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
         //public IEnumerable ThisIsNotSupportedIEnumerable { get; }
         public AccessRight Right { get; set; }
@@ -84,6 +85,7 @@ namespace DEMO
         public User AssignedUser { get; set; }
         public Point Position { get; set; }
         public IUser ContactUser { get; }
+        //[NoosonCustom(SerializeMethodName =nameof(SerializeIUser), SerializeImplementationType = typeof(SUTMessage), DeserializeMethodName =nameof(DeserializeIUser))]
         public IUser AlternativUser { get; set; }
         public int X { get; set; }
 
@@ -96,10 +98,22 @@ namespace DEMO
 
         public SUTMessage()
         {
+            ReadOnlyCountings = new List<short>();
+            ContactUser = new User() { Name = " " };
+        }
+
+        public static void SerializeIUser(BinaryWriter bw, IUser user)
+        {
+            bw.Write(user.Name);
+        }
+
+        public static IUser DeserializeIUser(BinaryReader br)
+        {
+            return new User() { Name = br.ReadString() };
         }
 
 
-        [NoosonCustom(SerializeMethodName ="SerializeMe")]
+        [NoosonCustom(SerializeMethodName = "SerializeMe", DeserializeMethodName = "DeserializeMe")]
 
         public class User : IUser
         {
@@ -110,17 +124,25 @@ namespace DEMO
 
             public void Serialize(BinaryWriter writer)
             {
-
+                writer.Write(Name);
             }
 
             public void SerializeMe(BinaryWriter bw)
             {
-
+                bw.Write(Name);
             }
 
+            public static void SerializeMe(BinaryWriter bw, IUser user)
+            {
+                bw.Write(user.Name);
+            }
             public static User Deserialize(BinaryReader reader)
             {
-                return new User();
+                return new User() { Name = reader.ReadString() };
+            }
+            public static User DeserializeMe(BinaryReader reader)
+            {
+                return new User() { Name = reader.ReadString() };
             }
         }
     }

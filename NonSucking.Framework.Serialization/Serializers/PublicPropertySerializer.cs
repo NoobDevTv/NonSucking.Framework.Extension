@@ -28,7 +28,6 @@ namespace NonSucking.Framework.Serialization
                 .Where(property =>
                     property.Name != "this[]");
 
-
             var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
             {

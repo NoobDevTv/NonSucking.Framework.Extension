@@ -66,44 +66,26 @@ namespace NonSucking.Framework.Serialization
 
             string itemName = Helper.GetRandomNameFor("item");
 
-            //TryGeneratePublicPropsLines(builder, writerName, true);
-            //TODO
+            StatementSyntax statements;
 
-            StatementSyntax[] statements = Array.Empty<StatementSyntax>();
-
-
-            if ((int)genericArgument.SpecialType is >= 7 and <= 20) //List<string>, List<int>
-            {
-                statements
-                    = new[]{
-                        NoosonGenerator.CreateStatementForSerializing(
-                            new MemberInfo(genericArgument, genericArgument, itemName),
-                            context,
-                            writerName
-                        )
-                    };
-            }
-            else
-            {
-                var genericInfo = new[] { new MemberInfo(genericArgument, genericArgument, itemName) };
-                statements
-                    = NoosonGenerator.GenerateStatementsForProps(genericInfo, context, MethodType.Serialize)
-                    .ToArray();
-            }
-
+            statements
+                = NoosonGenerator.CreateStatementForSerializing(
+                        new MemberInfo(genericArgument, genericArgument, itemName),
+                        context,
+                        writerName);
 
             var memberReference
                 = new MemberReference(
                 type.TypeKind == TypeKind.Array
                     ? "Length"
                     : "Count");
-            var countRefernce = new ReferenceArgument(new VariableReference(Helper.GetMemberAccessString(property), memberReference));
+            var countReference = new ReferenceArgument(new VariableReference(Helper.GetMemberAccessString(property), memberReference));
 
 
             var invocationExpression
                         = Statement
                         .Expression
-                        .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] { countRefernce })
+                        .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] { countReference })
                         .AsStatement();
 
 
@@ -165,26 +147,22 @@ namespace NonSucking.Framework.Serialization
             var randomForThisScope = Helper.GetRandomNameFor("");
 
             List<StatementSyntax> statements = new();
-            var listVariableName = $"{genericArgument.Name}{Helper.localVariableSuffix}{randomForThisScope}";
+            var listVariableName = $"{genericArgument.Name}{randomForThisScope}";
 
-            if ((int)genericArgument.SpecialType is >= 7 and <= 20) //List<string>, List<int>
-            {
-                statements.Add(NoosonGenerator.CreateStatementForDeserializing(
-                            new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
-                            context,
-                            readerName
-                        ));
-                var localDeclerationSyntax = statements[0] as LocalDeclarationStatementSyntax;
-                listVariableName = localDeclerationSyntax.Declaration.Variables.First().Identifier.ToFullString();
-            }
+            statements.Add(NoosonGenerator.CreateStatementForDeserializing(
+                        new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
+                        context,
+                        readerName
+                    ));
+
+            LocalDeclarationStatementSyntax localDeclarationStatement;
+
+            if (statements[0] is BlockSyntax blockSyntax)
+                localDeclarationStatement = GetDeclerationStatement(blockSyntax.Statements);
             else
-            {
-                var genericInfo = new[] { new MemberInfo(genericArgument, genericArgument, listVariableName) };
-                var gsfp 
-                    = NoosonGenerator
-                    .GenerateStatementsForProps(genericInfo, context, MethodType.Deserialize);
-                statements.AddRange(gsfp);
-            }
+                localDeclarationStatement = GetDeclerationStatement(statements);
+
+            listVariableName = localDeclarationStatement.Declaration.Variables.First().Identifier.ToFullString();
 
             var listName = $"@{Helper.GetRandomNameFor(property.Name)}";
 
@@ -231,6 +209,22 @@ namespace NonSucking.Framework.Serialization
                 = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { countStatement, listStatement, iterationStatement });
 
             return true;
+        }
+
+        private static LocalDeclarationStatementSyntax GetDeclerationStatement(IReadOnlyCollection<StatementSyntax> statements)
+        {
+            LocalDeclarationStatementSyntax localDeclarationStatement;
+
+            if (statements.First() is LocalDeclarationStatementSyntax localDeclarationStatement2)
+            {
+                localDeclarationStatement = localDeclarationStatement2;
+            }
+            else
+            {
+                localDeclarationStatement = null;
+            }
+
+            return localDeclarationStatement;
         }
     }
 }

@@ -2,7 +2,7 @@
 
 namespace NonSucking.Framework.Serialization
 {
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Interface, Inherited = false, AllowMultiple = false)]
     public class NoosonCustomAttribute : Attribute
     {
         public Type SerializeImplementationType { get; set; }

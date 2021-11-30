@@ -21,7 +21,6 @@ namespace NonSucking.Framework.Serialization
             statement = null;
             var methodName = "Deserialize";
             bool isClassAttribute = false;
-
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
             {
                 isClassAttribute = property.TypeSymbol.TryGetAttribute(AttributeTemplates.Custom, out propAttrData);
@@ -54,16 +53,18 @@ namespace NonSucking.Framework.Serialization
                    .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)readerName) })
                    .AsExpression();
             }
-            else if (isClassAttribute)
+            else if(isClassAttribute || property.Symbol is not IPropertySymbol)
             {
+                //Static on target type
                 invocationExpression
-                       = Statement
-                       .Expression
-                       .Invoke(Helper.GetMemberAccessString(property), methodName, arguments: new[] { new ValueArgument((object)readerName) })
-                       .AsExpression();
+                        = Statement
+                        .Expression
+                        .Invoke(property.TypeSymbol.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)readerName) })
+                        .AsExpression();
             }
             else
             {
+                //Static on this
                 invocationExpression
                         = Statement
                         .Expression
@@ -87,7 +88,6 @@ namespace NonSucking.Framework.Serialization
             statement = null;
             var methodName = "Serialize";
             bool isClassAttribute = false;
-
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
             {
                 isClassAttribute = property.TypeSymbol.TryGetAttribute(AttributeTemplates.Custom, out propAttrData);
@@ -118,17 +118,18 @@ namespace NonSucking.Framework.Serialization
                    .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)writerName), new ValueArgument((object)property.Name) })
                    .AsStatement();
             }
-            else if (isClassAttribute)
-            {
-                statement
-                 = Statement
-                 .Expression
-                 .Invoke(Helper.GetMemberAccessString(property), methodName, arguments: new[] { new ValueArgument((object)writerName) })
-                 .AsStatement();
-            }
-            else
+            else if (isClassAttribute || property.Symbol is not IPropertySymbol)
             {
                 //non Static
+                statement
+                        = Statement
+                        .Expression
+                        .Invoke(Helper.GetMemberAccessString(property), methodName, arguments: new[] { new ValueArgument((object)writerName) })
+                        .AsStatement();
+            }
+            else 
+            {
+                //Non Static on this
                 statement
                         = Statement
                         .Expression

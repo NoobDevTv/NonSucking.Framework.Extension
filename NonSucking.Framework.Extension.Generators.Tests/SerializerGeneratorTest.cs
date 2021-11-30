@@ -15,13 +15,19 @@ namespace NonSucking.Framework.Serialization.Tests
         [Test]
         public static void Debug()
         {
-            var sutMessage = @"..\..\..\..\DEMO\SUTMessage.cs";
-            var text = File.ReadAllText(sutMessage);
+            const string demoPath= @"..\..\..\..\DEMO\";
+            var sutMessage = @$"{demoPath}SUTMessage.cs";
+            var iUser = @$"{demoPath}IUser.cs";
+            var message = @$"{demoPath}Message.cs";
+            var singePropTest = @$"{demoPath}SinglePropTest.cs";
 
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
             {
-                { sutMessage, text}
+                { sutMessage, File.ReadAllText(sutMessage)},
+                { iUser, File.ReadAllText(iUser)},
+                { message, File.ReadAllText(message)},
+                { singePropTest, File.ReadAllText(singePropTest)},
             },
             () => new NoosonGenerator());
 

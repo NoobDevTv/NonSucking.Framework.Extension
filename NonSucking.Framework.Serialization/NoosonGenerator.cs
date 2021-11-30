@@ -22,7 +22,7 @@ using VaVare.Generators.Common;
 
 namespace NonSucking.Framework.Serialization
 {
-    public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName)
+    public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol)
     {
         const string Category = "SerializationGenerator";
         const string IdPrefix = "NSG";
@@ -201,8 +201,8 @@ namespace NonSucking.Framework.Serialization
 
             foreach (VisitInfo classToAugment in source.VisitInfos)
             {
-                NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName);
-                NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName);
+                NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, classToAugment.TypeSymbol);
+                NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, classToAugment.TypeSymbol);
                 var methods =
                     new[] {
                         GenerateSerializeMethod(classToAugment, serializeContext),

@@ -10,6 +10,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -62,7 +63,12 @@ namespace dotVariant.Generator.Test
             => CSharpCompilation.Create(
                 "test",
                 sources.Select(s => CSharpSyntaxTree.ParseText(s.Value, path: s.Key)),
-                new[] { MetadataReference.CreateFromFile(typeof(Binder).GetTypeInfo().Assembly.Location) },
+                new[] { MetadataReference.CreateFromFile(typeof(Binder).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(INotifyPropertyChanged).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(System.ComponentModel.DescriptionAttribute).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(System.Drawing.Point).GetTypeInfo().Assembly.Location),
+                },
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
         public static string TrimLines(string s)
