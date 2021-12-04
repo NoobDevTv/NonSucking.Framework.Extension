@@ -14,9 +14,15 @@ using static DEMO.SUTMessage;
 
 namespace DEMO
 {
+
+    public partial class ComplaingBaseBase
+    {
+        public string TestBase { get; set; }
+    }
+
     [Nooson]
 
-    public partial class ComplainBaseWithCtor
+    public partial class ComplainBaseWithCtor : ComplaingBaseBase
     {
         //[NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor))]
         //public User ComplainUser { get; set; }

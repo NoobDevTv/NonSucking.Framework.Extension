@@ -81,8 +81,8 @@ namespace NonSucking.Framework.Serialization.Serializers
                 .ToList();
 
             var properties
-                = typeSymbol
-                .GetMembers()
+                = Helper.GetMembersWithBase(typeSymbol)
+                .Select(x=>x.Symbol)
                 .OfType<IPropertySymbol>()
                 .Where(property =>
                     !property.IsReadOnly

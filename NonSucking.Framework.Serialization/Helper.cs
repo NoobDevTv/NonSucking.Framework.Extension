@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -16,6 +17,21 @@ namespace NonSucking.Framework.Serialization
         static Helper()
         {
             endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        }
+
+        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol symbol)
+        {
+            if (symbol is null)
+                yield break;
+            foreach (var member in symbol.GetMembers())
+            {
+                if (member is IPropertySymbol propSymbol)
+                    yield return new MemberInfo(propSymbol.Type, member, member.Name);
+            }
+            foreach (var item in GetMembersWithBase(symbol.BaseType))
+            {
+                yield return item;
+            }
         }
 
         internal static string GetReadMethodCallFrom(SpecialType specialType)

@@ -26,7 +26,7 @@ namespace NonSucking.Framework.Serialization
     {
         const string Category = "SerializationGenerator";
         const string IdPrefix = "NSG";
-        
+
         //Proudly stolen from https://github.com/mknejp/dotvariant/blob/c59599a079637e38c3471a13b6a0443e4e607058/src/dotVariant.Generator/Diagnose.cs#L234
         public void AddDiagnostic(string id, LocalizableString message, DiagnosticSeverity severity, int warningLevel, Location location)
         {
@@ -178,21 +178,15 @@ namespace NonSucking.Framework.Serialization
             {
                 return VisitInfo.Empty;
             }
-
+            //syntaxContext.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax.BaseList.Types[0])
             MemberInfo[] properties
-                = classDeclarationSyntax
-                    .Members
-                    .OfType<PropertyDeclarationSyntax>()
-                    .Select(
-                        p =>
-                        {
-                            var prop = syntaxContext.SemanticModel.GetDeclaredSymbol(p);
-                            return new MemberInfo(prop.Type, prop, prop.Name);
-                        })
+                = Helper.GetMembersWithBase(typeSymbol)
                     .ToArray();
 
-            return new VisitInfo(classDeclarationSyntax, typeSymbol, attribute, properties);
+            return new VisitInfo(typeSymbol, attribute, properties);
         }
+
+        
 
 
 
@@ -217,8 +211,7 @@ namespace NonSucking.Framework.Serialization
                     .Build();
 
                 //rawSourceText += "You need a attribute for property XY, because it's a duplicate";
-                string hintName
-                    = $"{classToAugment.TypeSymbol.ToDisplayString()}";
+                string hintName = $"{classToAugment.TypeSymbol.ToDisplayString()}";
 
                 /*
                                             Schlachtplan
@@ -331,13 +324,13 @@ namespace NonSucking.Framework.Serialization
         internal static IEnumerable<StatementSyntax> GenerateStatementsForProps(IReadOnlyCollection<MemberInfo> properties, NoosonGeneratorContext context, MethodType methodType)
         {
             var propsWithAttr = properties.Select(property => (property, attribute: property.Symbol.GetAttribute(AttributeTemplates.Order)));
-            foreach (var propWithAttr in propsWithAttr.OrderBy(x=> x.attribute is null ? int.MaxValue : (int)x.attribute.ConstructorArguments[0].Value))
+            foreach (var propWithAttr in propsWithAttr.OrderBy(x => x.attribute is null ? int.MaxValue : (int)x.attribute.ConstructorArguments[0].Value))
             {
                 var property = propWithAttr.property;
                 ITypeSymbol propertyType = property.TypeSymbol;
 
                 string propertyName = property.Name;
-        
+
                 if (!IsPropertySupported(property, context)
                     || property.Symbol.TryGetAttribute(AttributeTemplates.Ignore, out _))
                 {
