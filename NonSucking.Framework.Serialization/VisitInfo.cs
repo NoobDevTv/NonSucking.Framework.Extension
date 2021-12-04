@@ -12,7 +12,7 @@ namespace NonSucking.Framework.Serialization
         public INamedTypeSymbol TypeSymbol { get; private set; }
         public AttributeData Attribute { get; private set; }
 
-        public IReadOnlyCollection<MemberInfo> Properties { get; }
+        public IReadOnlyCollection<MemberInfo> Properties { get; init; }
 
         public VisitInfo(INamedTypeSymbol typeSymbol = default, AttributeData attribute = default, MemberInfo[] properties = default)
         {

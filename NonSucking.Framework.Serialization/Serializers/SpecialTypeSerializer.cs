@@ -12,7 +12,7 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class SpecialTypeSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
         {
             var type = property.TypeSymbol;
             switch ((int)type.SpecialType)
@@ -20,26 +20,26 @@ namespace NonSucking.Framework.Serialization
                 case >= 7 and <= 20:
                     ValueArgument argument = Helper.GetValueArgumentFrom(property);
 
-                    statement
-                        = Statement
+                    statements
+                        = new[]{Statement
                         .Expression
                         .Invoke(writerName, "Write", arguments: new[] { argument })
-                        .AsStatement();
+                        .AsStatement() };
                     return true;
                 default:
-                    statement = null;
+                    statements = null;
                     return false;
             }
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
         {
             var type = property.TypeSymbol;
 
             switch ((int)type.SpecialType)
             {
                 case >= 7 and <= 20:
-                    string memberName = $"@{Helper.GetRandomNameFor(property.Name)}";
+                    string memberName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
 
                     var invocationExpression
                         = Statement
@@ -47,14 +47,14 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(readerName, Helper.GetReadMethodCallFrom(type.SpecialType))
                         .AsExpression();
 
-                    statement
-                        = Statement
+                    statements
+                        = new[]{Statement
                         .Declaration
-                        .DeclareAndAssign(memberName, invocationExpression);
+                        .DeclareAndAssign(memberName, invocationExpression)};
 
                     return true;
                 default:
-                    statement = null;
+                    statements = null;
                     return false;
             }
         }

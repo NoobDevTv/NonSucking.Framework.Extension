@@ -14,15 +14,14 @@ using VaVare.Generators.Common;
 using VaVare.Models.References;
 
 using VaVare.Statements;
-using NonSucking.Framework.Serialization.Vavare;
 
 namespace NonSucking.Framework.Serialization
 {
     internal static class ListSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
         {
-            statement = null;
+            statements = null;
             var type = property.TypeSymbol;
             bool isIEnumerable
                 = type
@@ -64,15 +63,14 @@ namespace NonSucking.Framework.Serialization
                 throw new NotSupportedException();
             }
 
-            string itemName = Helper.GetRandomNameFor("item");
-
-            StatementSyntax statements;
-
-            statements
+            string itemName = Helper.GetRandomNameFor("item", property.Name);
+            
+            
+            var localStatements
                 = NoosonGenerator.CreateStatementForSerializing(
                         new MemberInfo(genericArgument, genericArgument, itemName),
                         context,
-                        writerName);
+                        writerName).ToArray();
 
             var memberReference
                 = new MemberReference(
@@ -92,18 +90,18 @@ namespace NonSucking.Framework.Serialization
             var iterationStatement
                 = Statement
                 .Iteration
-                 .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(statements), useVar: true);
+                 .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(localStatements), useVar: true);
 
 
-            statement = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { invocationExpression, iterationStatement });
+            statements = new StatementSyntax[] { invocationExpression, iterationStatement };
 
 
             return true;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
         {
-            statement = null;
+            statements = null;
             var type = property.TypeSymbol;
 
             bool isEnumerable
@@ -144,12 +142,12 @@ namespace NonSucking.Framework.Serialization
                 throw new NotSupportedException();
             }
 
-            var randomForThisScope = Helper.GetRandomNameFor("");
+            var randomForThisScope = Helper.GetRandomNameFor("", property.Name);
 
-            List<StatementSyntax> statements = new();
+            List<StatementSyntax> localStatements = new();
             var listVariableName = $"{genericArgument.Name}{randomForThisScope}";
 
-            statements.Add(NoosonGenerator.CreateStatementForDeserializing(
+            localStatements.AddRange(NoosonGenerator.CreateStatementForDeserializing(
                         new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
                         context,
                         readerName
@@ -157,14 +155,14 @@ namespace NonSucking.Framework.Serialization
 
             LocalDeclarationStatementSyntax localDeclarationStatement;
 
-            if (statements[0] is BlockSyntax blockSyntax)
+            if (localStatements[0] is BlockSyntax blockSyntax)
                 localDeclarationStatement = GetDeclerationStatement(blockSyntax.Statements);
             else
-                localDeclarationStatement = GetDeclerationStatement(statements);
+                localDeclarationStatement = GetDeclerationStatement(localStatements);
 
             listVariableName = localDeclarationStatement.Declaration.Variables.First().Identifier.ToFullString();
 
-            var listName = $"@{Helper.GetRandomNameFor(property.Name)}";
+            var listName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
 
             var addStatement
                 = Statement
@@ -172,10 +170,10 @@ namespace NonSucking.Framework.Serialization
                 .Invoke(listName, $"Add", arguments: new[] { new ValueArgument((object)listVariableName) })
                 .AsStatement();
 
-            statements.Add(addStatement);
+            localStatements.Add(addStatement);
 
             var start = new VariableReference("0");
-            var end = new VariableReference(Helper.GetRandomNameFor("count" + property.Name));
+            var end = new VariableReference(Helper.GetRandomNameFor("count", property.Name));
 
 
             ExpressionSyntax invocationExpression
@@ -203,10 +201,10 @@ namespace NonSucking.Framework.Serialization
             var iterationStatement
                 = Statement
                 .Iteration
-                .For(start, end, Helper.GetRandomNameFor("i"), BodyGenerator.Create(statements.ToArray()));
+                .For(start, end, Helper.GetRandomNameFor("i",""), BodyGenerator.Create(localStatements.ToArray()));
 
-            statement
-                = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { countStatement, listStatement, iterationStatement });
+            statements
+                = new StatementSyntax[] { countStatement, listStatement, iterationStatement };
 
             return true;
         }

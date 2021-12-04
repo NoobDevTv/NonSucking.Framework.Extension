@@ -10,7 +10,6 @@ using System.Text;
 using static NonSucking.Framework.Serialization.NoosonGenerator;
 
 using VaVare.Statements;
-using NonSucking.Framework.Serialization.Vavare;
 using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
@@ -18,12 +17,13 @@ namespace NonSucking.Framework.Serialization
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo memberInfo, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
         {
             var props
-                = Helper.GetMembersWithBase(memberInfo.TypeSymbol)
+                = Helper.GetMembersWithBase(property.TypeSymbol)
                 .Where(property =>
-                    property.Name != "this[]");
+                    property.Name != "this[]")
+               .Select(x => x with { Parent = property.Name });
 
             var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
@@ -31,23 +31,23 @@ namespace NonSucking.Framework.Serialization
                 context.AddDiagnostic("0007",
                        "",
                        "Properties who are write only are not supported. Implemented a custom serializer method or ignore this property.",
-                       memberInfo.TypeSymbol,
+                       property.TypeSymbol,
                        DiagnosticSeverity.Error
                        );
             }
 
             props = FilterPropsForNotWriteOnly(props);
 
-            var statements
+             statements
                 = GenerateStatementsForProps(
                     props
-                        .Select(x => x with { Parent = memberInfo.FullName })
+                        .Select(x => x with { Parent = property.FullName })
                         .ToArray(),
                     context,
                     MethodType.Serialize
 
-                );
-            statement = BlockHelper.GetBlockWithoutBraces(statements);
+                ).SelectMany(x=>x).ToList();
+
             return true;
 
         }
@@ -72,12 +72,13 @@ namespace NonSucking.Framework.Serialization
             return props;
         }
 
-        internal static bool TryDeserialize(MemberInfo memberInfo, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
         {
             var props
-               = Helper.GetMembersWithBase(memberInfo.TypeSymbol)
+               = Helper.GetMembersWithBase(property.TypeSymbol)
                .Where(property =>
-                   property.Name != "this[]");
+                   property.Name != "this[]")
+               .Select(x => x with { Parent = property.Name });
 
             var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
@@ -85,7 +86,7 @@ namespace NonSucking.Framework.Serialization
                 context.AddDiagnostic("0007",
                        "",
                        "Properties who are write only are not supported. Implemented a custom serializer method or ignore this property.",
-                       memberInfo.TypeSymbol,
+                       property.TypeSymbol,
                        DiagnosticSeverity.Error
                        );
             }
@@ -93,26 +94,26 @@ namespace NonSucking.Framework.Serialization
             props = FilterPropsForNotWriteOnly(props);
 
 
-            string randomForThisScope = Helper.GetRandomNameFor("");
-            var statements
+            string randomForThisScope = Helper.GetRandomNameFor("", property.Parent);
+            var statementList
                 = GenerateStatementsForProps(
                     props.ToArray(),
                     context,
                     MethodType.Deserialize
-                ).ToList();
+                ).SelectMany(x=>x).ToList();
 
-            string memberName = $"@{Helper.GetRandomNameFor(memberInfo.Name)}";
+            string memberName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
 
             var declaration
                 = Statement
                 .Declaration
-                .Declare(memberName, SyntaxFactory.ParseTypeName(memberInfo.TypeSymbol.ToDisplayString()));
+                .Declare(memberName, SyntaxFactory.ParseTypeName(property.TypeSymbol.ToDisplayString()));
 
             try
             {
 
-                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)memberInfo.TypeSymbol, statements.ToArray(), memberName, DeclareOrAndAssign.DeclareOnly);
-                statements.Add(ctorSyntax);
+                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)property.TypeSymbol, statementList, memberName, DeclareOrAndAssign.DeclareOnly);
+                statementList.AddRange(ctorSyntax);
 
             }
             catch (NotSupportedException)
@@ -120,11 +121,13 @@ namespace NonSucking.Framework.Serialization
                 context.AddDiagnostic("0006",
                    "",
                    "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
-                   memberInfo.Symbol,
+                   property.Symbol,
                    DiagnosticSeverity.Error
                    );
             }
-            statement = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { declaration, SyntaxFactory.Block(SyntaxFactory.List(statements)), });
+
+            statementList.Insert(0, declaration);
+            statements = statementList;
             return true;
         }
     }

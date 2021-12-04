@@ -16,9 +16,9 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class CustomMethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
         {
-            statement = null;
+            statements = null;
             var methodName = "Deserialize";
             bool isClassAttribute = false;
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
@@ -53,7 +53,7 @@ namespace NonSucking.Framework.Serialization
                    .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)readerName) })
                    .AsExpression();
             }
-            else if(isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
+            else if (isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
             {
                 //Static on target type
                 invocationExpression
@@ -72,10 +72,10 @@ namespace NonSucking.Framework.Serialization
                         .AsExpression();
             }
 
-            statement
-                = Statement
+            statements
+                = new[]{Statement
                 .Declaration
-                .DeclareAndAssign($"@{Helper.GetRandomNameFor(property.Name)}", invocationExpression);
+                .DeclareAndAssign($"{Helper.GetRandomNameFor(property.Name, property.Parent)}", invocationExpression)};
 
             return true;
         }
@@ -83,9 +83,9 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out StatementSyntax statement)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
         {
-            statement = null;
+            statements = null;
             var methodName = "Serialize";
             bool isClassAttribute = false;
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
@@ -107,7 +107,7 @@ namespace NonSucking.Framework.Serialization
             {
                 methodName = customMethodName;
             }
-
+            StatementSyntax statement;
             var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeImplementationType").Value.Value as ISymbol;
             if (customType != null)
             {
@@ -127,7 +127,7 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(Helper.GetMemberAccessString(property), methodName, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
-            else 
+            else
             {
                 //Non Static on this
                 statement
@@ -136,6 +136,8 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(methodName, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
+
+            statements = new[] { statement };
 
             return true;
 

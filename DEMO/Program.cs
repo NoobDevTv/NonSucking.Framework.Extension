@@ -40,7 +40,8 @@ namespace DEMO
                 countPositions = 123121,
                 Position = new Point(12,99),
                 Positions = new[] { new Point(777,888), new Point(7770, 4594), new Point(445678, 42), new Point(6456, 4567), },
-                ReadOnlyCountingsButSetable = new List<short> { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22},
+                ReadOnlyCountingsButSetable = new List<short> { 100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200},
+                ReadOnlyDicSetable = new Dictionary<short,short>(){ { 22, 33 }, { 44, 55 }, { 6666, 7777 }, { 661, 789 }, },
                 Right = AccessRight.A,
                 Text = "Just a random text",
                 Type = 897987414,
@@ -65,9 +66,13 @@ namespace DEMO
                 using var br = new BinaryReader(ms);
                 var sutMessageDes = SUTMessage.Deserialize(br);
 
-                if(sutMessageDes == sutMessage)
+                if (sutMessageDes == sutMessage)
                 {
-                    ;
+                    Console.WriteLine("Success");
+                }
+                else
+                {
+                    Console.WriteLine("Failure");
                 }
 
             }

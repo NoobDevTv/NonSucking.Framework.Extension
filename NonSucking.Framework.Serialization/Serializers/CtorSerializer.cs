@@ -10,7 +10,6 @@ using System.Text;
 using VaVare.Models.References;
 
 using VaVare.Statements;
-using NonSucking.Framework.Serialization.Vavare;
 
 namespace NonSucking.Framework.Serialization.Serializers
 {
@@ -23,7 +22,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
     internal static class CtorSerializer
     {
-        internal static StatementSyntax CallCtorAndSetProps(INamedTypeSymbol typeSymbol, ICollection<StatementSyntax> statements, string instanceName, DeclareOrAndAssign declareAndAssign)
+        internal static ICollection<StatementSyntax> CallCtorAndSetProps(INamedTypeSymbol typeSymbol, ICollection<StatementSyntax> statements, string instanceName, DeclareOrAndAssign declareAndAssign)
         {
             var constructors
                 = typeSymbol
@@ -32,6 +31,8 @@ namespace NonSucking.Framework.Serialization.Serializers
                     (constructor.TryGetAttribute(AttributeTemplates.PreferredCtor, out _) ? 0xFFFF1 : 0) //0xFFFF is the maximum amount of Parameters, so we add an additional one
                     + constructor.Parameters.Length)
                 .ToList();
+
+            var shouldContain = instanceName.Substring(0, instanceName.IndexOf(Helper.localVariableSuffix));
 
             var localDeclarations
                 = statements
@@ -43,8 +44,19 @@ namespace NonSucking.Framework.Serialization.Serializers
                  )
                 .SelectMany(declaration => declaration.Declaration.Variables)
                 .Select(variable => variable.Identifier.Text)
-                .Where(text => text.StartsWith("@"))
-                .Select(text => text.Substring(1))
+                .Where(text =>
+                {
+                    int firstIndex = text.IndexOf(Helper.localVariableSuffix);
+                    if(firstIndex == -1)
+                        return false;
+                    firstIndex += +Helper.localVariableSuffix.Length;
+                    int secondIndex = text.IndexOf(Helper.localVariableSuffix, firstIndex);
+                    if (secondIndex == -1)
+                        return false;
+                    if (text.Substring(firstIndex, secondIndex - firstIndex) != shouldContain)
+                        return false;
+                    return true;
+                })
                 .ToList();
 
             var currentType
@@ -54,9 +66,9 @@ namespace NonSucking.Framework.Serialization.Serializers
 
             if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
             {
-                return Statement
+                return new[]{ Statement
                  .Declaration
-                 .Assign(instanceName, SyntaxFactory.ParseTypeName(" default"));
+                 .Assign(instanceName, SyntaxFactory.ParseTypeName(" default")) };
             }
 
             var ctorCallStatement
@@ -64,12 +76,14 @@ namespace NonSucking.Framework.Serialization.Serializers
 
             var propertyAssignments
                 = AssignMissingSetterProperties(typeSymbol, localDeclarations, ctorArguments, instanceName);
-
-            return BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { ctorCallStatement, propertyAssignments });
+            var ret = new List<StatementSyntax>();
+            ret.Add(ctorCallStatement);
+            ret.AddRange(propertyAssignments);
+            return ret;
         }
 
 
-        internal static StatementSyntax AssignMissingSetterProperties(ITypeSymbol typeSymbol, List<string> localDeclarations, List<string> ctorArguments, string variableName)
+        internal static List<StatementSyntax> AssignMissingSetterProperties(ITypeSymbol typeSymbol, List<string> localDeclarations, List<string> ctorArguments, string variableName)
         {
 
             //TODO Set Public props which have a set method via !IPropertySymbol.IsReadOnly
@@ -137,7 +151,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             }
 
 
-            return BlockHelper.GetBlockWithoutBraces(blockStatements);
+            return blockStatements;
 
         }
 

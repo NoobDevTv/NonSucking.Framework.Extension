@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 
@@ -12,11 +14,13 @@ namespace NonSucking.Framework.Serialization
     internal static class Helper
     {
         private static readonly Regex endsWithOurSuffixAndGuid;
-        internal const string localVariableSuffix = "___";
-
+        internal const string localVariableSuffix = "__";
+        internal const string doubleLocalVariableSuffix = localVariableSuffix + localVariableSuffix;
+        internal static int uniqueNumber = -1;
         static Helper()
         {
-            endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            //endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-zA-Z]{{1,6}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
         internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol symbol)
@@ -27,11 +31,11 @@ namespace NonSucking.Framework.Serialization
             {
                 if (member is IPropertySymbol propSymbol)
                 {
-                    yield return new MemberInfo(propSymbol.Type, member, member.Name);
+                    yield return new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
                 }
                 else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
                 {
-                    yield return new MemberInfo(fieldSymbol.Type, member, member.Name);
+                    yield return new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
                 }
             }
             foreach (var item in GetMembersWithBase(symbol.BaseType))
@@ -71,12 +75,30 @@ namespace NonSucking.Framework.Serialization
             return string.Equals(identifier, parameterName, StringComparison.OrdinalIgnoreCase);
         }
 
-        internal static string GetRandomNameFor(string variableName)
+
+        const string allChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const uint allCharsLength = 52;
+
+        private static string IntToString(int i)
+        {
+            var unsigned = (uint)i;
+            var sb = new StringBuilder();
+            while (unsigned > 0)
+            {
+                uint begin = unsigned % allCharsLength;
+                _ = sb.Insert(0, allChars[(int)begin]);
+                unsigned /= allCharsLength;
+            }
+            return sb.ToString();
+        }
+
+        internal static string GetRandomNameFor(string variableName, string name = "")
         {
             if (endsWithOurSuffixAndGuid.IsMatch(variableName))
                 return variableName;
 
-            return $"{variableName}{localVariableSuffix}{Guid.NewGuid().ToString("N")}";
+
+            return $"{variableName}{localVariableSuffix}{name}{localVariableSuffix}{IntToString(Interlocked.Increment(ref uniqueNumber))}";
         }
 
         internal static ValueArgument GetValueArgumentFrom(MemberInfo memberInfo, ITypeSymbol castTo = null)

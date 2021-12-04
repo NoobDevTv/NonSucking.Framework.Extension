@@ -18,7 +18,8 @@ namespace DEMO
     [Nooson]
     public partial class ComplaingBaseBase
     {
-        public string TestBase { get; set; }
+        public List<ComplainBase> AssignedUser { get; set; }
+        public List<ComplainBase> AssignedUser2 { get; set; }
 
     }
 
@@ -91,6 +92,7 @@ namespace DEMO
         public Dictionary<short, ComplainBase> CountingDic { get; set; }
         public IReadOnlyList<short> ReadOnlyCountings { get; }
         public IReadOnlyList<short> ReadOnlyCountingsButSetable { get; set; }
+        public IReadOnlyDictionary<short, short> ReadOnlyDicSetable { get; set; }
         //public IEnumerable<short> ThisIsAListAsIEnumerable { get; }
         //public IEnumerable ThisIsNotSupportedIEnumerable { get; }
         public AccessRight Right { get; set; }
@@ -141,7 +143,7 @@ namespace DEMO
         public bool Equals(SUTMessage other) => 
             other is not null 
             && Positions.SequenceEqual(other.Positions) 
-            //&& Type == other.Type 
+            && Type == other.Type 
             && Text == other.Text 
             && UsersList.SequenceEqual(other.UsersList) 
             && ComplainsBases.SequenceEqual(other.ComplainsBases) 
@@ -149,6 +151,7 @@ namespace DEMO
             && CountingDic.SequenceEqual( other.CountingDic) 
             && ReadOnlyCountings.SequenceEqual(other.ReadOnlyCountings) 
             && ReadOnlyCountingsButSetable.SequenceEqual(other.ReadOnlyCountingsButSetable) 
+            && ReadOnlyDicSetable.SequenceEqual(other.ReadOnlyDicSetable) 
             && Right == other.Right 
             && EqualityComparer<ComplainBase>.Default.Equals(Complain, other.Complain) 
             && EqualityComparer<User>.Default.Equals(AssignedUser, other.AssignedUser) 

@@ -1,12 +1,14 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using NonSucking.Framework.Serialization.Vavare;
+
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+
 using VaVare.Generators.Common;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Models.References;
@@ -17,17 +19,26 @@ namespace NonSucking.Framework.Serialization
     internal static class DictionarySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out StatementSyntax statement)
+        private static bool CheckMetaDataName(ISymbol symbol)
         {
-            statement = null;
+            return symbol.MetadataName == typeof(IReadOnlyDictionary<,>).Name
+                || symbol.MetadataName == typeof(IDictionary<,>).Name;
+        }
+
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
+        {
+            statements = null;
             ITypeSymbol type = property.TypeSymbol;
+
+
             bool isDictionary
-                = type
-                .AllInterfaces
-                .Any(x =>
-                    x.MetadataName == typeof(IReadOnlyDictionary<,>).Name
-                    || x.MetadataName == typeof(IDictionary<,>).Name
-                );
+                = CheckMetaDataName(type)
+                || type
+                    .AllInterfaces
+                    .Any(x =>
+                        x.MetadataName == typeof(IReadOnlyDictionary<,>).Name
+                        || x.MetadataName == typeof(IDictionary<,>).Name
+                    );
 
 
             if (!isDictionary)
@@ -35,9 +46,9 @@ namespace NonSucking.Framework.Serialization
                 return false;
             }
 
-            string itemName = Helper.GetRandomNameFor("item");
+            string itemName = Helper.GetRandomNameFor("item", property.Name);
 
-            List<StatementSyntax> statements = new();
+            List<StatementSyntax> localStatements = new();
 
             ITypeSymbol keyGenericArgument;
             ITypeSymbol valueGenericArgument;
@@ -59,11 +70,14 @@ namespace NonSucking.Framework.Serialization
                     };
 
 
-                IEnumerable<StatementSyntax> generatedStatements
+                var generatedStatements
                     = NoosonGenerator
                     .GenerateStatementsForProps(genericInfos, context, MethodType.Serialize);
+                foreach (var item in generatedStatements)
+                {
 
-                statements.AddRange(generatedStatements);
+                    localStatements.AddRange(item);
+                }
             }
             else
             {
@@ -88,27 +102,29 @@ namespace NonSucking.Framework.Serialization
             ForEachStatementSyntax iterationStatement
                 = Statement
                 .Iteration
-                .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(statements.ToArray()), useVar: true);
+                .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(localStatements.ToArray()), useVar: true);
 
 
-            statement = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { invocationExpression, iterationStatement });
+            statements = new StatementSyntax[] { invocationExpression, iterationStatement };
 
 
             return true;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
         {
-            statement = null;
+            statements = null;
             ITypeSymbol type = property.TypeSymbol;
 
             bool isDictionary
-                   = type
+               = CheckMetaDataName(type)
+               || type
                    .AllInterfaces
                    .Any(x =>
                        x.MetadataName == typeof(IReadOnlyDictionary<,>).Name
                        || x.MetadataName == typeof(IDictionary<,>).Name
                    );
+
 
             if (!isDictionary)
             {
@@ -118,9 +134,9 @@ namespace NonSucking.Framework.Serialization
             ITypeSymbol keyGenericArgument;
             ITypeSymbol valueGenericArgument;
 
-            string keyVariableName = Helper.GetRandomNameFor("key");
-            string valueVariableName = Helper.GetRandomNameFor("value");
-            List<StatementSyntax> statements = new();
+            string keyVariableName = Helper.GetRandomNameFor("key", property.Name);
+            string valueVariableName = Helper.GetRandomNameFor("value", property.Name);
+            List<StatementSyntax> localStatements = new();
 
             if (type is INamedTypeSymbol nts)
             {
@@ -138,11 +154,13 @@ namespace NonSucking.Framework.Serialization
                         new MemberInfo(valueGenericArgument, valueGenericArgument, valueVariableName)
                     };
 
-                IEnumerable<StatementSyntax> statementsForProps
+                var statementsForProps
                     = NoosonGenerator
                     .GenerateStatementsForProps(genericInfos, context, MethodType.Deserialize);
-
-                statements.AddRange(statementsForProps);
+                foreach (var item in statementsForProps)
+                {
+                    localStatements.AddRange(item);
+                }
             }
             else
             {
@@ -150,22 +168,22 @@ namespace NonSucking.Framework.Serialization
             }
 
 
-            string listName = $"@{Helper.GetRandomNameFor(property.Name)}";
+            string listName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
 
             ExpressionStatementSyntax addStatement
                 = Statement
                 .Expression
                 .Invoke(
-                    listName, 
-                    $"Add", 
+                    listName,
+                    $"Add",
                     arguments: new[] { new ValueArgument((object)keyVariableName), new ValueArgument((object)valueVariableName) }
                 )
                 .AsStatement();
 
-            statements.Add(addStatement);
+            localStatements.Add(addStatement);
 
             VariableReference start = new VariableReference("0");
-            VariableReference end = new VariableReference(Helper.GetRandomNameFor("count" + property.Name));
+            VariableReference end = new VariableReference(Helper.GetRandomNameFor("count" , property.Name));
 
 
             ExpressionSyntax invocationExpression
@@ -193,10 +211,10 @@ namespace NonSucking.Framework.Serialization
             ForStatementSyntax iterationStatement
                 = Statement
                 .Iteration
-                .For(start, end, Helper.GetRandomNameFor("i"), BodyGenerator.Create(statements.ToArray()));
+                .For(start, end, Helper.GetRandomNameFor("i", ""), BodyGenerator.Create(localStatements.ToArray()));
 
-            statement
-                = BlockHelper.GetBlockWithoutBraces(new StatementSyntax[] { countStatement, listStatement, iterationStatement });
+            statements
+                = new StatementSyntax[] { countStatement, listStatement, iterationStatement };
 
             return true;
         }
