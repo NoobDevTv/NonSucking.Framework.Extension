@@ -13,9 +13,8 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class EnumSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
         {
-            statements = null;
 
             var type = property.TypeSymbol;
 
@@ -28,11 +27,10 @@ namespace NonSucking.Framework.Serialization
             {
                 ValueArgument argument = Helper.GetValueArgumentFrom(property, typeSymbol.EnumUnderlyingType);
 
-                statements
-                        = new[]{Statement
+                statements.Add(Statement
                         .Expression
                         .Invoke(writerName, "Write", arguments: new[] { argument })
-                        .AsStatement()};
+                        .AsStatement());
                 return true;
             }
             else
@@ -41,9 +39,9 @@ namespace NonSucking.Framework.Serialization
             }
 
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,List<StatementSyntax> statements)
         {
-            statements = null;
+            
             var type = property.TypeSymbol;
 
             if (type.TypeKind != TypeKind.Enum)
@@ -70,10 +68,9 @@ namespace NonSucking.Framework.Serialization
                     = SyntaxFactory
                     .CastExpression(typeSyntax, invocationExpression);
 
-                statements
-                    = new[]{Statement
+                statements.Add(Statement
                     .Declaration
-                    .DeclareAndAssign(localName, invocationExpression)};
+                    .DeclareAndAssign(localName, invocationExpression));
 
                 return true;
             }

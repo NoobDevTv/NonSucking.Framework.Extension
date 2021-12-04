@@ -3,19 +3,16 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Formatting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Options;
 
 using NonSucking.Framework.Serialization.Attributes;
 using NonSucking.Framework.Serialization.Serializers;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 
 using VaVare;
@@ -256,7 +253,7 @@ namespace NonSucking.Framework.Serialization
                  
                  */
 
-                using var workspace = new AdhocWorkspace() {  };
+                using var workspace = new AdhocWorkspace() { };
                 var options = workspace.Options
                     .WithChangedOption(CSharpFormattingOptions.NewLineForElse, true)
                     .WithChangedOption(CSharpFormattingOptions.NewLineForFinally, true)
@@ -265,8 +262,8 @@ namespace NonSucking.Framework.Serialization
                     .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInTypes, true)
                     .WithChangedOption(CSharpFormattingOptions.IndentBlock, false)
                     ;
-                var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace("    ", "\n", true).ToFullString();
-                
+                var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
+
                 sourceProductionContext.AddSource(hintName, formattedText);
             }
 
@@ -278,7 +275,7 @@ namespace NonSucking.Framework.Serialization
             var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryWriter {context.ReaderWriterName}");
 
             var body
-                = CreateBlock(visitInfo with {Properties = visitInfo.Properties.Select(x=> x with {Parent = "" }).ToArray()}, context, MethodType.Serialize);
+                = CreateBlock(visitInfo with { Properties = visitInfo.Properties.Select(x => x with { Parent = "" }).ToArray() }, context, MethodType.Serialize);
 
             return new MethodBuilder("Serialize")
                 .WithModifiers(Modifiers.Public)
@@ -305,8 +302,8 @@ namespace NonSucking.Framework.Serialization
         {
             var statements
                 = GenerateStatementsForProps(visitInfo.Properties, context, methodType)
-                .Where(statement => statement is not null)
-                .SelectMany(x=>x)
+                .Where(x=>x.Count > 0)
+                .SelectMany(x => x)
                 .ToList();
 
             if (methodType == MethodType.Deserialize)
@@ -335,7 +332,7 @@ namespace NonSucking.Framework.Serialization
             }
             return BodyGenerator.Create(statements.ToArray());
         }
-        internal static IEnumerable<ICollection<StatementSyntax>> GenerateStatementsForProps(IReadOnlyCollection<MemberInfo> properties, NoosonGeneratorContext context, MethodType methodType)
+        internal static IEnumerable<List<StatementSyntax>> GenerateStatementsForProps(IReadOnlyCollection<MemberInfo> properties, NoosonGeneratorContext context, MethodType methodType)
         {
             var propsWithAttr = properties.Select(property => (property, attribute: property.Symbol.GetAttribute(AttributeTemplates.Order)));
             foreach (var propWithAttr in propsWithAttr.OrderBy(x => x.attribute is null ? int.MaxValue : (int)x.attribute.ConstructorArguments[0].Value))
@@ -382,29 +379,31 @@ namespace NonSucking.Framework.Serialization
         }
 
 
-        internal static ICollection<StatementSyntax> CreateStatementForSerializing(MemberInfo property, NoosonGeneratorContext context, string writerName)
+        internal static List<StatementSyntax> CreateStatementForSerializing(MemberInfo property, NoosonGeneratorContext context, string writerName)
         {
-            _ = CustomMethodCallSerializer.TrySerialize(property, context, writerName, out ICollection<StatementSyntax> statements)
-                           || SpecialTypeSerializer.TrySerialize(property, context, writerName, out statements)
-                           || EnumSerializer.TrySerialize(property, context, writerName, out statements)
-                           || MethodCallSerializer.TrySerialize(property, context, writerName, out statements)
-                           || DictionarySerializer.TrySerialize(property, context, writerName, out statements)
-                           || ListSerializer.TrySerialize(property, context, writerName, out statements)
-                           || PublicPropertySerializer.TrySerialize(property, context, writerName, out statements)
+            List<StatementSyntax> statements = new();
+            _ = CustomMethodCallSerializer.TrySerialize(property, context, writerName, statements)
+                           || SpecialTypeSerializer.TrySerialize(property, context, writerName, statements)
+                           || EnumSerializer.TrySerialize(property, context, writerName, statements)
+                           || MethodCallSerializer.TrySerialize(property, context, writerName, statements)
+                           || DictionarySerializer.TrySerialize(property, context, writerName, statements)
+                           || ListSerializer.TrySerialize(property, context, writerName, statements)
+                           || PublicPropertySerializer.TrySerialize(property, context, writerName, statements)
                            ;
 
             return statements;
         }
 
-        internal static ICollection<StatementSyntax> CreateStatementForDeserializing(MemberInfo property, NoosonGeneratorContext context, string readerName)
+        internal static List<StatementSyntax> CreateStatementForDeserializing(MemberInfo property, NoosonGeneratorContext context, string readerName)
         {
-            _ = CustomMethodCallSerializer.TryDeserialize(property, context, readerName, out ICollection<StatementSyntax> statements)
-                           || SpecialTypeSerializer.TryDeserialize(property, context, readerName, out statements)
-                           || EnumSerializer.TryDeserialize(property, context, readerName, out statements)
-                           || MethodCallSerializer.TryDeserialize(property, context, readerName, out statements)
-                           || DictionarySerializer.TryDeserialize(property, context, readerName, out statements)
-                           || ListSerializer.TryDeserialize(property, context, readerName, out statements)
-                           || PublicPropertySerializer.TryDeserialize(property, context, readerName, out statements)
+            List<StatementSyntax> statements = new();
+            _ = CustomMethodCallSerializer.TryDeserialize(property, context, readerName, statements)
+                           || SpecialTypeSerializer.TryDeserialize(property, context, readerName, statements)
+                           || EnumSerializer.TryDeserialize(property, context, readerName, statements)
+                           || MethodCallSerializer.TryDeserialize(property, context, readerName, statements)
+                           || DictionarySerializer.TryDeserialize(property, context, readerName, statements)
+                           || ListSerializer.TryDeserialize(property, context, readerName, statements)
+                           || PublicPropertySerializer.TryDeserialize(property, context, readerName, statements)
                            ;
 
             return statements;

@@ -19,9 +19,9 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class ListSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
         {
-            statements = null;
+            
             var type = property.TypeSymbol;
             bool isIEnumerable
                 = type
@@ -93,15 +93,16 @@ namespace NonSucking.Framework.Serialization
                  .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(localStatements), useVar: true);
 
 
-            statements = new StatementSyntax[] { invocationExpression, iterationStatement };
+            statements.Add(invocationExpression);
+            statements.Add(iterationStatement);
 
 
             return true;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,List<StatementSyntax> statements)
         {
-            statements = null;
+            
             var type = property.TypeSymbol;
 
             bool isEnumerable
@@ -203,8 +204,9 @@ namespace NonSucking.Framework.Serialization
                 .Iteration
                 .For(start, end, Helper.GetRandomNameFor("i",""), BodyGenerator.Create(localStatements.ToArray()));
 
-            statements
-                = new StatementSyntax[] { countStatement, listStatement, iterationStatement };
+            statements.Add(countStatement); 
+            statements.Add(listStatement);
+            statements.Add(iterationStatement);
 
             return true;
         }

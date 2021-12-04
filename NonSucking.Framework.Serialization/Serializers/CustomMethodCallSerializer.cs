@@ -16,9 +16,8 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class CustomMethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
         {
-            statements = null;
             var methodName = "Deserialize";
             bool isClassAttribute = false;
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
@@ -72,10 +71,9 @@ namespace NonSucking.Framework.Serialization
                         .AsExpression();
             }
 
-            statements
-                = new[]{Statement
+            statements.Add(Statement
                 .Declaration
-                .DeclareAndAssign($"{Helper.GetRandomNameFor(property.Name, property.Parent)}", invocationExpression)};
+                .DeclareAndAssign($"{Helper.GetRandomNameFor(property.Name, property.Parent)}", invocationExpression));
 
             return true;
         }
@@ -83,9 +81,9 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
         {
-            statements = null;
+            
             var methodName = "Serialize";
             bool isClassAttribute = false;
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
@@ -137,7 +135,7 @@ namespace NonSucking.Framework.Serialization
                         .AsStatement();
             }
 
-            statements = new[] { statement };
+            statements.Add(statement);
 
             return true;
 

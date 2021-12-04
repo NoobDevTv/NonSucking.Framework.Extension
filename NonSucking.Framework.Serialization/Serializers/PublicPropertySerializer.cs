@@ -17,7 +17,7 @@ namespace NonSucking.Framework.Serialization
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
         {
             var props
                 = Helper.GetMembersWithBase(property.TypeSymbol)
@@ -38,15 +38,14 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
-             statements
-                = GenerateStatementsForProps(
-                    props
-                        .Select(x => x with { Parent = property.FullName })
-                        .ToArray(),
-                    context,
-                    MethodType.Serialize
-
-                ).SelectMany(x=>x).ToList();
+            statements.AddRange(
+                GenerateStatementsForProps(
+                   props
+                       .Select(x => x with { Parent = property.FullName })
+                       .ToArray(),
+                   context,
+                   MethodType.Serialize
+               ).SelectMany(x => x));
 
             return true;
 
@@ -72,7 +71,7 @@ namespace NonSucking.Framework.Serialization
             return props;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
         {
             var props
                = Helper.GetMembersWithBase(property.TypeSymbol)
@@ -100,7 +99,7 @@ namespace NonSucking.Framework.Serialization
                     props.ToArray(),
                     context,
                     MethodType.Deserialize
-                ).SelectMany(x=>x).ToList();
+                ).SelectMany(x => x).ToList();
 
             string memberName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
 
@@ -127,7 +126,7 @@ namespace NonSucking.Framework.Serialization
             }
 
             statementList.Insert(0, declaration);
-            statements = statementList;
+            statements.AddRange(statementList);
             return true;
         }
     }

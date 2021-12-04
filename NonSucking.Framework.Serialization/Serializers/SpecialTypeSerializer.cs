@@ -12,7 +12,7 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class SpecialTypeSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, out ICollection<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, List<StatementSyntax> statements)
         {
             var type = property.TypeSymbol;
             switch ((int)type.SpecialType)
@@ -20,19 +20,18 @@ namespace NonSucking.Framework.Serialization
                 case >= 7 and <= 20:
                     ValueArgument argument = Helper.GetValueArgumentFrom(property);
 
-                    statements
-                        = new[]{Statement
+                    statements.Add(Statement
                         .Expression
                         .Invoke(writerName, "Write", arguments: new[] { argument })
-                        .AsStatement() };
+                        .AsStatement());
                     return true;
                 default:
-                    statements = null;
+
                     return false;
             }
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, out ICollection<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
         {
             var type = property.TypeSymbol;
 
@@ -47,14 +46,13 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(readerName, Helper.GetReadMethodCallFrom(type.SpecialType))
                         .AsExpression();
 
-                    statements
-                        = new[]{Statement
+                    statements.Add(Statement
                         .Declaration
-                        .DeclareAndAssign(memberName, invocationExpression)};
+                        .DeclareAndAssign(memberName, invocationExpression));
 
                     return true;
                 default:
-                    statements = null;
+
                     return false;
             }
         }
