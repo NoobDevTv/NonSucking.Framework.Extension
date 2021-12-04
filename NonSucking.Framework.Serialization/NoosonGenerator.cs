@@ -79,6 +79,7 @@ namespace NonSucking.Framework.Serialization
         internal static readonly NoosonCustomAttributeTemplate Custom = new();
         internal static readonly NoosonAttributeTemplate GenSerializationAttribute = new();
         internal static readonly NoosonOrderAttributeTemplate Order = new();
+        internal static readonly NoosonIncludeAttributeTemplate Include = new();
 
 
 
@@ -178,7 +179,6 @@ namespace NonSucking.Framework.Serialization
             {
                 return VisitInfo.Empty;
             }
-            //syntaxContext.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax.BaseList.Types[0])
             MemberInfo[] properties
                 = Helper.GetMembersWithBase(typeSymbol)
                     .ToArray();
@@ -186,7 +186,7 @@ namespace NonSucking.Framework.Serialization
             return new VisitInfo(typeSymbol, attribute, properties);
         }
 
-        
+
 
 
 
@@ -225,6 +225,7 @@ namespace NonSucking.Framework.Serialization
                 3. ✓ Attributes => Überschreiben von Property Namen zu Ctor Parameter
                 4. ✓ Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
                 1.   Listen: IEnumerable => List, IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
+                a.   Init Only Properties (Aktuell zählen sie für uns als Readonly)
 
                 *: ✓ Serialize bzw. Deserialize auf List Items aufrufen wenn möglich
                 *: ✓ Randomize der count variable beim Deserialize
@@ -243,14 +244,14 @@ namespace NonSucking.Framework.Serialization
                 4. ✓ Custom Serialize/Deserialize
 
                 Future:
-                7.   NoosonInclude for fields
+                7. ✓ NoosonInclude for fields
                 5.   BinaryWriter / Span Switch/Off/On
                 */
 
                 using var workspace = new AdhocWorkspace();
                 var options = workspace.Options;
                 var formattedText = Formatter.Format(sourceCode, workspace, options).ToFullString();
-
+                
                 sourceProductionContext.AddSource(hintName, formattedText);
             }
 

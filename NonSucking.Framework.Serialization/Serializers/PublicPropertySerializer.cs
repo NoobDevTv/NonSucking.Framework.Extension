@@ -21,14 +21,11 @@ namespace NonSucking.Framework.Serialization
         internal static bool TrySerialize(MemberInfo memberInfo, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
         {
             var props
-                = memberInfo
-                .TypeSymbol
-                .GetMembers()
-                .OfType<IPropertySymbol>()
+                = Helper.GetMembersWithBase(memberInfo.TypeSymbol)
                 .Where(property =>
                     property.Name != "this[]");
 
-            var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
+            var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
             {
                 context.AddDiagnostic("0007",
@@ -39,12 +36,12 @@ namespace NonSucking.Framework.Serialization
                        );
             }
 
-            props = props.Where(x => !x.IsWriteOnly && x.GetMethod is not null);
+            props = FilterPropsForNotWriteOnly(props);
 
             var statements
                 = GenerateStatementsForProps(
                     props
-                        .Select(x => new MemberInfo(x.Type, x, x.Name, memberInfo.FullName))
+                        .Select(x => x with { Name = memberInfo.FullName })
                         .ToArray(),
                     context,
                     MethodType.Serialize
@@ -55,17 +52,34 @@ namespace NonSucking.Framework.Serialization
 
         }
 
+        private static IEnumerable<MemberInfo> FilterPropsForNotWriteOnly(IEnumerable<MemberInfo> props)
+        {
+            props = props.Where(x =>
+            {
+                if (x.Symbol is IPropertySymbol ps
+                    && !ps.IsWriteOnly
+                    && ps.GetMethod is not null)
+                {
+                    return true;
+                }
+                else if (x.Symbol is IFieldSymbol fs)
+                {
+                    return true;
+                }
+                return false;
+
+            });
+            return props;
+        }
+
         internal static bool TryDeserialize(MemberInfo memberInfo, NoosonGeneratorContext context, string readerName, out StatementSyntax statement)
         {
             var props
-                = memberInfo
-                .TypeSymbol
-                .GetMembers()
-                .OfType<IPropertySymbol>()                
-                .Where(property => 
-                    property.Name != "this[]");
+               = Helper.GetMembersWithBase(memberInfo.TypeSymbol)
+               .Where(property =>
+                   property.Name != "this[]");
 
-            var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
+            var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
             {
                 context.AddDiagnostic("0007",
@@ -76,15 +90,13 @@ namespace NonSucking.Framework.Serialization
                        );
             }
 
-            props = props.Where(x => !x.IsWriteOnly && x.GetMethod is not null);
-           
+            props = FilterPropsForNotWriteOnly(props);
+
 
             string randomForThisScope = Helper.GetRandomNameFor("");
             var statements
                 = GenerateStatementsForProps(
-                    props
-                        .Select(x => new MemberInfo(x.Type, x, $"{x.Name}"))
-                        .ToArray(),
+                    props.ToArray(),
                     context,
                     MethodType.Deserialize
                 ).ToList();

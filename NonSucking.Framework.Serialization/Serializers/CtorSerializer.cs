@@ -80,26 +80,36 @@ namespace NonSucking.Framework.Serialization.Serializers
                 )
                 .ToList();
 
-            var properties
-                = Helper.GetMembersWithBase(typeSymbol)
-                .Select(x=>x.Symbol)
-                .OfType<IPropertySymbol>()
-                .Where(property =>
-                    !property.IsReadOnly
+            List<(ITypeSymbol type, ISymbol symbol)> properties = new();
+
+            foreach (var item in Helper.GetMembersWithBase(typeSymbol))
+            {
+                if (item.Symbol is IPropertySymbol property
+                    && !property.IsReadOnly
                     && property.SetMethod is not null
-                    && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, property.Name))
-                );
+                    && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, property.Name)))
+                {
+                    properties.Add((property.Type, property));
+                }
+                else if (item.Symbol is IFieldSymbol field
+                     && !field.IsReadOnly
+                     && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, field.Name)))
+                {
+                    properties.Add((field.Type, field));
+
+                }
+            }
 
             var blockStatements = new List<StatementSyntax>();
 
             foreach (var property in properties)
             {
                 var variableReference
-                     = new VariableReference(variableName, new MemberReference(property.Name));
+                     = new VariableReference(variableName, new MemberReference(property.symbol.Name));
 
                 var declaration
                     = localDeclarations
-                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(declaration, property.Name));
+                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(declaration, property.symbol.Name));
 
                 if (declaration is null)
                 {
@@ -108,7 +118,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
                 VariableReference declarationReference;
 
-                if (property.Type.TypeKind == TypeKind.Array)
+                if (property.type.TypeKind == TypeKind.Array)
                 {
                     var method = new MethodReference("ToArray");
                     declarationReference = new MemberReference(declaration, method);

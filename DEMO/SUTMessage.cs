@@ -26,7 +26,7 @@ namespace DEMO
     {
         //[NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor))]
         //public User ComplainUser { get; set; }
-        public string Complain { get; set; }
+        public string Complain { get; init; }
         [NoosonCustom(SerializeMethodName = "FirstSerialize", DeserializeMethodName = "FirstDeserialize")]
         public string FirstCustom { get; set; }
         [NoosonOrder(0)]
@@ -38,7 +38,13 @@ namespace DEMO
         [NoosonOrder(5)]
         public string Ultimate { get; private set; }
 
+        [NoosonInclude]
         private readonly string valueNever;
+
+        [NoosonInclude]
+        [NoosonCustom(SerializeMethodName = "FirstSerialize", DeserializeMethodName = "FirstDeserialize")]
+        private string serializeThisFieldForMe = "";
+        [NoosonPreferredCtor]
         public ComplainBaseWithCtor(string complain, string valueNever)
         {
             Complain = complain;
@@ -61,7 +67,6 @@ namespace DEMO
         }
 
 
-        [NoosonPreferredCtor]
         public ComplainBaseWithCtor([NoosonParameter(nameof(Ultimate))] string first, string second, string last)
         {
             Complain = first + second + last;

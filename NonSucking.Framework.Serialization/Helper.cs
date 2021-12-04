@@ -26,7 +26,13 @@ namespace NonSucking.Framework.Serialization
             foreach (var member in symbol.GetMembers())
             {
                 if (member is IPropertySymbol propSymbol)
+                {
                     yield return new MemberInfo(propSymbol.Type, member, member.Name);
+                }
+                else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
+                {
+                    yield return new MemberInfo(fieldSymbol.Type, member, member.Name);
+                }
             }
             foreach (var item in GetMembersWithBase(symbol.BaseType))
             {

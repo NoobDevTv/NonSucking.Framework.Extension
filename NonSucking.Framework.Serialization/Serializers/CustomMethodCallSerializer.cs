@@ -53,7 +53,7 @@ namespace NonSucking.Framework.Serialization
                    .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)readerName) })
                    .AsExpression();
             }
-            else if(isClassAttribute || property.Symbol is not IPropertySymbol)
+            else if(isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
             {
                 //Static on target type
                 invocationExpression
@@ -118,7 +118,7 @@ namespace NonSucking.Framework.Serialization
                    .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)writerName), new ValueArgument((object)property.Name) })
                    .AsStatement();
             }
-            else if (isClassAttribute || property.Symbol is not IPropertySymbol)
+            else if (isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
             {
                 //non Static
                 statement
