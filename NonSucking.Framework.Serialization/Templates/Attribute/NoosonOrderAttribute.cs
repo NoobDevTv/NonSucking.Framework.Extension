@@ -2,7 +2,7 @@
 
 namespace NonSucking.Framework.Serialization
 {
-    [AttributeUsage(AttributeTargets.Property | AttributeTarget.Fields, Inherited = false, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     public class NoosonOrderAttribute : Attribute
     {
         public int Order { get;  }

@@ -41,7 +41,7 @@ namespace NonSucking.Framework.Serialization
             var statements
                 = GenerateStatementsForProps(
                     props
-                        .Select(x => x with { Name = memberInfo.FullName })
+                        .Select(x => x with { Parent = memberInfo.FullName })
                         .ToArray(),
                     context,
                     MethodType.Serialize

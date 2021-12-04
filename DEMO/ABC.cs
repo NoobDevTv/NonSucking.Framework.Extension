@@ -6,12 +6,12 @@
 //        {
 
 //            writer.Write(Positions.Length);
-//            foreach (var item___2c9c3b47b6a64f949f87314c4b4811a8 in Positions)
+//            foreach (var item___00465bb861654173bd2dcc3d17ecf599 in Positions)
 //            {
 
-//                writer.Write(item___2c9c3b47b6a64f949f87314c4b4811a8.IsEmpty);
-//                writer.Write(item___2c9c3b47b6a64f949f87314c4b4811a8.X);
-//                writer.Write(item___2c9c3b47b6a64f949f87314c4b4811a8.Y);
+//                writer.Write(item___00465bb861654173bd2dcc3d17ecf599);
+//                writer.Write(item___00465bb861654173bd2dcc3d17ecf599);
+//                writer.Write(item___00465bb861654173bd2dcc3d17ecf599);
 
 //            }
 
@@ -19,22 +19,22 @@
 //            writer.Write(Text);
 
 //            writer.Write(UsersList.Count);
-//            foreach (var item___d0736c6a3ae04076ad4f71d75e5240fd in UsersList)
+//            foreach (var item___ca577bad3eb2438e84d7ec06a3a09ffb in UsersList)
 //            {
-//                item___d0736c6a3ae04076ad4f71d75e5240fd.SerializeMe(writer);
+//                item___ca577bad3eb2438e84d7ec06a3a09ffb.SerializeMe(writer);
 //            }
 
 
 //            writer.Write(ComplainsBases.Count);
-//            foreach (var item___eea9d5e15a60455186a827c78692df42 in ComplainsBases)
+//            foreach (var item___137ba30dbecd4501b9df0531fe283915 in ComplainsBases)
 //            {
 
-//                writer.Write(item___eea9d5e15a60455186a827c78692df42.Complain);
+//                writer.Write(item___137ba30dbecd4501b9df0531fe283915);
 
-//                writer.Write(item___eea9d5e15a60455186a827c78692df42.Complains.Count);
-//                foreach (var item___edf7427aa463498481fa034e2f771015 in item___eea9d5e15a60455186a827c78692df42.Complains)
+//                writer.Write(item___137ba30dbecd4501b9df0531fe283915.Count);
+//                foreach (var item___e8a45ae2d3c945c597d3d8e09b3de1a4 in item___137ba30dbecd4501b9df0531fe283915)
 //                {
-//                    writer.Write(item___edf7427aa463498481fa034e2f771015);
+//                    writer.Write(item___e8a45ae2d3c945c597d3d8e09b3de1a4);
 //                }
 
 
@@ -42,23 +42,23 @@
 
 
 //            writer.Write(Countings.Count);
-//            foreach (var item___77b67d99f38340f7a1182155b901d1d5 in Countings)
+//            foreach (var item___d123dcb8794340038abf3c7f34e313b2 in Countings)
 //            {
-//                writer.Write(item___77b67d99f38340f7a1182155b901d1d5);
+//                writer.Write(item___d123dcb8794340038abf3c7f34e313b2);
 //            }
 
 
 //            writer.Write(CountingDic.Count);
-//            foreach (var item___9803905a0a2e48b08201e0ec339c87c0 in CountingDic)
+//            foreach (var item___737c25c8b0bb4ebda090486bb0552c90 in CountingDic)
 //            {
-//                writer.Write(item___9803905a0a2e48b08201e0ec339c87c0.Key);
+//                writer.Write(item___737c25c8b0bb4ebda090486bb0552c90.Key);
 
-//                writer.Write(item___9803905a0a2e48b08201e0ec339c87c0.Value.Complain);
+//                writer.Write(item___737c25c8b0bb4ebda090486bb0552c90.Value);
 
-//                writer.Write(item___9803905a0a2e48b08201e0ec339c87c0.Value.Complains.Count);
-//                foreach (var item___a85791352498490f8b8eb4241e2d342f in item___9803905a0a2e48b08201e0ec339c87c0.Value.Complains)
+//                writer.Write(item___737c25c8b0bb4ebda090486bb0552c90.Value.Count);
+//                foreach (var item___3f3c85e009714431929219429e8e9c37 in item___737c25c8b0bb4ebda090486bb0552c90.Value)
 //                {
-//                    writer.Write(item___a85791352498490f8b8eb4241e2d342f);
+//                    writer.Write(item___3f3c85e009714431929219429e8e9c37);
 //                }
 
 
@@ -66,37 +66,40 @@
 
 
 //            writer.Write(ReadOnlyCountings.Count);
-//            foreach (var item___1f2fb634576f4a8caadf4f2b6a57be85 in ReadOnlyCountings)
+//            foreach (var item___d8a8e9669fd940afa681e329fbc61224 in ReadOnlyCountings)
 //            {
-//                writer.Write(item___1f2fb634576f4a8caadf4f2b6a57be85);
+//                writer.Write(item___d8a8e9669fd940afa681e329fbc61224);
+//            }
+
+
+//            writer.Write(ReadOnlyCountingsButSetable.Count);
+//            foreach (var item___3e691c591a5f4dd7ae5786850737df5f in ReadOnlyCountingsButSetable)
+//            {
+//                writer.Write(item___3e691c591a5f4dd7ae5786850737df5f);
 //            }
 
 
 //            writer.Write((int)Right);
 
-//            writer.Write(Complain.Complain);
+//            writer.Write(Complain);
 
-//            writer.Write(Complain.Complains.Count);
-//            foreach (var item___8bce757b754a4d5da0c4ad674f54b697 in Complain.Complains)
+//            writer.Write(Complain.Count);
+//            foreach (var item___133bf16ee6c54a799e070a47b2b433af in Complain)
 //            {
-//                writer.Write(item___8bce757b754a4d5da0c4ad674f54b697);
+//                writer.Write(item___133bf16ee6c54a799e070a47b2b433af);
 //            }
 
 
 
 //            AssignedUser.SerializeMe(writer);
 
-//            writer.Write(Position.IsEmpty);
-//            writer.Write(Position.X);
-//            writer.Write(Position.Y);
+//            writer.Write(Position);
+//            writer.Write(Position);
+//            writer.Write(Position);
 
 
-//            writer.Write(ContactUser.Name);
-
-
-//            writer.Write(AlternativUser.Name);
-
-
+//            DEMO.SUTMessage.User.SerializeMe(writer, ContactUser);
+//            DEMO.SUTMessage.User.SerializeMe(writer, AlternativUser);
 //            writer.Write(X);
 //            writer.Write(countPositions);
 //        }
@@ -104,194 +107,192 @@
 //        public static SUTMessage Deserialize(System.IO.BinaryReader reader)
 //        {
 
-//            var countPositions___b3fe4c6db0ac4d28b1ad7c4dbe4ae0c9 = reader.ReadInt32();
-//            var @Positions___42440040ebe74f148d8ecfad5479167a = new System.Collections.Generic.List<System.Drawing.Point>(countPositions___b3fe4c6db0ac4d28b1ad7c4dbe4ae0c9);
-//            for (int i___8792594a83694733aa0eee122170101e = 0; i___8792594a83694733aa0eee122170101e < countPositions___b3fe4c6db0ac4d28b1ad7c4dbe4ae0c9; i___8792594a83694733aa0eee122170101e++)
+//            var countPositions___08e553870d464679ad7cd408e046c768 = reader.ReadInt32();
+//            var @Positions___af785b88f201418fbb64e6bacb60bb71 = new System.Collections.Generic.List<System.Drawing.Point>(countPositions___08e553870d464679ad7cd408e046c768);
+//            for (int i___bff459de96f84e0a8b55070d7619d3d8 = 0; i___bff459de96f84e0a8b55070d7619d3d8 < countPositions___08e553870d464679ad7cd408e046c768; i___bff459de96f84e0a8b55070d7619d3d8++)
 //            {
 
-//                System.Drawing.Point @Point___122cb66a470841a38c62fc84e9458368;
+//                System.Drawing.Point @Point___b7b996746025442686855337a4731681;
 //                {
-//                    var @IsEmpty___0c9decf8ed684e36a9dfe35ed3f555dd = reader.ReadBoolean();
-//                    var @X___c60a4afdc63046f3acac9a9686d46299 = reader.ReadInt32();
-//                    var @Y___bf153f06f105458692f173c473483c64 = reader.ReadInt32();
+//                    var @IsEmpty___3eea643f9eb64353a99e07480ae3e8b5 = reader.ReadBoolean();
+//                    var @X___479243cddc8146ecbb52553008056d2b = reader.ReadInt32();
+//                    var @Y___74fe9a617cc34f2da39d244266263c2d = reader.ReadInt32();
 
-//                    @Point___122cb66a470841a38c62fc84e9458368 = new System.Drawing.Point(X___c60a4afdc63046f3acac9a9686d46299, Y___bf153f06f105458692f173c473483c64);
+//                    @Point___b7b996746025442686855337a4731681 = new System.Drawing.Point(X___479243cddc8146ecbb52553008056d2b, Y___74fe9a617cc34f2da39d244266263c2d);
 
 
 
 //                }
 
 
-//                @Positions___42440040ebe74f148d8ecfad5479167a.Add(@Point___122cb66a470841a38c62fc84e9458368);
+//                @Positions___af785b88f201418fbb64e6bacb60bb71.Add(@Point___b7b996746025442686855337a4731681);
 //            }
 
 
-//            var @Text___f53e0845bc35444fb1a28eb50dbf7585 = reader.ReadString();
+//            var @Text___567eb6da2a4a40b8839f32682323aef9 = reader.ReadString();
 
-//            var countUsersList___6188c1ca65c146f78b26b88ddab77558 = reader.ReadInt32();
-//            var @UsersList___0d4cf4a53442436285bb51690f03eae9 = new System.Collections.Generic.List<DEMO.SUTMessage.User>(countUsersList___6188c1ca65c146f78b26b88ddab77558);
-//            for (int i___f408c9828c264bc6b38096f59c1bc8a3 = 0; i___f408c9828c264bc6b38096f59c1bc8a3 < countUsersList___6188c1ca65c146f78b26b88ddab77558; i___f408c9828c264bc6b38096f59c1bc8a3++)
+//            var countUsersList___1661e6ceb3ce4d26bf9a229720b4a7d5 = reader.ReadInt32();
+//            var @UsersList___dcee38cccd5640cba39ed970cac813a3 = new System.Collections.Generic.List<DEMO.SUTMessage.User>(countUsersList___1661e6ceb3ce4d26bf9a229720b4a7d5);
+//            for (int i___e09b5774d550469bb0a5b8b5b5ad54c0 = 0; i___e09b5774d550469bb0a5b8b5b5ad54c0 < countUsersList___1661e6ceb3ce4d26bf9a229720b4a7d5; i___e09b5774d550469bb0a5b8b5b5ad54c0++)
 //            {
-//                var @User___4e2f38bcab134f93828ead6417dd85af = DEMO.SUTMessage.User.DeserializeMe(reader);
-//                @UsersList___0d4cf4a53442436285bb51690f03eae9.Add(@User___4e2f38bcab134f93828ead6417dd85af);
+//                var @User___ba858ff4eec940eabea8949e11775145 = DEMO.SUTMessage.User.DeserializeMe(reader);
+//                @UsersList___dcee38cccd5640cba39ed970cac813a3.Add(@User___ba858ff4eec940eabea8949e11775145);
 //            }
 
 
-//            var countComplainsBases___da2359968d4d4db7abb4cbdbcd4d82b9 = reader.ReadInt32();
-//            var @ComplainsBases___9f6fbd6ba1334b7aa35304b78bc4244a = new System.Collections.Generic.List<DEMO.ComplainBase>(countComplainsBases___da2359968d4d4db7abb4cbdbcd4d82b9);
-//            for (int i___5f1e9ca496a548b4a9c6f325d6ef0df7 = 0; i___5f1e9ca496a548b4a9c6f325d6ef0df7 < countComplainsBases___da2359968d4d4db7abb4cbdbcd4d82b9; i___5f1e9ca496a548b4a9c6f325d6ef0df7++)
+//            var countComplainsBases___c0fd4e152b584e119b48fe228e6ffbd0 = reader.ReadInt32();
+//            var @ComplainsBases___a9ab8aaeaafa43c79abca40cc4d9a8d0 = new System.Collections.Generic.List<DEMO.ComplainBase>(countComplainsBases___c0fd4e152b584e119b48fe228e6ffbd0);
+//            for (int i___c13cddcd5d4d4f4e8427de32101bfb6f = 0; i___c13cddcd5d4d4f4e8427de32101bfb6f < countComplainsBases___c0fd4e152b584e119b48fe228e6ffbd0; i___c13cddcd5d4d4f4e8427de32101bfb6f++)
 //            {
 
-//                DEMO.ComplainBase @ComplainBase___64916bf694ed4111bd8106bacbbfa566;
+//                DEMO.ComplainBase @ComplainBase___9620b125ba7b46ebb88a00e1e8330ed2;
 //                {
-//                    var @Complain___aeffd2623f5a4417be401ba7b5e6bcf0 = reader.ReadString();
+//                    var @Complain___7cbed4c995ac4bf98fe5dd485fd239bd = reader.ReadString();
 
-//                    var countComplains___c86f8a4f0bb8401abda8db559fff9405 = reader.ReadInt32();
-//                    var @Complains___7ba9f3fc3c6648478ab29c3dc24783cf = new System.Collections.Generic.List<string>(countComplains___c86f8a4f0bb8401abda8db559fff9405);
-//                    for (int i___b2d4fbc9b1af42c9acf67762017920e8 = 0; i___b2d4fbc9b1af42c9acf67762017920e8 < countComplains___c86f8a4f0bb8401abda8db559fff9405; i___b2d4fbc9b1af42c9acf67762017920e8++)
+//                    var countComplains___e6ab9d932e874849bfdd17c4d3a7e0ea = reader.ReadInt32();
+//                    var @Complains___4de374f34022427d84d7d1b5f50a3cf7 = new System.Collections.Generic.List<string>(countComplains___e6ab9d932e874849bfdd17c4d3a7e0ea);
+//                    for (int i___b39b692c6bd34c6fa6eec223b8f364b6 = 0; i___b39b692c6bd34c6fa6eec223b8f364b6 < countComplains___e6ab9d932e874849bfdd17c4d3a7e0ea; i___b39b692c6bd34c6fa6eec223b8f364b6++)
 //                    {
-//                        var @String___c8bc4fa0b8eb45cb96b0f9d5be54538b = reader.ReadString();
-//                        @Complains___7ba9f3fc3c6648478ab29c3dc24783cf.Add(@String___c8bc4fa0b8eb45cb96b0f9d5be54538b);
+//                        var @String___c701dd6204b940489e28f0b1ef8bd199 = reader.ReadString();
+//                        @Complains___4de374f34022427d84d7d1b5f50a3cf7.Add(@String___c701dd6204b940489e28f0b1ef8bd199);
 //                    }
 
 
-//                    @ComplainBase___64916bf694ed4111bd8106bacbbfa566 = new DEMO.ComplainBase();
+//                    @ComplainBase___9620b125ba7b46ebb88a00e1e8330ed2 = new DEMO.ComplainBase();
 
-//                    @ComplainBase___64916bf694ed4111bd8106bacbbfa566.Complain = Complain___aeffd2623f5a4417be401ba7b5e6bcf0;
-//                    @ComplainBase___64916bf694ed4111bd8106bacbbfa566.Complains = Complains___7ba9f3fc3c6648478ab29c3dc24783cf;
+//                    @ComplainBase___9620b125ba7b46ebb88a00e1e8330ed2.Complain = Complain___7cbed4c995ac4bf98fe5dd485fd239bd;
+//                    @ComplainBase___9620b125ba7b46ebb88a00e1e8330ed2.Complains = Complains___4de374f34022427d84d7d1b5f50a3cf7;
 
 
 //                }
 
 
-//                @ComplainsBases___9f6fbd6ba1334b7aa35304b78bc4244a.Add(@ComplainBase___64916bf694ed4111bd8106bacbbfa566);
+//                @ComplainsBases___a9ab8aaeaafa43c79abca40cc4d9a8d0.Add(@ComplainBase___9620b125ba7b46ebb88a00e1e8330ed2);
 //            }
 
 
-//            var countCountings___9a8461ede73742c787f042ed6e3c07a5 = reader.ReadInt32();
-//            var @Countings___ec1b5d1c70fc4883a4405ec4baeabe98 = new System.Collections.Generic.List<short>(countCountings___9a8461ede73742c787f042ed6e3c07a5);
-//            for (int i___618c559144a547d2ad53d0b49b087d8f = 0; i___618c559144a547d2ad53d0b49b087d8f < countCountings___9a8461ede73742c787f042ed6e3c07a5; i___618c559144a547d2ad53d0b49b087d8f++)
+//            var countCountings___e7ddac5d58b44c24baf02cd2424d858c = reader.ReadInt32();
+//            var @Countings___9899105a9d774d349cb8a0c05279b1ac = new System.Collections.Generic.List<short>(countCountings___e7ddac5d58b44c24baf02cd2424d858c);
+//            for (int i___8b5c2f21f5eb42648e8adc8c1cae6138 = 0; i___8b5c2f21f5eb42648e8adc8c1cae6138 < countCountings___e7ddac5d58b44c24baf02cd2424d858c; i___8b5c2f21f5eb42648e8adc8c1cae6138++)
 //            {
-//                var @Int16___99ca8f7fe59d4ef490b3432b5288c2c7 = reader.ReadInt16();
-//                @Countings___ec1b5d1c70fc4883a4405ec4baeabe98.Add(@Int16___99ca8f7fe59d4ef490b3432b5288c2c7);
+//                var @Int16___584437aae39e47c780794af9c38682b3 = reader.ReadInt16();
+//                @Countings___9899105a9d774d349cb8a0c05279b1ac.Add(@Int16___584437aae39e47c780794af9c38682b3);
 //            }
 
 
-//            var countCountingDic___224ea14074af4297b5a06e9008ee2340 = reader.ReadInt32();
-//            var @CountingDic___a4b3e85e525345ecb5b30c97c59170ef = new System.Collections.Generic.Dictionary<short, DEMO.ComplainBase>(countCountingDic___224ea14074af4297b5a06e9008ee2340);
-//            for (int i___2fa00c43fe4d423d813cc50545c26007 = 0; i___2fa00c43fe4d423d813cc50545c26007 < countCountingDic___224ea14074af4297b5a06e9008ee2340; i___2fa00c43fe4d423d813cc50545c26007++)
+//            var countCountingDic___6836c2314ef544cda7b5954bb2615b90 = reader.ReadInt32();
+//            var @CountingDic___d9b8473c626f4e239c72aed2ff285df1 = new System.Collections.Generic.Dictionary<short, DEMO.ComplainBase>(countCountingDic___6836c2314ef544cda7b5954bb2615b90);
+//            for (int i___dee8604e900647098f5ebb97aa49fb9a = 0; i___dee8604e900647098f5ebb97aa49fb9a < countCountingDic___6836c2314ef544cda7b5954bb2615b90; i___dee8604e900647098f5ebb97aa49fb9a++)
 //            {
-//                var @key___eb59a5dcc869403ba43d2d4f0a583c62 = reader.ReadInt16();
+//                var @key___61ba53b0de914e54821c87d4cd2b46db = reader.ReadInt16();
 
-//                DEMO.ComplainBase @value___b093c4b7897d4211b602e0a3590584b2;
+//                DEMO.ComplainBase @value___ab6266a539af4c5a92fdc5fa0226ce63;
 //                {
-//                    var @Complain___100bee7bca8c4e628e4839ff23ce5e0d = reader.ReadString();
+//                    var @Complain___a061480c5952438e935df79512fb2946 = reader.ReadString();
 
-//                    var countComplains___97c13418057940d09548ad6fec4b91dd = reader.ReadInt32();
-//                    var @Complains___799743c0efd54baf9b53873318fc4b18 = new System.Collections.Generic.List<string>(countComplains___97c13418057940d09548ad6fec4b91dd);
-//                    for (int i___56cab966f59a42e2afb7a647ae4af38c = 0; i___56cab966f59a42e2afb7a647ae4af38c < countComplains___97c13418057940d09548ad6fec4b91dd; i___56cab966f59a42e2afb7a647ae4af38c++)
+//                    var countComplains___a744efd6a7864a0086945b2b71a156f2 = reader.ReadInt32();
+//                    var @Complains___f5ccfddcb8c94a7097e34acfabed15a8 = new System.Collections.Generic.List<string>(countComplains___a744efd6a7864a0086945b2b71a156f2);
+//                    for (int i___f616da761ef04116a23b2f1e136076f1 = 0; i___f616da761ef04116a23b2f1e136076f1 < countComplains___a744efd6a7864a0086945b2b71a156f2; i___f616da761ef04116a23b2f1e136076f1++)
 //                    {
-//                        var @String___6aacf146c2614f31b8a5053e14594e67 = reader.ReadString();
-//                        @Complains___799743c0efd54baf9b53873318fc4b18.Add(@String___6aacf146c2614f31b8a5053e14594e67);
+//                        var @String___30b8279b3bd24d76924e4739c0ba9980 = reader.ReadString();
+//                        @Complains___f5ccfddcb8c94a7097e34acfabed15a8.Add(@String___30b8279b3bd24d76924e4739c0ba9980);
 //                    }
 
 
-//                    @value___b093c4b7897d4211b602e0a3590584b2 = new DEMO.ComplainBase();
+//                    @value___ab6266a539af4c5a92fdc5fa0226ce63 = new DEMO.ComplainBase();
 
-//                    @value___b093c4b7897d4211b602e0a3590584b2.Complain = Complain___100bee7bca8c4e628e4839ff23ce5e0d;
-//                    @value___b093c4b7897d4211b602e0a3590584b2.Complains = Complains___799743c0efd54baf9b53873318fc4b18;
+//                    @value___ab6266a539af4c5a92fdc5fa0226ce63.Complain = Complain___a061480c5952438e935df79512fb2946;
+//                    @value___ab6266a539af4c5a92fdc5fa0226ce63.Complains = Complains___f5ccfddcb8c94a7097e34acfabed15a8;
 
 
 //                }
 
 
-//                @CountingDic___a4b3e85e525345ecb5b30c97c59170ef.Add(key___eb59a5dcc869403ba43d2d4f0a583c62, value___b093c4b7897d4211b602e0a3590584b2);
+//                @CountingDic___d9b8473c626f4e239c72aed2ff285df1.Add(key___61ba53b0de914e54821c87d4cd2b46db, value___ab6266a539af4c5a92fdc5fa0226ce63);
 //            }
 
 
-//            var countReadOnlyCountings___b8cdfee9f3ef4416bb337639f1d88ea4 = reader.ReadInt32();
-//            var @ReadOnlyCountings___40157a6464214caf8675be97cf80c893 = new System.Collections.Generic.List<short>(countReadOnlyCountings___b8cdfee9f3ef4416bb337639f1d88ea4);
-//            for (int i___6f041c0ff2ac411c8c2b868f17d272af = 0; i___6f041c0ff2ac411c8c2b868f17d272af < countReadOnlyCountings___b8cdfee9f3ef4416bb337639f1d88ea4; i___6f041c0ff2ac411c8c2b868f17d272af++)
+//            var countReadOnlyCountings___e62ed938034a445fabdc3af2f1a772af = reader.ReadInt32();
+//            var @ReadOnlyCountings___a553a83447024dd5af633f4e8d93c2c0 = new System.Collections.Generic.List<short>(countReadOnlyCountings___e62ed938034a445fabdc3af2f1a772af);
+//            for (int i___94a08fdf49274c0e848d6ea58f2ef6c2 = 0; i___94a08fdf49274c0e848d6ea58f2ef6c2 < countReadOnlyCountings___e62ed938034a445fabdc3af2f1a772af; i___94a08fdf49274c0e848d6ea58f2ef6c2++)
 //            {
-//                var @Int16___810fe12da7b643aa80a01facb821b3a0 = reader.ReadInt16();
-//                @ReadOnlyCountings___40157a6464214caf8675be97cf80c893.Add(@Int16___810fe12da7b643aa80a01facb821b3a0);
+//                var @Int16___8c3bb266dc5946eca44c94a06ab7e99b = reader.ReadInt16();
+//                @ReadOnlyCountings___a553a83447024dd5af633f4e8d93c2c0.Add(@Int16___8c3bb266dc5946eca44c94a06ab7e99b);
 //            }
 
 
-//            var @Right___de7fb3c3a3484a79bbcfee937a2a3c9d = (AccessRight)reader.ReadInt32();
-
-//            DEMO.ComplainBase @Complain___b1d0b6868aa44c76acae71fa08ec1559;
+//            var countReadOnlyCountingsButSetable___e8cbcb25bc924f5e91474f39d1dddf9c = reader.ReadInt32();
+//            var @ReadOnlyCountingsButSetable___b2f2e14067b24f648fcdd8a503f56d1d = new System.Collections.Generic.List<short>(countReadOnlyCountingsButSetable___e8cbcb25bc924f5e91474f39d1dddf9c);
+//            for (int i___0bf4b71909d64427bc1d06d4d4f74d8b = 0; i___0bf4b71909d64427bc1d06d4d4f74d8b < countReadOnlyCountingsButSetable___e8cbcb25bc924f5e91474f39d1dddf9c; i___0bf4b71909d64427bc1d06d4d4f74d8b++)
 //            {
-//                var @Complain___752ce844f00341bebb9a333b6fbc432e = reader.ReadString();
+//                var @Int16___ba8d138814744f7697db3fe9eb4dcee1 = reader.ReadInt16();
+//                @ReadOnlyCountingsButSetable___b2f2e14067b24f648fcdd8a503f56d1d.Add(@Int16___ba8d138814744f7697db3fe9eb4dcee1);
+//            }
 
-//                var countComplains___b6235a3afd65408aaa7e1a5be9efe118 = reader.ReadInt32();
-//                var @Complains___a879a3340a3948d58796237f43d88ca2 = new System.Collections.Generic.List<string>(countComplains___b6235a3afd65408aaa7e1a5be9efe118);
-//                for (int i___3a92251f3f7b4a11ad5ac55d0c4c3507 = 0; i___3a92251f3f7b4a11ad5ac55d0c4c3507 < countComplains___b6235a3afd65408aaa7e1a5be9efe118; i___3a92251f3f7b4a11ad5ac55d0c4c3507++)
+
+//            var @Right___51c9587c55044acab9a870d2be4535a6 = (AccessRight)reader.ReadInt32();
+
+//            DEMO.ComplainBase @Complain___b342c32a6cc844c58dd7d09e30504697;
+//            {
+//                var @Complain___05419e2bca97492b9ef346666e9fd138 = reader.ReadString();
+
+//                var countComplains___5bff023acd1149259927a19efe436aaa = reader.ReadInt32();
+//                var @Complains___41bc6277e26e4bcbb2a5e15eb3388387 = new System.Collections.Generic.List<string>(countComplains___5bff023acd1149259927a19efe436aaa);
+//                for (int i___9bd7618e79404db5bb672df934fd0e27 = 0; i___9bd7618e79404db5bb672df934fd0e27 < countComplains___5bff023acd1149259927a19efe436aaa; i___9bd7618e79404db5bb672df934fd0e27++)
 //                {
-//                    var @String___de69610e750442eea73b24b3f8d6f638 = reader.ReadString();
-//                    @Complains___a879a3340a3948d58796237f43d88ca2.Add(@String___de69610e750442eea73b24b3f8d6f638);
+//                    var @String___1355e388e7144faea48b1dd4348f945c = reader.ReadString();
+//                    @Complains___41bc6277e26e4bcbb2a5e15eb3388387.Add(@String___1355e388e7144faea48b1dd4348f945c);
 //                }
 
 
-//                @Complain___b1d0b6868aa44c76acae71fa08ec1559 = new DEMO.ComplainBase();
+//                @Complain___b342c32a6cc844c58dd7d09e30504697 = new DEMO.ComplainBase();
 
-//                @Complain___b1d0b6868aa44c76acae71fa08ec1559.Complain = Complain___752ce844f00341bebb9a333b6fbc432e;
-//                @Complain___b1d0b6868aa44c76acae71fa08ec1559.Complains = Complains___a879a3340a3948d58796237f43d88ca2;
+//                @Complain___b342c32a6cc844c58dd7d09e30504697.Complain = Complain___05419e2bca97492b9ef346666e9fd138;
+//                @Complain___b342c32a6cc844c58dd7d09e30504697.Complains = Complains___41bc6277e26e4bcbb2a5e15eb3388387;
 
 
 //            }
 
 
-//            var @AssignedUser___418d118f497a4b0894fd3aeac07fa7b4 = DEMO.SUTMessage.User.DeserializeMe(reader);
+//            var @AssignedUser___1e76c80413f34f288a45c7610272faaf = DEMO.SUTMessage.User.DeserializeMe(reader);
 
-//            System.Drawing.Point @Position___3be4d91e4844493f92f29ef2801c39b1;
+//            System.Drawing.Point @Position___8df28725e93c4938941988693a13a1b7;
 //            {
-//                var @IsEmpty___2cb15ba260fa46f98d8abe74a374bede = reader.ReadBoolean();
-//                var @X___119f8a3248884c30ac0003ba5995eb54 = reader.ReadInt32();
-//                var @Y___b6148dd5081f4565af2ad9dfa2dcd075 = reader.ReadInt32();
+//                var @IsEmpty___35c400fc4d8042208d5da9feefa5a23a = reader.ReadBoolean();
+//                var @X___23ad3b47fc8f44a3aa28cf59786ec834 = reader.ReadInt32();
+//                var @Y___5f645ee520ac480790a87139e0a30769 = reader.ReadInt32();
 
-//                @Position___3be4d91e4844493f92f29ef2801c39b1 = new System.Drawing.Point(X___119f8a3248884c30ac0003ba5995eb54, Y___b6148dd5081f4565af2ad9dfa2dcd075);
+//                @Position___8df28725e93c4938941988693a13a1b7 = new System.Drawing.Point(X___23ad3b47fc8f44a3aa28cf59786ec834, Y___5f645ee520ac480790a87139e0a30769);
 
 
 
 //            }
 
 
-//            DEMO.IUser @ContactUser___560f8daa66b44b398ce9af0ae3a7a652;
-//            {
-//                var @Name___84708c0b836c4ba19465091def3800bc = reader.ReadString();
-//                @ContactUser___560f8daa66b44b398ce9af0ae3a7a652 = default;
-//            }
+//            var @ContactUser___c6ba80454882441992f8ed6c79860095 = DEMO.SUTMessage.User.DeserializeMe(reader);
+//            var @AlternativUser___5c43d9aa22524dad814c0724db8d6432 = DEMO.SUTMessage.User.DeserializeMe(reader);
+//            var @X___e0c2f4d23c3949a8b6331144c5e70152 = reader.ReadInt32();
+//            var @countPositions___9e4fef9a15754362bad4c5a93d8e9914 = reader.ReadInt32();
+
+//            var returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809 = new DEMO.SUTMessage();
+
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.Positions = Positions___af785b88f201418fbb64e6bacb60bb71.ToArray();
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.Text = Text___567eb6da2a4a40b8839f32682323aef9;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.UsersList = UsersList___dcee38cccd5640cba39ed970cac813a3;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.ComplainsBases = ComplainsBases___a9ab8aaeaafa43c79abca40cc4d9a8d0;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.Countings = Countings___9899105a9d774d349cb8a0c05279b1ac;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.CountingDic = CountingDic___d9b8473c626f4e239c72aed2ff285df1;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.ReadOnlyCountingsButSetable = ReadOnlyCountingsButSetable___b2f2e14067b24f648fcdd8a503f56d1d;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.Right = Right___51c9587c55044acab9a870d2be4535a6;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.Complain = Complain___b342c32a6cc844c58dd7d09e30504697;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.AssignedUser = AssignedUser___1e76c80413f34f288a45c7610272faaf;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.Position = Position___8df28725e93c4938941988693a13a1b7;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.AlternativUser = AlternativUser___5c43d9aa22524dad814c0724db8d6432;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.X = X___e0c2f4d23c3949a8b6331144c5e70152;
+//            returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809.countPositions = countPositions___9e4fef9a15754362bad4c5a93d8e9914;
 
 
-//            DEMO.IUser @AlternativUser___61a963f43a204a448b82872d4890edb7;
-//            {
-//                var @Name___d077229cc7374067b670dbad2c0d7dd9 = reader.ReadString();
-//                @AlternativUser___61a963f43a204a448b82872d4890edb7 = default;
-//            }
-
-
-//            var @X___c3ac69e7798f41e3987a41acc585857b = reader.ReadInt32();
-//            var @countPositions___b140236c4fe6477a9b0b3c130b715338 = reader.ReadInt32();
-
-//            var returnValue___4282e785524240f0a10aba1aaa8df738 = new DEMO.SUTMessage();
-
-//            returnValue___4282e785524240f0a10aba1aaa8df738.Positions = Positions___42440040ebe74f148d8ecfad5479167a.ToArray();
-//            returnValue___4282e785524240f0a10aba1aaa8df738.Text = Text___f53e0845bc35444fb1a28eb50dbf7585;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.UsersList = UsersList___0d4cf4a53442436285bb51690f03eae9;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.ComplainsBases = ComplainsBases___9f6fbd6ba1334b7aa35304b78bc4244a;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.Countings = Countings___ec1b5d1c70fc4883a4405ec4baeabe98;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.CountingDic = CountingDic___a4b3e85e525345ecb5b30c97c59170ef;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.Right = Right___de7fb3c3a3484a79bbcfee937a2a3c9d;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.Complain = Complain___b1d0b6868aa44c76acae71fa08ec1559;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.AssignedUser = AssignedUser___418d118f497a4b0894fd3aeac07fa7b4;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.Position = Position___3be4d91e4844493f92f29ef2801c39b1;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.AlternativUser = AlternativUser___61a963f43a204a448b82872d4890edb7;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.X = X___c3ac69e7798f41e3987a41acc585857b;
-//            returnValue___4282e785524240f0a10aba1aaa8df738.countPositions = countPositions___b140236c4fe6477a9b0b3c130b715338;
-
-
-//            return returnValue___4282e785524240f0a10aba1aaa8df738;
+//            return returnValue___e1e8a3b26d754eb7b8d77b5cbe5f8809;
 //        }
 //    }
 //}

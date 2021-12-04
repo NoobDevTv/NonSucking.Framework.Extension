@@ -17,7 +17,7 @@ namespace DEMO
         static void Main(string[] args)
         {
 
-            var sutMessage = new SUTMessage
+            var sutMessage = new SUTMessage()
             {
                 AlternativUser = new User { Name = "Okay" },
                 AssignedUser = new User { Name = "OkayTest" },
@@ -64,6 +64,12 @@ namespace DEMO
             {
                 using var br = new BinaryReader(ms);
                 var sutMessageDes = SUTMessage.Deserialize(br);
+
+                if(sutMessageDes == sutMessage)
+                {
+                    ;
+                }
+
             }
 
 

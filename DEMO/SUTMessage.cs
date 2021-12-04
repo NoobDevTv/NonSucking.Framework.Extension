@@ -15,9 +15,11 @@ using static DEMO.SUTMessage;
 namespace DEMO
 {
 
+    [Nooson]
     public partial class ComplaingBaseBase
     {
         public string TestBase { get; set; }
+
     }
 
     [Nooson]
@@ -77,10 +79,10 @@ namespace DEMO
     }
 
     [Nooson]
-    public partial class SUTMessage
+    public partial class SUTMessage : IEquatable<SUTMessage>
     {
         public Point[] Positions { get; set; }
-        [NoosonIgnore]
+        //[NoosonIgnore]
         public int Type { get; set; }
         public string Text { get; set; }
         public List<User> UsersList { get; set; }
@@ -102,6 +104,12 @@ namespace DEMO
 
         public int countPositions { get; set; }
 
+        [NoosonInclude]
+        private int randomField = new Random().Next();
+
+        [NoosonInclude]
+        private readonly string forCtor = DateTime.Now.ToString("HH:mm:ss.fffffff");
+
         public enum AccessRight
         {
             A, B, C
@@ -111,6 +119,12 @@ namespace DEMO
         {
             ReadOnlyCountings = new List<short>();
             ContactUser = new User() { Name = " " };
+        }
+
+        [NoosonPreferredCtor]
+        public SUTMessage([NoosonParameter(nameof(forCtor))] string createTime) : this()
+        {
+            forCtor = createTime;
         }
 
         public static void SerializeIUser(BinaryWriter bw, IUser user)
@@ -123,10 +137,62 @@ namespace DEMO
             return new User() { Name = br.ReadString() };
         }
 
+        public override bool Equals(object obj) => Equals(obj as SUTMessage);
+        public bool Equals(SUTMessage other) => 
+            other is not null 
+            && Positions.SequenceEqual(other.Positions) 
+            //&& Type == other.Type 
+            && Text == other.Text 
+            && UsersList.SequenceEqual(other.UsersList) 
+            && ComplainsBases.SequenceEqual(other.ComplainsBases) 
+            && Countings.SequenceEqual(other.Countings) 
+            && CountingDic.SequenceEqual( other.CountingDic) 
+            && ReadOnlyCountings.SequenceEqual(other.ReadOnlyCountings) 
+            && ReadOnlyCountingsButSetable.SequenceEqual(other.ReadOnlyCountingsButSetable) 
+            && Right == other.Right 
+            && EqualityComparer<ComplainBase>.Default.Equals(Complain, other.Complain) 
+            && EqualityComparer<User>.Default.Equals(AssignedUser, other.AssignedUser) 
+            && Position.Equals(other.Position) 
+            && EqualityComparer<IUser>.Default.Equals(ContactUser, other.ContactUser) 
+            && EqualityComparer<IUser>.Default.Equals(AlternativUser, other.AlternativUser) 
+            && X == other.X 
+            && countPositions == other.countPositions 
+            && randomField == other.randomField 
+            && forCtor == other.forCtor;
+        /*
+         EqualityComparer<List<User>>.Default.Equals(UsersList, other.UsersList) && EqualityComparer<List<ComplainBase>>.Default.Equals(ComplainsBases, other.ComplainsBases) && EqualityComparer<List<short>>.Default.Equals(Countings, other.Countings) && EqualityComparer<Dictionary<short, ComplainBase>>.Default.Equals(CountingDic, other.CountingDic) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountings, other.ReadOnlyCountings) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountingsButSetable, other.ReadOnlyCountingsButSetable)         
+        */
+        public static bool operator ==(SUTMessage left, SUTMessage right) => EqualityComparer<SUTMessage>.Default.Equals(left, right);
+        public static bool operator !=(SUTMessage left, SUTMessage right) => !(left == right);
+
+        public override int GetHashCode()
+        {
+            var hash = new HashCode();
+            hash.Add(Positions);
+            hash.Add(Type);
+            hash.Add(Text);
+            hash.Add(UsersList);
+            hash.Add(ComplainsBases);
+            hash.Add(Countings);
+            hash.Add(CountingDic);
+            hash.Add(ReadOnlyCountings);
+            hash.Add(ReadOnlyCountingsButSetable);
+            hash.Add(Right);
+            hash.Add(Complain);
+            hash.Add(AssignedUser);
+            hash.Add(Position);
+            hash.Add(ContactUser);
+            hash.Add(AlternativUser);
+            hash.Add(X);
+            hash.Add(countPositions);
+            hash.Add(randomField);
+            hash.Add(forCtor);
+            return hash.ToHashCode();
+        }
 
         [NoosonCustom(SerializeMethodName = "SerializeMe", DeserializeMethodName = "DeserializeMe")]
 
-        public class User : IUser
+        public class User : IUser, IEquatable<User>
         {
             public string Name { get; set; }
 
@@ -155,7 +221,15 @@ namespace DEMO
             {
                 return new User() { Name = reader.ReadString() };
             }
+
+            public override bool Equals(object obj) => Equals(obj as User);
+            public bool Equals(User other) => other != null && Name == other.Name;
+            public override int GetHashCode() => HashCode.Combine(Name);
+
+            public static bool operator ==(User left, User right) => EqualityComparer<User>.Default.Equals(left, right);
+            public static bool operator !=(User left, User right) => !(left == right);
         }
+
     }
 
 
@@ -205,10 +279,17 @@ namespace DEMO
 
 
     //[Nooson]
-    public partial class ComplainBase
+    public partial class ComplainBase : IEquatable<ComplainBase>
     {
         public string Complain { get; set; }
         public List<string> Complains { get; set; }
+
+        public override bool Equals(object obj) => Equals(obj as ComplainBase);
+        public bool Equals(ComplainBase other) => other != null && Complain == other.Complain && Complains.SequenceEqual(other.Complains);
+        public override int GetHashCode() => HashCode.Combine(Complain, Complains);
+
+        public static bool operator ==(ComplainBase left, ComplainBase right) => EqualityComparer<ComplainBase>.Default.Equals(left, right);
+        public static bool operator !=(ComplainBase left, ComplainBase right) => !(left == right);
 
         //public ComplainBase(string abc)
         //{
