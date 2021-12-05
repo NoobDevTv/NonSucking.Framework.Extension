@@ -15,11 +15,11 @@ namespace NonSucking.Framework.Serialization.Tests
         [Test]
         public static void Debug()
         {
-            const string demoPath= @"..\..\..\..\DEMO\";
-            var sutMessage = @$"{demoPath}SUTMessage.cs";
-            var iUser = @$"{demoPath}IUser.cs";
-            var message = @$"{demoPath}Message.cs";
-            var singePropTest = @$"{demoPath}SinglePropTest.cs";
+            string demoPath= Path.Combine("..", "..", "..", "..", "DEMO");
+            var sutMessage = Path.Combine(demoPath, "SUTMessage.cs");
+            var iUser = Path.Combine(demoPath, "IUser.cs");
+            var message = Path.Combine(demoPath, "Message.cs");
+            var singePropTest = Path.Combine(demoPath, "SinglePropTest.cs");
 
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
