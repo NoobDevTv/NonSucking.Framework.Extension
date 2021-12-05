@@ -18,6 +18,7 @@ namespace DEMO
     [Nooson]
     public partial class ComplaingBaseBase
     {
+        [NoosonIgnore]
         public string InitOnlyABC { get; init; }
 
     }
@@ -27,6 +28,7 @@ namespace DEMO
     {
         //[NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor))]
         //public User ComplainUser { get; set; }
+        [NoosonIgnore]
         public string Complain { get; init; }
         [NoosonCustom(SerializeMethodName = "FirstSerialize", DeserializeMethodName = "FirstDeserialize")]
         public string FirstCustom { get; set; }

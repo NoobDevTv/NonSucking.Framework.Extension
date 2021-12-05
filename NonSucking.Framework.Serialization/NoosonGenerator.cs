@@ -347,8 +347,7 @@ namespace NonSucking.Framework.Serialization
 
                 string propertyName = property.Name;
 
-                if (!IsPropertySupported(property, context)
-                    || property.Symbol.TryGetAttribute(AttributeTemplates.Ignore, out _))
+                if (!IsPropertySupported(property, context))
                 {
                     continue;
                 }

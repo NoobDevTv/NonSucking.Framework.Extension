@@ -29,6 +29,9 @@ namespace NonSucking.Framework.Serialization
                 yield break;
             foreach (var member in symbol.GetMembers())
             {
+                if (member.TryGetAttribute(AttributeTemplates.Ignore, out _))
+                    continue;
+
                 if (member is IPropertySymbol propSymbol)
                 {
                     yield return new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
