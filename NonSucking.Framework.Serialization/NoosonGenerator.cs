@@ -225,8 +225,8 @@ namespace NonSucking.Framework.Serialization
                 3. ✓ Attributes => Überschreiben von Property Namen zu Ctor Parameter
                 4. ✓ Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
                 1. ✓ Listen: IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
-                a.   Init Only Properties (Aktuell zählen sie für uns als Readonly)
-
+                a. ✓ Init Only Properties (Aktuell zählen sind quasi Readonly werden aber als Writeable gesehen, Error und rausfiltern)
+                
                 *: ✓ Serialize bzw. Deserialize auf List Items aufrufen wenn möglich
                 *: ✓ Randomize der count variable beim Deserialize
                 *: ✓ Serialize Member access
@@ -246,6 +246,7 @@ namespace NonSucking.Framework.Serialization
                 Future:
                 7. ✓ NoosonInclude for fields
                 5.   BinaryWriter / Span Switch/Off/On
+                a.   Init Only Properties (Aktuell zählen sind quasi Readonly werden aber als Writeable gesehen)
                 
                 OptIn Serialize Features:
                 0.   IEnumerable<T> => List<T> mit byte flag, ob noch etwas kommt
@@ -262,7 +263,11 @@ namespace NonSucking.Framework.Serialization
                     .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInTypes, true)
                     .WithChangedOption(CSharpFormattingOptions.IndentBlock, false)
                     ;
-                var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
+                var formattedText
+                    = Formatter
+                        .Format(sourceCode, workspace, options)
+                        .NormalizeWhitespace()
+                        .ToFullString();
 
                 sourceProductionContext.AddSource(hintName, formattedText);
             }
@@ -302,7 +307,7 @@ namespace NonSucking.Framework.Serialization
         {
             var statements
                 = GenerateStatementsForProps(visitInfo.Properties, context, methodType)
-                .Where(x=>x.Count > 0)
+                .Where(x => x.Count > 0)
                 .SelectMany(x => x)
                 .ToList();
 
@@ -368,6 +373,17 @@ namespace NonSucking.Framework.Serialization
                     context.AddDiagnostic("0007",
                            "",
                            "Properties that are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                           property.Symbol,
+                           DiagnosticSeverity.Error
+                           );
+                    return false;
+                }
+                else if (propSymbol.SetMethod is not null && propSymbol.SetMethod.IsInitOnly)
+                {
+
+                    context.AddDiagnostic("0011",
+                           "",
+                           "Properties who are init only are (currently) not supported. Implemented a custom serializer method or ignore this property.",
                            property.Symbol,
                            DiagnosticSeverity.Error
                            );

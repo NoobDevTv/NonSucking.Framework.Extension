@@ -18,12 +18,11 @@ namespace DEMO
     [Nooson]
     public partial class ComplaingBaseBase
     {
-        public List<ComplainBase> AssignedUser { get; set; }
+        public string InitOnlyABC { get; init; }
 
     }
 
     [Nooson]
-
     public partial class ComplainBaseWithCtor : ComplaingBaseBase
     {
         //[NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor))]

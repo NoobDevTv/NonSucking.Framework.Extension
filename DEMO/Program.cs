@@ -1,11 +1,8 @@
-﻿using Newtonsoft.Json;
-
+﻿
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 
 using static DEMO.SUTMessage;
 
@@ -36,16 +33,16 @@ namespace DEMO
                     { 3, new ComplainBase() { Complain = "SingleComplainInDic", Complains = new List<string> { "MultiComplainsInDic3", "MultiComplainsInDic32", "MultiComplainsInDic33" } } },
                     { 4, new ComplainBase() { Complain = "SingleComplainInDic", Complains = new List<string> { "MultiComplainsInDic4", "MultiComplainsInDic42", "MultiComplainsInDic43" } } }
                 },
-                Countings = new() { 1,3,4,8,9,4564,231,8976,687},
+                Countings = new() { 1, 3, 4, 8, 9, 4564, 231, 8976, 687 },
                 countPositions = 123121,
-                Position = new Point(12,99),
-                Positions = new[] { new Point(777,888), new Point(7770, 4594), new Point(445678, 42), new Point(6456, 4567), },
-                ReadOnlyCountingsButSetable = new List<short> { 100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200},
-                ReadOnlyDicSetable = new Dictionary<short,short>(){ { 22, 33 }, { 44, 55 }, { 6666, 7777 }, { 661, 789 }, },
+                Position = new Point(12, 99),
+                Positions = new[] { new Point(777, 888), new Point(7770, 4594), new Point(445678, 42), new Point(6456, 4567), },
+                ReadOnlyCountingsButSetable = new List<short> { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100, 2200 },
+                ReadOnlyDicSetable = new Dictionary<short, short>() { { 22, 33 }, { 44, 55 }, { 6666, 7777 }, { 661, 789 }, },
                 Right = AccessRight.A,
                 Text = "Just a random text",
                 Type = 897987414,
-                UsersList = new List<User>() { new User() { Name= "1User"}, new User() { Name = "2User" }, new User() { Name = "3User" }, new User() { Name = "4User" } },
+                UsersList = new List<User>() { new User() { Name = "1User" }, new User() { Name = "2User" }, new User() { Name = "3User" }, new User() { Name = "4User" } },
                 X = 123123,
             };
 
