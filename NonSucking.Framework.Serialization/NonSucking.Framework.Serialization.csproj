@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+	<!-- !#USE_Nuget -->
+	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Serialization.props" Condition="'$(Configuration)'=='Release'" />
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>10.0</LangVersion>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<!-- Special properties for analyzer packages. -->
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<IncludeSymbols>false</IncludeSymbols>
@@ -14,10 +16,14 @@
 
 	<ItemGroup>
 		<Compile Remove="Templates\Attribute\**\*.cs" />
+		<EmbeddedResource Include="Templates\Attribute\**\*.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Templates\Attribute\**\*.cs" />
+		<None Include="..\LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
