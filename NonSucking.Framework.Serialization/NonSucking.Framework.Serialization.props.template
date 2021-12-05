@@ -5,8 +5,8 @@
 		<Authors>${AUTHORS}</Authors>
 		<Copyright>${COPYRIGHT}</Copyright>
 		<Company>${COMPANY}</Company>
-		<Title>${TITLE_EXTENSION}</Title>
-		<Description>${DESCRIPTION_EXTENSION}</Description>
+		<Title>${TITLE_SERIALIZATION}</Title>
+		<Description>${DESCRIPTION_SERIALIZATION}</Description>
 		<PackageReleaseNotes>
 			This is a first preview version and not intended for productive use. Not everything has been tested or commented yet.
 
@@ -14,7 +14,7 @@
 			* Typecontainer and Standalone typecontainer added. In a slightly modified variant to ScotlandYard ML and OctoAwesome
 		</PackageReleaseNotes>
 		<PackageTags>
-			${TAGS_EXTENSION}
+			${TAGS_SERIALIZATION}
 		</PackageTags>
 		<!-- <PackageIconUrl>${ICON_URL}</PackageIconUrl> -->
 		<RepositoryUrl>${REPO_URL}</RepositoryUrl>

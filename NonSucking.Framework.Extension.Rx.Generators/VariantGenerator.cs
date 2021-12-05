@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace NonSucking.Framework.Extension.Generators
+namespace NonSucking.Framework.Serialization
 {
     [Generator]
     public class VariantGenerator : ISourceGenerator
