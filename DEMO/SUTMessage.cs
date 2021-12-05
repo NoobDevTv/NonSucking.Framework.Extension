@@ -19,7 +19,6 @@ namespace DEMO
     public partial class ComplaingBaseBase
     {
         public List<ComplainBase> AssignedUser { get; set; }
-        public List<ComplainBase> AssignedUser2 { get; set; }
 
     }
 
@@ -45,7 +44,7 @@ namespace DEMO
         private readonly string valueNever;
 
         [NoosonInclude]
-        [NoosonCustom(SerializeMethodName = "FirstSerialize", DeserializeMethodName = "FirstDeserialize")]
+        [NoosonCustom(SerializeMethodName = "FirstSerialize", SerializeImplementationType = typeof(ComplainBaseWithCtor), DeserializeMethodName = "FirstDeserialize")]
         private string serializeThisFieldForMe = "";
         [NoosonPreferredCtor]
         public ComplainBaseWithCtor(string complain, string valueNever)
@@ -140,27 +139,27 @@ namespace DEMO
         }
 
         public override bool Equals(object obj) => Equals(obj as SUTMessage);
-        public bool Equals(SUTMessage other) => 
-            other is not null 
-            && Positions.SequenceEqual(other.Positions) 
-            && Type == other.Type 
-            && Text == other.Text 
-            && UsersList.SequenceEqual(other.UsersList) 
-            && ComplainsBases.SequenceEqual(other.ComplainsBases) 
-            && Countings.SequenceEqual(other.Countings) 
-            && CountingDic.SequenceEqual( other.CountingDic) 
-            && ReadOnlyCountings.SequenceEqual(other.ReadOnlyCountings) 
-            && ReadOnlyCountingsButSetable.SequenceEqual(other.ReadOnlyCountingsButSetable) 
-            && ReadOnlyDicSetable.SequenceEqual(other.ReadOnlyDicSetable) 
-            && Right == other.Right 
-            && EqualityComparer<ComplainBase>.Default.Equals(Complain, other.Complain) 
-            && EqualityComparer<User>.Default.Equals(AssignedUser, other.AssignedUser) 
-            && Position.Equals(other.Position) 
-            && EqualityComparer<IUser>.Default.Equals(ContactUser, other.ContactUser) 
-            && EqualityComparer<IUser>.Default.Equals(AlternativUser, other.AlternativUser) 
-            && X == other.X 
-            && countPositions == other.countPositions 
-            && randomField == other.randomField 
+        public bool Equals(SUTMessage other) =>
+            other is not null
+            && Positions.SequenceEqual(other.Positions)
+            && Type == other.Type
+            && Text == other.Text
+            && UsersList.SequenceEqual(other.UsersList)
+            && ComplainsBases.SequenceEqual(other.ComplainsBases)
+            && Countings.SequenceEqual(other.Countings)
+            && CountingDic.SequenceEqual(other.CountingDic)
+            && ReadOnlyCountings.SequenceEqual(other.ReadOnlyCountings)
+            && ReadOnlyCountingsButSetable.SequenceEqual(other.ReadOnlyCountingsButSetable)
+            && ReadOnlyDicSetable.SequenceEqual(other.ReadOnlyDicSetable)
+            && Right == other.Right
+            && EqualityComparer<ComplainBase>.Default.Equals(Complain, other.Complain)
+            && EqualityComparer<User>.Default.Equals(AssignedUser, other.AssignedUser)
+            && Position.Equals(other.Position)
+            && EqualityComparer<IUser>.Default.Equals(ContactUser, other.ContactUser)
+            && EqualityComparer<IUser>.Default.Equals(AlternativUser, other.AlternativUser)
+            && X == other.X
+            && countPositions == other.countPositions
+            && randomField == other.randomField
             && forCtor == other.forCtor;
         /*
          EqualityComparer<List<User>>.Default.Equals(UsersList, other.UsersList) && EqualityComparer<List<ComplainBase>>.Default.Equals(ComplainsBases, other.ComplainsBases) && EqualityComparer<List<short>>.Default.Equals(Countings, other.Countings) && EqualityComparer<Dictionary<short, ComplainBase>>.Default.Equals(CountingDic, other.CountingDic) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountings, other.ReadOnlyCountings) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountingsButSetable, other.ReadOnlyCountingsButSetable)         

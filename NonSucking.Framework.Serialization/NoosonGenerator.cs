@@ -211,7 +211,7 @@ namespace NonSucking.Framework.Serialization
                     .Build();
 
                 //rawSourceText += "You need a attribute for property XY, because it's a duplicate";
-                string hintName = $"{classToAugment.TypeSymbol.ToDisplayString()}";
+                string hintName = $"{classToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
 
                 /*
                                             Schlachtplan
