@@ -132,15 +132,15 @@ namespace NonSucking.Framework.Serialization.Serializers
 
                 VariableReference declarationReference;
 
-                if (property.type.TypeKind == TypeKind.Array)
-                {
-                    var method = new MethodReference("ToArray");
-                    declarationReference = new MemberReference(declaration, method);
-                }
-                else
-                {
+                //if (property.type.TypeKind == TypeKind.Array)
+                //{
+                //    var method = new MethodReference("ToArray");
+                //    declarationReference = new MemberReference(declaration, method);
+                //}
+                //else
+                //{
                     declarationReference = new VariableReference(declaration);
-                }
+                //}
 
                 var statement
                     = Statement
@@ -220,8 +220,11 @@ namespace NonSucking.Framework.Serialization.Serializers
 
         internal static StatementSyntax DeclareAssignCtor(TypeSyntax currentType, string instanceName, DeclareOrAndAssign declareAndAssign, ArgumentListSyntax arguments)
         {
+
+
             if (declareAndAssign == DeclareOrAndAssign.DeclareAndAssign)
             {
+                
                 return Statement
                     .Declaration
                     .DeclareAndAssign(instanceName, currentType, arguments);

@@ -16,15 +16,18 @@ namespace NonSucking.Framework.Serialization
         private static readonly Regex endsWithOurSuffixAndGuid;
         internal const string localVariableSuffix = "__";
         internal const string doubleLocalVariableSuffix = localVariableSuffix + localVariableSuffix;
-        internal static int uniqueNumber = -1;
+        internal static int uniqueNumber = 8;
         static Helper()
         {
             //endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-zA-Z]{{1,6}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
-        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol symbol)
+        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
         {
+            if(currentIteration++ > maxRecursion)
+                yield break;
+
             if (symbol is null)
                 yield break;
             foreach (var member in symbol.GetMembers())
@@ -38,7 +41,7 @@ namespace NonSucking.Framework.Serialization
                     yield return new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
                 }
             }
-            foreach (var item in GetMembersWithBase(symbol.BaseType))
+            foreach (var item in GetMembersWithBase(symbol.BaseType, maxRecursion, currentIteration))
             {
                 yield return item;
             }

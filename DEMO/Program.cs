@@ -17,6 +17,11 @@ namespace DEMO
         static void Main(string[] args)
         {
 
+            var bll = new ByteLengthList() { new byte[] { 12, 13, 14 }, new byte[] { 45, 46, 47 } };
+            bll.NameOfList = "ABC";
+
+            var conv = Newtonsoft.Json.JsonConvert.SerializeObject(bll);
+            ;
             var sutMessage = new SUTMessage()
             {
                 AlternativUser = new User { Name = "Okay" },

@@ -17,10 +17,10 @@ namespace NonSucking.Framework.Serialization
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
-                = Helper.GetMembersWithBase(property.TypeSymbol)
+                = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                 .Where(property =>
                     property.Name != "this[]")
                .Select(x => x with { Parent = property.Name });
@@ -71,10 +71,10 @@ namespace NonSucking.Framework.Serialization
             return props;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
-               = Helper.GetMembersWithBase(property.TypeSymbol)
+               = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                .Where(property =>
                    property.Name != "this[]")
                .Select(x => x with { Parent = property.Name });

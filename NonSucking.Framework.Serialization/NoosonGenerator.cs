@@ -180,15 +180,13 @@ namespace NonSucking.Framework.Serialization
                 return VisitInfo.Empty;
             }
             MemberInfo[] properties
-                = Helper.GetMembersWithBase(typeSymbol)
+                = Helper
+                    .GetMembersWithBase(typeSymbol)
+                    .Where(x=>!x.Symbol.ContainingType.IsAbstract)
                     .ToArray();
 
             return new VisitInfo(typeSymbol, attribute, properties);
         }
-
-
-
-
 
         private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation, ImmutableArray<VisitInfo> VisitInfos) source)
         {
@@ -210,48 +208,7 @@ namespace NonSucking.Framework.Serialization
                     .WithMethods(methods)
                     .Build();
 
-                //rawSourceText += "You need a attribute for property XY, because it's a duplicate";
                 string hintName = $"{classToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
-
-                /*
-                                            Schlachtplan
-                0. ✓ IEnumerable => Not Supported (yet)
-                5. ✓ Derserialize => Serialize Logik rückwärts aufrufen
-                7. ✓ CleanUp and Refactor
-                2. ✓ Ctor Analyzing => Get Only Props (Simples namematching von Parameter aufgrund von Namen), ReadOnlyProps ohne Ctor Parameter ignorieren
-                8. ✓ Support for Dictionaries 
-                6. ✓ Fehler/Warnings ausgeben
-                9. ✓ Neue Generator API (v2)
-                3. ✓ Attributes => Überschreiben von Property Namen zu Ctor Parameter
-                4. ✓ Custom Type Serializer/Deserializer => Falls etwas not supported wird, wie IReadOnlySet, IEnumerable
-                1. ✓ Listen: IReadOnlyCollection => ReadOnlyCollection, IReadOnlyDictionary => ReadOnlyDictionary
-                a.   Init Only Properties (Aktuell zählen sie für uns als Readonly)
-
-                *: ✓ Serialize bzw. Deserialize auf List Items aufrufen wenn möglich
-                *: ✓ Randomize der count variable beim Deserialize
-                *: ✓ Serialize Member access
-                *: ✓ Randomize var item name
-                *: ✓ List filter indexer
-                *: ✓ item Accessor Dictionary serialize
-                *: X Dictionary doesnt have add for KeyValuePair
-               
-
-                Unsere Attribute:
-                1. ✓ Ignore
-                3. ✓ PrefferedCtor
-                2. ✓ Property name for ctor
-                6. ✓ Order Attribute for Property Serializing
-                4. ✓ Custom Serialize/Deserialize
-
-                Future:
-                7. ✓ NoosonInclude for fields
-                5.   BinaryWriter / Span Switch/Off/On
-                
-                OptIn Serialize Features:
-                0.   IEnumerable<T> => List<T> mit byte flag, ob noch etwas kommt
-                1.   
-                 
-                 */
 
                 using var workspace = new AdhocWorkspace() { };
                 var options = workspace.Options

@@ -16,6 +16,7 @@ namespace NonSucking.Framework.Serialization.Tests
         public static void Debug()
         {
             const string demoPath= @"..\..\..\..\DEMO\";
+            var secondTestFile = @$"{demoPath}SecondTestFile.cs";
             var sutMessage = @$"{demoPath}SUTMessage.cs";
             var iUser = @$"{demoPath}IUser.cs";
             var message = @$"{demoPath}Message.cs";
@@ -24,10 +25,11 @@ namespace NonSucking.Framework.Serialization.Tests
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
             {
-                { sutMessage, File.ReadAllText(sutMessage)},
-                { iUser, File.ReadAllText(iUser)},
-                { message, File.ReadAllText(message)},
-                { singePropTest, File.ReadAllText(singePropTest)},
+                { secondTestFile, File.ReadAllText(secondTestFile)},
+                //{ sutMessage, File.ReadAllText(sutMessage)},
+                //{ iUser, File.ReadAllText(iUser)},
+                //{ message, File.ReadAllText(message)},
+                //{ singePropTest, File.ReadAllText(singePropTest)},
             },
             () => new NoosonGenerator());
 

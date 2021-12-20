@@ -1,4 +1,7 @@
-﻿using NonSucking.Framework.Serialization;
+﻿using Newtonsoft.Json.Converters;
+using Newtonsoft.Json;
+
+using NonSucking.Framework.Serialization;
 
 using System;
 using System.Collections;
@@ -7,7 +10,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 using static DEMO.SUTMessage;
@@ -19,8 +21,12 @@ namespace DEMO
     public partial class ComplaingBaseBase
     {
         public List<ComplainBase> AssignedUser { get; set; }
+        public Guid TestGuid { get; set; }
+
 
     }
+
+
 
     [Nooson]
 
@@ -81,6 +87,7 @@ namespace DEMO
     [Nooson]
     public partial class SUTMessage : IEquatable<SUTMessage>
     {
+
         public Point[] Positions { get; set; }
         //[NoosonIgnore]
         public int Type { get; set; }
@@ -232,6 +239,26 @@ namespace DEMO
             public static bool operator !=(User left, User right) => !(left == right);
         }
 
+
+
+    }
+    //[Nooson]
+    public partial class ComplainBase : IEquatable<ComplainBase>
+    {
+        public string Complain { get; set; }
+        public List<string> Complains { get; set; }
+
+        public override bool Equals(object obj) => Equals(obj as ComplainBase);
+        public bool Equals(ComplainBase other) => other != null && Complain == other.Complain && Complains.SequenceEqual(other.Complains);
+        public override int GetHashCode() => HashCode.Combine(Complain, Complains);
+
+        public static bool operator ==(ComplainBase left, ComplainBase right) => EqualityComparer<ComplainBase>.Default.Equals(left, right);
+        public static bool operator !=(ComplainBase left, ComplainBase right) => !(left == right);
+
+        //public ComplainBase(string abc)
+        //{
+
+        //}
     }
 
 
@@ -280,22 +307,4 @@ namespace DEMO
     //}
 
 
-    //[Nooson]
-    public partial class ComplainBase : IEquatable<ComplainBase>
-    {
-        public string Complain { get; set; }
-        public List<string> Complains { get; set; }
-
-        public override bool Equals(object obj) => Equals(obj as ComplainBase);
-        public bool Equals(ComplainBase other) => other != null && Complain == other.Complain && Complains.SequenceEqual(other.Complains);
-        public override int GetHashCode() => HashCode.Combine(Complain, Complains);
-
-        public static bool operator ==(ComplainBase left, ComplainBase right) => EqualityComparer<ComplainBase>.Default.Equals(left, right);
-        public static bool operator !=(ComplainBase left, ComplainBase right) => !(left == right);
-
-        //public ComplainBase(string abc)
-        //{
-
-        //}
-    }
 }
