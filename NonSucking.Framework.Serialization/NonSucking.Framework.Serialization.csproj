@@ -48,7 +48,7 @@
 		<PackageReference Include="System.Composition.AttributedModel" Version="1.0.31" PrivateAssets="all" GeneratePathProperty="true" />
 		<None Include="$(PkgSystem_Composition_AttributedModel)\lib\netstandard1.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
-		<PackageReference Include="VaVare" Version="0.16.0.122-alpha" PrivateAssets="all" GeneratePathProperty="true" />
+		<PackageReference Include="VaVare" Version="1.0.0-alpha" PrivateAssets="all" GeneratePathProperty="true" />
 		<None Include="$(PkgVaVare)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
 

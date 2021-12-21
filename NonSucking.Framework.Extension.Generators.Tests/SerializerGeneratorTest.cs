@@ -15,16 +15,20 @@ namespace NonSucking.Framework.Serialization.Tests
         [Test]
         public static void Debug()
         {
-            const string demoPath= @"..\..\..\..\DEMO\";
+            const string demoPath= @"../../../../DEMO/";
             var secondTestFile = @$"{demoPath}SecondTestFile.cs";
             var sutMessage = @$"{demoPath}SUTMessage.cs";
             var iUser = @$"{demoPath}IUser.cs";
             var message = @$"{demoPath}Message.cs";
             var singePropTest = @$"{demoPath}SinglePropTest.cs";
+            var recordTestFile = @$"{demoPath}RecordTestFile.cs";
+            var structTestFile = @$"{demoPath}StructTestFile.cs";
 
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
             {
+                //{ recordTestFile, File.ReadAllText(recordTestFile)},
+                //{ structTestFile, File.ReadAllText(structTestFile)},
                 { secondTestFile, File.ReadAllText(secondTestFile)},
                 //{ sutMessage, File.ReadAllText(sutMessage)},
                 //{ iUser, File.ReadAllText(iUser)},

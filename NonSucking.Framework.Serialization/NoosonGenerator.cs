@@ -161,15 +161,16 @@ namespace NonSucking.Framework.Serialization
         }
         private static bool Predicate(SyntaxNode syntaxNode, CancellationToken cancellationToken)
         {
-            return syntaxNode is ClassDeclarationSyntax classDeclarationSyntax
-                && classDeclarationSyntax.AttributeLists.Count > 0;
+            return syntaxNode is ClassDeclarationSyntax { AttributeLists: { Count: > 0 } }
+                or RecordDeclarationSyntax { AttributeLists: { Count: > 0 } }
+                or StructDeclarationSyntax {AttributeLists: {Count: > 0 }};
         }
 
         private static VisitInfo Transform(GeneratorSyntaxContext syntaxContext, CancellationToken cancellationToken)
         {
-            var classDeclarationSyntax = syntaxContext.Node as ClassDeclarationSyntax;
+            var typeDeclarationSyntax = syntaxContext.Node as TypeDeclarationSyntax;
 
-            INamedTypeSymbol typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(classDeclarationSyntax);
+            INamedTypeSymbol typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(typeDeclarationSyntax);
             System.Collections.Immutable.ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
             var attribute
                 = attributes
@@ -179,11 +180,17 @@ namespace NonSucking.Framework.Serialization
             {
                 return VisitInfo.Empty;
             }
-            MemberInfo[] properties
+
+            var propEnumerable 
                 = Helper
-                    .GetMembersWithBase(typeSymbol)
-                    .Where(x=>!x.Symbol.ContainingType.IsAbstract)
-                    .ToArray();
+                .GetMembersWithBase(typeSymbol)
+                .Where(x => !x.Symbol.ContainingType.IsAbstract);
+            if (typeSymbol.IsRecord)
+            {
+                // Exclude CompilerGenerated EqualityContract from serialization process
+                propEnumerable = propEnumerable.Where(x => x.Name != "EqualityContract");
+            }
+            MemberInfo[] properties = propEnumerable.ToArray();
 
             return new VisitInfo(typeSymbol, attribute, properties);
         }
@@ -191,24 +198,40 @@ namespace NonSucking.Framework.Serialization
         private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation, ImmutableArray<VisitInfo> VisitInfos) source)
         {
 
-            foreach (VisitInfo classToAugment in source.VisitInfos)
+            foreach (VisitInfo typeToAugment in source.VisitInfos)
             {
-                NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, classToAugment.TypeSymbol);
-                NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, classToAugment.TypeSymbol);
+                NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeToAugment.TypeSymbol);
+                NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeToAugment.TypeSymbol);
                 var methods =
                     new[] {
-                        GenerateSerializeMethod(classToAugment, serializeContext),
-                        GenerateDeserializeMethod(classToAugment, deserializeContext)
+                        GenerateSerializeMethod(typeToAugment, serializeContext),
+                        GenerateDeserializeMethod(typeToAugment, deserializeContext)
                     };
 
-                var sourceCode
-                    = new ClassBuilder(classToAugment.TypeSymbol.Name, classToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
-                    .WithUsings()
-                    .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                    .WithMethods(methods)
-                    .Build();
-
-                string hintName = $"{classToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
+                CompilationUnitSyntax sourceCode;
+                if (typeToAugment.TypeSymbol.IsRecord)
+                    sourceCode 
+                        = new RecordBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString(), typeToAugment.TypeSymbol.IsValueType)
+                        .WithUsings()
+                        .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                        .WithMethods(methods)
+                        .Build();
+                else if (typeToAugment.TypeSymbol.IsValueType)
+                    sourceCode 
+                        = new StructBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                        .WithUsings()
+                        .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                        .WithMethods(methods)
+                        .Build();
+                else
+                    sourceCode 
+                        = new ClassBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                        .WithUsings()
+                        .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                        .WithMethods(methods)
+                        .Build();
+                        
+                string hintName = $"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
 
                 using var workspace = new AdhocWorkspace() { };
                 var options = workspace.Options
