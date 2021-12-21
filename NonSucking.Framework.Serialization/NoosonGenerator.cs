@@ -181,7 +181,8 @@ namespace NonSucking.Framework.Serialization
                 return VisitInfo.Empty;
             }
 
-            var propEnumerable = Helper
+            var propEnumerable 
+                = Helper
                 .GetMembersWithBase(typeSymbol)
                 .Where(x => !x.Symbol.ContainingType.IsAbstract);
             if (typeSymbol.IsRecord)
@@ -209,23 +210,27 @@ namespace NonSucking.Framework.Serialization
 
                 CompilationUnitSyntax sourceCode;
                 if (typeToAugment.TypeSymbol.IsRecord)
-                    sourceCode = new RecordBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString(), typeToAugment.TypeSymbol.IsValueType)
+                    sourceCode 
+                        = new RecordBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString(), typeToAugment.TypeSymbol.IsValueType)
                         .WithUsings()
                         .WithModifiers(Modifiers.Public, Modifiers.Partial)
                         .WithMethods(methods)
                         .Build();
                 else if (typeToAugment.TypeSymbol.IsValueType)
-                    sourceCode = new StructBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                    sourceCode 
+                        = new StructBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
                         .WithUsings()
                         .WithModifiers(Modifiers.Public, Modifiers.Partial)
                         .WithMethods(methods)
                         .Build();
                 else
-                    sourceCode = new ClassBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                    sourceCode 
+                        = new ClassBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
                         .WithUsings()
                         .WithModifiers(Modifiers.Public, Modifiers.Partial)
                         .WithMethods(methods)
                         .Build();
+                        
                 string hintName = $"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
 
                 using var workspace = new AdhocWorkspace() { };

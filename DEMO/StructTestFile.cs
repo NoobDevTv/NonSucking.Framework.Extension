@@ -2,7 +2,6 @@ using NonSucking.Framework.Serialization;
 
 namespace DEMO;
 
-
 [Nooson]
 public partial struct TestStruct
 {
