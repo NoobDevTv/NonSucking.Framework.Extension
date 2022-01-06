@@ -17,7 +17,7 @@ namespace NonSucking.Framework.Serialization
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
@@ -38,14 +38,14 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
-            statements.AddRange(
+            statements.Statements.AddRange(
                 GenerateStatementsForProps(
                    props
                        .Select(x => x with { Parent = property.FullName })
                        .ToArray(),
                    context,
                    MethodType.Serialize
-               ).SelectMany(x => x));
+               ).SelectMany(x => x.ToMergedBlock()));
 
             return true;
 
@@ -71,7 +71,7 @@ namespace NonSucking.Framework.Serialization
             return props;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
                = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
@@ -99,20 +99,14 @@ namespace NonSucking.Framework.Serialization
                     props.ToArray(),
                     context,
                     MethodType.Deserialize
-                ).SelectMany(x => x).ToList();
+                ).SelectMany(x => x.ToMergedBlock()).ToList();
 
-            string memberName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
-
-            var declaration
-                = Statement
-                .Declaration
-                .Declare(memberName, SyntaxFactory.ParseTypeName(property.TypeSymbol.ToDisplayString()));
-
+            statements.Statements.AddRange(statementList);
             try
             {
 
-                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)property.TypeSymbol, statementList, memberName, DeclareOrAndAssign.DeclareOnly);
-                statementList.AddRange(ctorSyntax);
+                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)property.TypeSymbol, statementList, property, property.CreateUniqueName());
+                statements.MergeWith(ctorSyntax);
 
             }
             catch (NotSupportedException)
@@ -124,9 +118,6 @@ namespace NonSucking.Framework.Serialization
                    DiagnosticSeverity.Error
                    );
             }
-
-            statementList.Insert(0, declaration);
-            statements.AddRange(statementList);
             return true;
         }
     }
