@@ -247,7 +247,7 @@ namespace NonSucking.Framework.Serialization
         {
             ITypeSymbol genericArgument = null;
             var typeForIter = type;
-            while (genericArgument == null)
+            while (genericArgument is null)
             {
                 if (typeForIter is INamedTypeSymbol nts)
                 {
@@ -255,13 +255,13 @@ namespace NonSucking.Framework.Serialization
                     if (nts.TypeArguments.Length > 0)
                     {
                         genericArgument = nts.TypeArguments[0];
-                        break;
+                        continue;
                     }
                 }
                 else if (typeForIter is IArrayTypeSymbol ats)
                 {
                     genericArgument = ats.ElementType;
-                    break;
+                    continue;
                 }
                 else
                 {

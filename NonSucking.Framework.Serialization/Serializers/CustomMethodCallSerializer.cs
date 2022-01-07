@@ -44,7 +44,7 @@ namespace NonSucking.Framework.Serialization
             var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "DeserializeImplementationType").Value.Value as ISymbol;
             InvocationExpressionSyntax invocationExpression;
 
-            if (customType != null)
+            if (customType is not null)
             {
                 //Static call
                 invocationExpression
@@ -106,7 +106,7 @@ namespace NonSucking.Framework.Serialization
             }
             StatementSyntax statement;
             var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeImplementationType").Value.Value as ISymbol;
-            if (customType != null)
+            if (customType is not null)
             {
                 //Static call
                 statement

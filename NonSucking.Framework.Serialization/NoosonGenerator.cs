@@ -84,7 +84,7 @@ namespace NonSucking.Framework.Serialization
 
         public static AttributeData GetAttribute(this ISymbol symbol, Template attributeTemplate)
         {
-            if (attributeTemplate == null)
+            if (attributeTemplate is null)
                 throw new ArgumentNullException(nameof(attributeTemplate));
             else if (attributeTemplate.Kind != Templates.TemplateKind.Attribute)
                 throw new ArgumentException(nameof(attributeTemplate) + " is not attribute");
@@ -94,13 +94,13 @@ namespace NonSucking.Framework.Serialization
 
         public static bool TryGetAttribute(this ISymbol symbol, Template attributeTemplate, out AttributeData attributeData)
         {
-            if (attributeTemplate == null)
+            if (attributeTemplate is null)
                 throw new ArgumentNullException(nameof(attributeTemplate));
             else if (attributeTemplate.Kind != Templates.TemplateKind.Attribute)
                 throw new ArgumentException(nameof(attributeTemplate) + " is not attribute");
 
             attributeData = symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass.ToDisplayString() == attributeTemplate.FullName);
-            return attributeData != null;
+            return attributeData is not null;
         }
     }
 

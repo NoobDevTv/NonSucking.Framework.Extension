@@ -31,13 +31,13 @@ public class GeneratedSerializerCode
     {
         foreach (var declaration in VariableDeclarations)
         {
-            var newDeclaration = variableTransformer == null
+            var newDeclaration = variableTransformer is null
                                     ? declaration.Declaration
                                     : variableTransformer(declaration);
             
             other.VariableDeclarations.Add(new SerializerVariable(newDeclaration, declaration.OriginalMember, declaration.UniqueName, null));
         }
-        return VariableDeclarations.Where(x => x.InitialValue != null).Select(x => x.GetAssignment()).Concat(Statements);
+        return VariableDeclarations.Where(x => x.InitialValue is not null).Select(x => x.GetAssignment()).Concat(Statements);
     }
 
     public void MergeWith(GeneratedSerializerCode other, bool emitVariables = true)
@@ -79,13 +79,13 @@ public class GeneratedSerializerCode
         {
             VariableDeclarations.Add(
                 new SerializerVariable(variableDeclaration, member, memberName,
-                        valueExpression == null ? null : SyntaxFactory.EqualsValueClause(valueExpression)
+                        valueExpression is null ? null : SyntaxFactory.EqualsValueClause(valueExpression)
                     )
                 );
         }
         else
         {
-            VariableDeclarations.Add( new SerializerVariable(variableDeclaration, member, memberName, null));
+            VariableDeclarations.Add(new SerializerVariable(variableDeclaration, member, memberName, null));
             Statements.Add(Statement.Declaration.Assign(memberName, valueExpression));
         }
     }
@@ -137,7 +137,7 @@ public class GeneratedSerializerCode
                     oldVariables.Select(x =>
                                         {
                                             var newInitialValue = tmpThis.InitialValue;
-                                            if (x.Initializer != null && newInitialValue != null)
+                                            if (x.Initializer is not null && newInitialValue is not null)
                                                 throw new NotSupportedException("Cannot assign already assigned variable.");
                                             return
                                                 SyntaxFactory.VariableDeclarator(x.Identifier, x.ArgumentList,

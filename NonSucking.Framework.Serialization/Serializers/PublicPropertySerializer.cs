@@ -7,10 +7,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using static NonSucking.Framework.Serialization.NoosonGenerator;
-
 using VaVare.Statements;
 using NonSucking.Framework.Serialization.Serializers;
+
+using static NonSucking.Framework.Serialization.NoosonGenerator;
 
 namespace NonSucking.Framework.Serialization
 {

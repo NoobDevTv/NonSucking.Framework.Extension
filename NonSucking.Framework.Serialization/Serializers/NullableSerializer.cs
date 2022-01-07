@@ -8,12 +8,12 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-using static NonSucking.Framework.Serialization.NoosonGenerator;
-
 using VaVare.Statements;
 using NonSucking.Framework.Serialization.Serializers;
 using VaVare.Generators.Common;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
+
+using static NonSucking.Framework.Serialization.NoosonGenerator;
 
 namespace NonSucking.Framework.Serialization
 {
