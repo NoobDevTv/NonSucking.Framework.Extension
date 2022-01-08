@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>preview</LangVersion>
+        <!-- Special properties for analyzer packages. -->
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeSymbols>false</IncludeSymbols>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <UseNETCoreGenerator>true</UseNETCoreGenerator>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>NonSucking.Framework.Serialization.Generator</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
+
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <GetTargetPathDependsOn>$(GetTargetPathDependsOn);nooson-GetDependencyTargetPaths</GetTargetPathDependsOn>
+    </PropertyGroup>
+
+    <Target Name="nooson-GetDependencyTargetPaths">
+        <ItemGroup>
+
+        </ItemGroup>
+    </Target>
+</Project>

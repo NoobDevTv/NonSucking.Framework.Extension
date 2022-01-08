@@ -16,9 +16,11 @@ using VaVare.Statements;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 using System.Drawing;
+using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(60)]
     internal static class ListSerializer
     {
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)

@@ -5,12 +5,13 @@ using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Text;
-
+using NonSucking.Framework.Serialization.Serializers;
 using VaVare.Statements;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(30)]
     internal static class EnumSerializer
     {
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)

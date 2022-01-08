@@ -14,6 +14,7 @@ using static NonSucking.Framework.Serialization.NoosonGenerator;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(70)]
     internal static class PublicPropertySerializer
     {
 

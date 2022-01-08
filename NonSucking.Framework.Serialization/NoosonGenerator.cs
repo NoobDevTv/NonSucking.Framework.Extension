@@ -105,7 +105,7 @@ namespace NonSucking.Framework.Serialization
     }
 
     [Generator]
-    public class NoosonGenerator : IIncrementalGenerator
+    public partial class NoosonGenerator : IIncrementalGenerator
     {
         internal const string writerName = "writer";
         internal const string readerName = "reader";
@@ -384,38 +384,6 @@ namespace NonSucking.Framework.Serialization
             }
 
             return true;
-        }
-
-
-        internal static GeneratedSerializerCode CreateStatementForSerializing(MemberInfo property, NoosonGeneratorContext context, string writerName, bool ignoreNullable = false)
-        {
-            GeneratedSerializerCode statements = new();
-            _ = CustomMethodCallSerializer.TrySerialize(property, context, writerName, statements)
-                           || !ignoreNullable && NullableSerializer.TrySerialize(property, context, writerName, statements)
-                           || SpecialTypeSerializer.TrySerialize(property, context, writerName, statements)
-                           || EnumSerializer.TrySerialize(property, context, writerName, statements)
-                           || MethodCallSerializer.TrySerialize(property, context, writerName, statements)
-                           || DictionarySerializer.TrySerialize(property, context, writerName, statements)
-                           || ListSerializer.TrySerialize(property, context, writerName, statements)
-                           || PublicPropertySerializer.TrySerialize(property, context, writerName, statements)
-                           ;
-
-            return statements;
-        }
-
-        internal static GeneratedSerializerCode CreateStatementForDeserializing(MemberInfo property, NoosonGeneratorContext context, string readerName, bool ignoreNullable = false)
-        {
-            GeneratedSerializerCode statements = new();
-            _ = CustomMethodCallSerializer.TryDeserialize(property, context, readerName, statements)
-                           || !ignoreNullable && NullableSerializer.TryDeserialize(property, context, readerName, statements)
-                           || SpecialTypeSerializer.TryDeserialize(property, context, readerName, statements)
-                           || EnumSerializer.TryDeserialize(property, context, readerName, statements)
-                           || MethodCallSerializer.TryDeserialize(property, context, readerName, statements)
-                           || DictionarySerializer.TryDeserialize(property, context, readerName, statements)
-                           || ListSerializer.TryDeserialize(property, context, readerName, statements)
-                           || PublicPropertySerializer.TryDeserialize(property, context, readerName, statements)
-                           ;
-            return statements;
         }
 
     }
