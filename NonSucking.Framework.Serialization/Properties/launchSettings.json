@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NonSucking.Framework.Serialization": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\DEMO\\DEMO.csproj"
+    }
+  }
+}
