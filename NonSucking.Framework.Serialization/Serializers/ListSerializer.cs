@@ -25,39 +25,24 @@ namespace NonSucking.Framework.Serialization
     {
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
         {
-
             var type = property.TypeSymbol;
-            bool isIEnumerable
+            var collectionInterface
                 = type
                 .AllInterfaces
-                .Any(x => x.Name == typeof(IEnumerable).Name)
-                || property.TypeSymbol.Name == typeof(IEnumerable).Name;
+                .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.ICollection<"));
 
-            if (!isIEnumerable)
+            bool isGenericCollection
+                = collectionInterface is not null
+                    || property.TypeSymbol.ToString().StartsWith("System.Collections.Generic.ICollection<");
+
+            if (!isGenericCollection)
             {
                 return false;
             }
 
-            bool isIEnumerableInterfaceSelf
-                = type.Name == nameof(IEnumerable);
-
-            if (isIEnumerableInterfaceSelf)
-            {
-                //Diagnostic Error for not supported type
-                context.AddDiagnostic("0005",
-                    "",
-                    "IEnumerable is not supported for serialization, implement own serializer or this value will be lost.",
-                    property.Symbol,
-                    DiagnosticSeverity.Error
-                    );
-                return true;
-            }
-
-            ITypeSymbol genericArgument = GetGenericTypeOf(type, out _);
+            ITypeSymbol genericArgument = GetGenericTypeOf(collectionInterface, out _);
 
             string itemName = Helper.GetRandomNameFor("item", property.Name);
-
-
 
             var localStatements
                 = NoosonGenerator.CreateStatementForSerializing(
@@ -65,16 +50,21 @@ namespace NonSucking.Framework.Serialization
                         context,
                         writerName);
 
+            var isArray = type.TypeKind == TypeKind.Array;
+
             var memberReference
                 = new MemberReference(
-                type.TypeKind == TypeKind.Array
-                    ? "Length"
-                    : "Count");
-            var countReference = new ReferenceArgument(new VariableReference(Helper.GetMemberAccessString(property), memberReference));
+                    isArray ? "Length" : "Count"
+                );
+
+            ITypeSymbol? castToCollection = isArray ? null : collectionInterface;
+
+            var countReference
+                = new ReferenceArgument(
+                    new VariableReference(Helper.GetMemberAccessString(property, castToCollection), memberReference)
+                );
 
             GeneratedSerializerCode preIterationStatements = new();
-
-
 
             var count = GetIterationAmount(property.TypeSymbol);
             if (count > -1)
@@ -90,7 +80,7 @@ namespace NonSucking.Framework.Serialization
             var iterationStatement
                 = Statement
                 .Iteration
-                 .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(innerStatements.ToArray()), useVar: true);
+                 .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property, castToCollection), BodyGenerator.Create(innerStatements.ToArray()), useVar: true);
 
 
             statements.MergeWith(preIterationStatements);
@@ -105,32 +95,21 @@ namespace NonSucking.Framework.Serialization
         {
 
             var type = property.TypeSymbol;
-
-            bool isEnumerable
+            var collectionInterface
                 = type
                 .AllInterfaces
-                .Any(x => x.Name == typeof(IEnumerable).Name)
-                || property.TypeSymbol.Name == typeof(IEnumerable).Name;
+                .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.ICollection<"));
 
-            if (!isEnumerable)
+            bool isGenericCollection
+                = collectionInterface is not null
+                    || property.TypeSymbol.ToString().StartsWith("System.Collections.Generic.ICollection<");
+
+            if (!isGenericCollection)
             {
                 return false;
             }
 
-            bool isIEnumerableSelf = type.Name == nameof(IEnumerable);
-            if (isIEnumerableSelf)
-            {
-                //Diagnostic Error for not supported type
-                context.AddDiagnostic("0005",
-                    "",
-                    "IEnumerable is not supported for deserialization, implement own deserializer or this value will be lost.",
-                    property.Symbol,
-                    DiagnosticSeverity.Error
-                    );
-                return true;
-            }
-
-            ITypeSymbol genericArgument = GetGenericTypeOf(type, out var isTypeGeneric);
+            ITypeSymbol genericArgument = GetGenericTypeOf(collectionInterface, out _);
 
             var randomForThisScope = Helper.GetRandomNameFor("", property.Name);
 
@@ -197,20 +176,44 @@ namespace NonSucking.Framework.Serialization
             }
             else
             {
+                var cast = Helper.Cast(listName, collectionInterface.ToDisplayString());
+                var castedListName = Helper.GetRandomNameFor("localList");
+                var castDeclaration
+                    = Statement
+                    .Declaration
+                    .ParseDeclareAndAssing(castedListName, cast);
 
                 var addStatement
                     = Statement
                     .Expression
-                    .Invoke(listName, $"Add", arguments: new[] { new ValueArgument((object)listVariableName) })
+                    .Invoke(castedListName, $"Add", arguments: new[] { new VariableArgument(listVariableName) })
                     .AsStatement();
 
                 itemDeserialization.Statements.Add(addStatement);
 
                 string listInitialize;
-                if (!type.AllInterfaces.Any(x => x.ToDisplayString().StartsWith("System.Collections.ICollection")))
-                    listInitialize = $"System.Collections.Generic.List<{genericArgument}>";
-                else
+
+
+                if (!type.IsAbstract && type.TypeKind != TypeKind.Interface)
+                {
                     listInitialize = type.ToDisplayString();
+
+                }
+                else if (type.AllInterfaces.Any(x => x.ToString().StartsWith("System.Collections.Generic.IDictionary<")))
+                {
+                    var namedTypeSymbol = genericArgument as INamedTypeSymbol;
+
+                    listInitialize = $"System.Collections.Generic.Dictionary<{namedTypeSymbol.TypeArguments[0]},{namedTypeSymbol.TypeArguments[1]}>";
+                }
+                else if (type.AllInterfaces.Any(x => x.ToString().StartsWith("System.Collections.IList<")))
+                {
+                    listInitialize = $"System.Collections.Generic.List<{genericArgument}>";
+                }
+                else
+                {
+                    //TODO Warning / Error
+                    return false;
+                }
 
 
                 ExpressionSyntax ctorInvocationExpression
@@ -227,6 +230,7 @@ namespace NonSucking.Framework.Serialization
 
                 statements.MergeWith(preIterationStatements);
                 statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(listInitialize), ctorInvocationExpression);
+                statements.Statements.Add(castDeclaration);
                 statements.Statements.Add(iterationStatement);
 
             }

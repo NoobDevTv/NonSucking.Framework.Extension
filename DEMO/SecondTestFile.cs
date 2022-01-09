@@ -116,21 +116,18 @@ public abstract class BaseSmarthomeMessage
     [JsonProperty("c"), JsonConverter(typeof(StringEnumConverter))]
     public virtual Command Command { get; set; }
 
-
-
-
 }
 
 [Nooson]
 public partial class BinarySmarthomeMessage : BaseSmarthomeMessage
 {
-    public MyEnumerable<int> MyEnumerable { get; set; }
+    //public MyEnumerable<int> MyEnumerable { get; set; }
     public SmarthomeHeader Header { get; set; }
     public override uint NodeId { get => base.NodeId; set => base.NodeId = value; }
     public override MessageType MessageType { get => base.MessageType; set => base.MessageType = value; }
     public override Command Command { get => base.Command; set => base.Command = value; }
 
-    public ByteLengthList2 Parameters { get; set; }
+    public ByteLengthList Parameters { get; set; }
 
     public BinarySmarthomeMessage(uint nodeId, MessageType messageType, Command command, params byte[][] parameters) : this(nodeId, messageType, command, new ByteLengthList(parameters))
     {

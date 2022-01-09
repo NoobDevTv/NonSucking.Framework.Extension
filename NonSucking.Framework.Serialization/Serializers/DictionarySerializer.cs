@@ -17,7 +17,7 @@ using VaVare.Statements;
 
 namespace NonSucking.Framework.Serialization
 {
-    [StaticSerializer(50)]
+    //[StaticSerializer(50)]
     internal static class DictionarySerializer
     {
 

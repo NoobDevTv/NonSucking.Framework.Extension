@@ -131,7 +131,7 @@ namespace NonSucking.Framework.Serialization
         internal static string Cast(string value, string castType = null)
         {
             if (!string.IsNullOrWhiteSpace(castType))
-                return $"({castType}){value}";
+                return $"(({castType}){value})";
 
             return value;
         }
