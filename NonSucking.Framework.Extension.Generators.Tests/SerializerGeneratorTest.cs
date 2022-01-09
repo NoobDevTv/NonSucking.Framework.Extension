@@ -24,15 +24,17 @@ namespace NonSucking.Framework.Serialization.Tests
             var recordTestFile = @$"{demoPath}RecordTestFile.cs";
             var structTestFile = @$"{demoPath}StructTestFile.cs";
             var nullableTestFile = @$"{demoPath}NullableTest.cs";
+            var listsContainer = @$"{demoPath}ListsContainer.cs";
 
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
             {
                 //{ recordTestFile, File.ReadAllText(recordTestFile)},
                 //{ structTestFile, File.ReadAllText(structTestFile)},
-                { nullableTestFile, File.ReadAllText(nullableTestFile)},
-                // { secondTestFile, File.ReadAllText(secondTestFile)},
-                // { sutMessage, File.ReadAllText(sutMessage)},
+                //{ nullableTestFile, File.ReadAllText(nullableTestFile)},
+                //{ secondTestFile, File.ReadAllText(secondTestFile)},
+                { listsContainer , File.ReadAllText(listsContainer )},
+                //{ sutMessage, File.ReadAllText(sutMessage)},
                 //{ iUser, File.ReadAllText(iUser)},
                 //{ message, File.ReadAllText(message)},
                 //{ singePropTest, File.ReadAllText(singePropTest)},

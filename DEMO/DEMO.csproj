@@ -18,6 +18,10 @@
 
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="GeneratedFiles\NonSucking.Framework.Serialization\" />
+	</ItemGroup>
+
 	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild">
 		<ItemGroup>
 			<Compile Remove="GeneratedFiles\**" />
