@@ -45,10 +45,7 @@ namespace NonSucking.Framework.Serialization
                         .Expression
                         .Invoke(readerName, Helper.GetReadMethodCallFrom(type.SpecialType))
                         .AsExpression();
-
-                    // statements.Add(Statement
-                    //     .Declaration
-                    //     .DeclareAndAssign(memberName, invocationExpression));
+                    
                     statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocationExpression);
 
                     return true;

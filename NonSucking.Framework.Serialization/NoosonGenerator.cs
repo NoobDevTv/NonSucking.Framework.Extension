@@ -23,8 +23,8 @@ namespace NonSucking.Framework.Serialization
 {
     public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol)
     {
-        const string Category = "SerializationGenerator";
-        const string IdPrefix = "NSG";
+        internal const string Category = "SerializationGenerator";
+        internal const string IdPrefix = "NSG";
 
         //Proudly stolen from https://github.com/mknejp/dotvariant/blob/c59599a079637e38c3471a13b6a0443e4e607058/src/dotVariant.Generator/Diagnose.cs#L234
         public void AddDiagnostic(string id, LocalizableString message, DiagnosticSeverity severity, int warningLevel, Location location)
@@ -209,7 +209,7 @@ namespace NonSucking.Framework.Serialization
         {
             foreach (VisitInfo typeToAugment in source.VisitInfos)
             {
-                // try
+                try
                 {
                     NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeToAugment.TypeSymbol);
                     NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeToAugment.TypeSymbol);
@@ -256,12 +256,24 @@ namespace NonSucking.Framework.Serialization
                     var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
 
                     sourceProductionContext.AddSource(hintName, formattedText);
-
                 }
-                // catch (Exception e)
-                // {
-                //     throw new Exception(typeToAugment.TypeSymbol.ToDisplayString() + e.Message + "\n" + e.StackTrace);
-                // }
+                catch (Exception e) when (!Debugger.IsAttached)
+                {
+                    var location = typeToAugment.TypeSymbol.DeclaringSyntaxReferences.Length > 0
+                        ? Location.Create(
+                            typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].SyntaxTree,
+                            typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].Span)
+                        : Location.None;
+                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            $"{NoosonGeneratorContext.IdPrefix}0011",
+                            "",
+                            $"Error occured while trying to generate serializer code for '{typeToAugment.TypeSymbol.ToDisplayString()}' type: {e.Message}\n{e.StackTrace}",
+                            nameof(NoosonGenerator),
+                            DiagnosticSeverity.Error,
+                            true),
+                            location));
+                }
             }
         }
 
