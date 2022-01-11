@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,7 +21,7 @@ namespace NonSucking.Framework.Serialization
 {
     internal static class ListSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, List<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
         {
 
             var type = property.TypeSymbol;
@@ -63,7 +62,6 @@ namespace NonSucking.Framework.Serialization
                         new MemberInfo(genericArgument, genericArgument, itemName),
                         context,
                         writerName);
-            //NoosonGenerator.CreateStatementForSerializing(property, context, writerName);
 
             var memberReference
                 = new MemberReference(
@@ -72,7 +70,7 @@ namespace NonSucking.Framework.Serialization
                     : "Count");
             var countReference = new ReferenceArgument(new VariableReference(Helper.GetMemberAccessString(property), memberReference));
 
-            List<StatementSyntax> preIterationStatements = new();
+            GeneratedSerializerCode preIterationStatements = new();
 
 
 
@@ -80,28 +78,28 @@ namespace NonSucking.Framework.Serialization
             if (count > -1)
                 PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, count);
 
-            preIterationStatements.Add(
+            preIterationStatements.Statements.Add(
                         Statement
                         .Expression
                         .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] { countReference })
                         .AsStatement());
 
-
+            var innerStatements = localStatements.MergeBlocksSeperated(statements);
             var iterationStatement
                 = Statement
                 .Iteration
-                 .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(localStatements.ToArray()), useVar: true);
+                 .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(innerStatements.ToArray()), useVar: true);
 
 
-            statements.AddRange(preIterationStatements);
-            statements.Add(iterationStatement);
+            statements.MergeWith(preIterationStatements);
+            statements.Statements.Add(iterationStatement);
 
 
             return true;
         }
 
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
         {
 
             var type = property.TypeSymbol;
@@ -134,31 +132,23 @@ namespace NonSucking.Framework.Serialization
 
             var randomForThisScope = Helper.GetRandomNameFor("", property.Name);
 
-            List<StatementSyntax> localStatements = new();
             var listVariableName = $"{genericArgument.Name}{randomForThisScope}";
 
-            localStatements.AddRange(NoosonGenerator.CreateStatementForDeserializing(
-                        new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
-                        context,
-                        readerName
-                    ));
+            var itemDeserialization = NoosonGenerator.CreateStatementForDeserializing(
+                new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
+                context,
+                readerName
+            );
 
-            List<StatementSyntax> preIterationStatements = new();
+            GeneratedSerializerCode preIterationStatements = new();
             var count = GetIterationAmount(property.TypeSymbol);
 
             if (count > -1)
                 PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, count);
-
-            LocalDeclarationStatementSyntax localDeclarationStatement;
-
-            if (localStatements[0] is BlockSyntax blockSyntax)
-                localDeclarationStatement = GetDeclerationStatement(blockSyntax.Statements);
-            else
-                localDeclarationStatement = GetDeclerationStatement(localStatements);
-
-            listVariableName = localDeclarationStatement.Declaration.Variables.First().Identifier.ToFullString();
-
-            var listName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
+            
+            listVariableName = itemDeserialization.VariableDeclarations.Single().UniqueName;
+            
+            var listName = property.CreateUniqueName();
 
 
             var start = new VariableReference("0");
@@ -170,16 +160,15 @@ namespace NonSucking.Framework.Serialization
                         .Expression
                         .Invoke(readerName, nameof(BinaryReader.ReadInt32))
                         .AsExpression();
-
-            preIterationStatements.Add(
+            preIterationStatements.Statements.Add(
                 Statement
-                .Declaration
-                .DeclareAndAssign(end.Name, invocationExpression));
+                    .Declaration
+                    .DeclareAndAssign(end.Name, invocationExpression));
 
             if (type is IArrayTypeSymbol arrayType)
             {
                 var indexName = Helper.GetRandomNameFor("i", "");
-
+                
                 var nullArrayStatement
                     = SyntaxFactory.ParseStatement($"{genericArgument}[] {listName};");
 
@@ -187,7 +176,7 @@ namespace NonSucking.Framework.Serialization
                     = SyntaxFactory
                     .ExpressionStatement(SyntaxFactory.ParseExpression($"{listName}[{indexName}]={listVariableName}"));
 
-                localStatements.Add(addStatement);
+                itemDeserialization.Statements.Add(addStatement);
 
                 var arrayStatement
                     = Statement
@@ -197,12 +186,12 @@ namespace NonSucking.Framework.Serialization
                 var iterationStatement
                     = Statement
                     .Iteration
-                    .For(start, end, indexName, BodyGenerator.Create(localStatements.ToArray()));
+                    .For(start, end, indexName, BodyGenerator.Create(itemDeserialization.ToMergedBlock().ToArray()));
 
-                statements.Add(nullArrayStatement);
-                statements.AddRange(preIterationStatements);
-                statements.Add(arrayStatement);
-                statements.Add(iterationStatement);
+                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName($"{genericArgument}[]"), null);
+                statements.MergeWith(preIterationStatements);
+                statements.Statements.Add(arrayStatement);
+                statements.Statements.Add(iterationStatement);
             }
             else
             {
@@ -213,7 +202,7 @@ namespace NonSucking.Framework.Serialization
                     .Invoke(listName, $"Add", arguments: new[] { new ValueArgument((object)listVariableName) })
                     .AsStatement();
 
-                localStatements.Add(addStatement);
+                itemDeserialization.Statements.Add(addStatement);
 
                 string listInitialize;
                 if (!type.AllInterfaces.Any(x => x.ToDisplayString().StartsWith("System.Collections.ICollection")))
@@ -228,19 +217,15 @@ namespace NonSucking.Framework.Serialization
                     .Invoke($"new {listInitialize}", arguments: new[] { new ValueArgument((object)end.Name) })
                     .AsExpression();
 
-                var listStatement
-                    = Statement
-                    .Declaration
-                    .DeclareAndAssign(listName, ctorInvocationExpression);
 
                 var iterationStatement
                     = Statement
                     .Iteration
-                    .For(start, end, Helper.GetRandomNameFor("i", ""), BodyGenerator.Create(localStatements.ToArray()));
+                    .For(start, end, Helper.GetRandomNameFor("i", ""), BodyGenerator.Create(itemDeserialization.MergeBlocksSeperated(statements).ToArray()));
 
-                statements.AddRange(preIterationStatements);
-                statements.Add(listStatement);
-                statements.Add(iterationStatement);
+                statements.MergeWith(preIterationStatements);
+                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(listInitialize), ctorInvocationExpression);
+                statements.Statements.Add(iterationStatement);
 
             }
 
@@ -262,7 +247,7 @@ namespace NonSucking.Framework.Serialization
         {
             ITypeSymbol genericArgument = null;
             var typeForIter = type;
-            while (genericArgument == null)
+            while (genericArgument is null)
             {
                 if (typeForIter is INamedTypeSymbol nts)
                 {
@@ -270,13 +255,13 @@ namespace NonSucking.Framework.Serialization
                     if (nts.TypeArguments.Length > 0)
                     {
                         genericArgument = nts.TypeArguments[0];
-                        break;
+                        continue;
                     }
                 }
                 else if (typeForIter is IArrayTypeSymbol ats)
                 {
                     genericArgument = ats.ElementType;
-                    break;
+                    continue;
                 }
                 else
                 {
@@ -289,21 +274,6 @@ namespace NonSucking.Framework.Serialization
             isTypeGeneric = ReferenceEquals(typeForIter, type);
 
             return genericArgument;
-        }
-        private static LocalDeclarationStatementSyntax GetDeclerationStatement(IReadOnlyCollection<StatementSyntax> statements)
-        {
-            LocalDeclarationStatementSyntax localDeclarationStatement;
-
-            if (statements.First() is LocalDeclarationStatementSyntax localDeclarationStatement2)
-            {
-                localDeclarationStatement = localDeclarationStatement2;
-            }
-            else
-            {
-                localDeclarationStatement = null;
-            }
-
-            return localDeclarationStatement;
         }
     }
 }

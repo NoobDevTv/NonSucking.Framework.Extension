@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
+using Microsoft.CodeAnalysis.CSharp;
 using VaVare.Generators.Common;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Models.References;
@@ -25,7 +25,7 @@ namespace NonSucking.Framework.Serialization
                 || symbol.MetadataName == typeof(IDictionary<,>).Name;
         }
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
         {
             
             ITypeSymbol type = property.TypeSymbol;
@@ -48,7 +48,7 @@ namespace NonSucking.Framework.Serialization
 
             string itemName = Helper.GetRandomNameFor("item", property.Name);
 
-            List<StatementSyntax> localStatements = new();
+            GeneratedSerializerCode localStatements = new();
 
             ITypeSymbol keyGenericArgument;
             ITypeSymbol valueGenericArgument;
@@ -75,8 +75,7 @@ namespace NonSucking.Framework.Serialization
                     .GenerateStatementsForProps(genericInfos, context, MethodType.Serialize);
                 foreach (var item in generatedStatements)
                 {
-
-                    localStatements.AddRange(item);
+                    localStatements.MergeWith(item);
                 }
             }
             else
@@ -102,17 +101,17 @@ namespace NonSucking.Framework.Serialization
             ForEachStatementSyntax iterationStatement
                 = Statement
                 .Iteration
-                .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(localStatements.ToArray()), useVar: true);
+                .ForEach(itemName, typeof(void), Helper.GetMemberAccessString(property), BodyGenerator.Create(localStatements.ToMergedBlock().ToArray()), useVar: true);
 
 
-            statements.Add(invocationExpression);
-            statements.Add(iterationStatement);
+            statements.Statements.Add(invocationExpression);
+            statements.Statements.Add(iterationStatement);
 
 
             return true;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,List<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
         {
             
             ITypeSymbol type = property.TypeSymbol;
@@ -137,7 +136,7 @@ namespace NonSucking.Framework.Serialization
 
             string keyVariableName = Helper.GetRandomNameFor("key", property.Name);
             string valueVariableName = Helper.GetRandomNameFor("value", property.Name);
-            List<StatementSyntax> localStatements = new();
+            GeneratedSerializerCode localStatements = new();
 
             if (type is INamedTypeSymbol nts)
             {
@@ -160,7 +159,7 @@ namespace NonSucking.Framework.Serialization
                     .GenerateStatementsForProps(genericInfos, context, MethodType.Deserialize);
                 foreach (var item in statementsForProps)
                 {
-                    localStatements.AddRange(item);
+                    localStatements.MergeWith(item);
                 }
             }
             else
@@ -169,7 +168,7 @@ namespace NonSucking.Framework.Serialization
             }
 
 
-            string listName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
+            string listName = property.CreateUniqueName();
 
             ExpressionStatementSyntax addStatement
                 = Statement
@@ -181,7 +180,7 @@ namespace NonSucking.Framework.Serialization
                 )
                 .AsStatement();
 
-            localStatements.Add(addStatement);
+            localStatements.Statements.Add(addStatement);
 
             VariableReference start = new VariableReference("0");
             VariableReference end = new VariableReference(Helper.GetRandomNameFor("count" , property.Name));
@@ -198,25 +197,23 @@ namespace NonSucking.Framework.Serialization
                 .Declaration
                 .DeclareAndAssign(end.Name, invocationExpression);
 
+            var dictTypeName =
+                $"System.Collections.Generic.Dictionary<{keyGenericArgument.ToDisplayString()}, {valueGenericArgument.ToDisplayString()}>";
             ExpressionSyntax ctorInvocationExpression
                 = Statement
                 .Expression
-                .Invoke($"new System.Collections.Generic.Dictionary<{keyGenericArgument.ToDisplayString()}, {valueGenericArgument.ToDisplayString()}>", arguments: new[] { new ValueArgument((object)end.Name) })
+                .Invoke($"new {dictTypeName}", arguments: new[] { new ValueArgument((object)end.Name) })
                 .AsExpression();
 
-            LocalDeclarationStatementSyntax listStatement
-                = Statement
-                .Declaration
-                .DeclareAndAssign(listName, ctorInvocationExpression);
 
             ForStatementSyntax iterationStatement
                 = Statement
                 .Iteration
-                .For(start, end, Helper.GetRandomNameFor("i", ""), BodyGenerator.Create(localStatements.ToArray()));
+                .For(start, end, Helper.GetRandomNameFor("i", ""), BodyGenerator.Create(localStatements.ToMergedBlock().ToArray()));
 
-            statements.Add(countStatement);
-            statements.Add(listStatement);
-            statements.Add(iterationStatement);
+            statements.Statements.Add(countStatement);
+            statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(dictTypeName), ctorInvocationExpression);
+            statements.Statements.Add(iterationStatement);
 
             return true;
         }

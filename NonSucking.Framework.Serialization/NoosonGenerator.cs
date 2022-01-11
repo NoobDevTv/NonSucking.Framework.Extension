@@ -23,8 +23,8 @@ namespace NonSucking.Framework.Serialization
 {
     public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol)
     {
-        const string Category = "SerializationGenerator";
-        const string IdPrefix = "NSG";
+        internal const string Category = "SerializationGenerator";
+        internal const string IdPrefix = "NSG";
 
         //Proudly stolen from https://github.com/mknejp/dotvariant/blob/c59599a079637e38c3471a13b6a0443e4e607058/src/dotVariant.Generator/Diagnose.cs#L234
         public void AddDiagnostic(string id, LocalizableString message, DiagnosticSeverity severity, int warningLevel, Location location)
@@ -84,7 +84,7 @@ namespace NonSucking.Framework.Serialization
 
         public static AttributeData GetAttribute(this ISymbol symbol, Template attributeTemplate)
         {
-            if (attributeTemplate == null)
+            if (attributeTemplate is null)
                 throw new ArgumentNullException(nameof(attributeTemplate));
             else if (attributeTemplate.Kind != Templates.TemplateKind.Attribute)
                 throw new ArgumentException(nameof(attributeTemplate) + " is not attribute");
@@ -94,13 +94,13 @@ namespace NonSucking.Framework.Serialization
 
         public static bool TryGetAttribute(this ISymbol symbol, Template attributeTemplate, out AttributeData attributeData)
         {
-            if (attributeTemplate == null)
+            if (attributeTemplate is null)
                 throw new ArgumentNullException(nameof(attributeTemplate));
             else if (attributeTemplate.Kind != Templates.TemplateKind.Attribute)
                 throw new ArgumentException(nameof(attributeTemplate) + " is not attribute");
 
             attributeData = symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass.ToDisplayString() == attributeTemplate.FullName);
-            return attributeData != null;
+            return attributeData is not null;
         }
     }
 
@@ -110,11 +110,13 @@ namespace NonSucking.Framework.Serialization
         internal const string writerName = "writer";
         internal const string readerName = "reader";
         private static readonly string returnValue;
+        private static readonly MemberInfo returnValueMember;
         internal const string ReturnValueBaseName = "ret";
 
         static NoosonGenerator()
         {
-            returnValue = Helper.GetRandomNameFor(ReturnValueBaseName, "");
+            returnValueMember = new MemberInfo(null, null, ReturnValueBaseName, "");
+            returnValue = returnValueMember.CreateUniqueName();
         }
 
         public void Initialize(IncrementalGeneratorInitializationContext incrementalContext)
@@ -168,85 +170,111 @@ namespace NonSucking.Framework.Serialization
 
         private static VisitInfo Transform(GeneratorSyntaxContext syntaxContext, CancellationToken cancellationToken)
         {
-            var typeDeclarationSyntax = syntaxContext.Node as TypeDeclarationSyntax;
-
-            INamedTypeSymbol typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(typeDeclarationSyntax);
-            System.Collections.Immutable.ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
-            var attribute
-                = attributes
-                .FirstOrDefault(d => d?.AttributeClass.ToDisplayString() == AttributeTemplates.GenSerializationAttribute.FullName);
-
-            if (attribute == default)
+            try
             {
-                return VisitInfo.Empty;
-            }
 
-            var propEnumerable 
-                = Helper
-                .GetMembersWithBase(typeSymbol)
-                .Where(x => !x.Symbol.ContainingType.IsAbstract);
-            if (typeSymbol.IsRecord)
+                var typeDeclarationSyntax = syntaxContext.Node as TypeDeclarationSyntax;
+
+                INamedTypeSymbol typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(typeDeclarationSyntax);
+                System.Collections.Immutable.ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
+                var attribute
+                    = attributes
+                        .FirstOrDefault(d => d?.AttributeClass.ToDisplayString() == AttributeTemplates.GenSerializationAttribute.FullName);
+
+                if (attribute == default)
+                {
+                    return VisitInfo.Empty;
+                }
+
+                var propEnumerable 
+                    = Helper
+                        .GetMembersWithBase(typeSymbol)
+                        .Where(x => !x.Symbol.ContainingType.IsAbstract);
+                if (typeSymbol.IsRecord)
+                {
+                    // Exclude CompilerGenerated EqualityContract from serialization process
+                    propEnumerable = propEnumerable.Where(x => x.Name != "EqualityContract");
+                }
+                MemberInfo[] properties = propEnumerable.ToArray();
+
+                return new VisitInfo(typeSymbol, attribute, properties);
+            }
+            catch (Exception e)
             {
-                // Exclude CompilerGenerated EqualityContract from serialization process
-                propEnumerable = propEnumerable.Where(x => x.Name != "EqualityContract");
+                throw new Exception(syntaxContext.Node.SyntaxTree.FilePath + e.Message + "\n" + e.StackTrace);
             }
-            MemberInfo[] properties = propEnumerable.ToArray();
-
-            return new VisitInfo(typeSymbol, attribute, properties);
         }
 
         private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation, ImmutableArray<VisitInfo> VisitInfos) source)
         {
-
             foreach (VisitInfo typeToAugment in source.VisitInfos)
             {
-                NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeToAugment.TypeSymbol);
-                NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeToAugment.TypeSymbol);
-                var methods =
-                    new[] {
-                        GenerateSerializeMethod(typeToAugment, serializeContext),
-                        GenerateDeserializeMethod(typeToAugment, deserializeContext)
-                    };
+                try
+                {
+                    NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeToAugment.TypeSymbol);
+                    NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeToAugment.TypeSymbol);
+                    var methods =
+                        new[] {
+                            GenerateSerializeMethod(typeToAugment, serializeContext),
+                            GenerateDeserializeMethod(typeToAugment, deserializeContext)
+                        };
 
-                CompilationUnitSyntax sourceCode;
-                if (typeToAugment.TypeSymbol.IsRecord)
-                    sourceCode 
-                        = new RecordBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString(), typeToAugment.TypeSymbol.IsValueType)
-                        .WithUsings()
-                        .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                        .WithMethods(methods)
-                        .Build();
-                else if (typeToAugment.TypeSymbol.IsValueType)
-                    sourceCode 
-                        = new StructBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
-                        .WithUsings()
-                        .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                        .WithMethods(methods)
-                        .Build();
-                else
-                    sourceCode 
-                        = new ClassBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
-                        .WithUsings()
-                        .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                        .WithMethods(methods)
-                        .Build();
-                        
-                string hintName = $"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
+                    CompilationUnitSyntax sourceCode;
+                    if (typeToAugment.TypeSymbol.IsRecord)
+                        sourceCode 
+                            = new RecordBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString(), typeToAugment.TypeSymbol.IsValueType)
+                            .WithUsings()
+                            .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                            .WithMethods(methods)
+                            .Build();
+                    else if (typeToAugment.TypeSymbol.IsValueType)
+                        sourceCode 
+                            = new StructBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                            .WithUsings()
+                            .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                            .WithMethods(methods)
+                            .Build();
+                    else
+                        sourceCode 
+                            = new ClassBuilder(typeToAugment.TypeSymbol.Name, typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString())
+                            .WithUsings()
+                            .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                            .WithMethods(methods)
+                            .Build();
+                            
+                    string hintName = $"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs";
 
-                using var workspace = new AdhocWorkspace() { };
-                var options = workspace.Options
-                    .WithChangedOption(CSharpFormattingOptions.NewLineForElse, true)
-                    .WithChangedOption(CSharpFormattingOptions.NewLineForFinally, true)
-                    .WithChangedOption(CSharpFormattingOptions.NewLineForCatch, true)
-                    .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInMethods, true)
-                    .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInTypes, true)
-                    .WithChangedOption(CSharpFormattingOptions.IndentBlock, false)
-                    ;
-                var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
+                    using var workspace = new AdhocWorkspace() { };
+                    var options = workspace.Options
+                        .WithChangedOption(CSharpFormattingOptions.NewLineForElse, true)
+                        .WithChangedOption(CSharpFormattingOptions.NewLineForFinally, true)
+                        .WithChangedOption(CSharpFormattingOptions.NewLineForCatch, true)
+                        .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInMethods, true)
+                        .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInTypes, true)
+                        .WithChangedOption(CSharpFormattingOptions.IndentBlock, false)
+                        ;
+                    var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
 
-                sourceProductionContext.AddSource(hintName, formattedText);
+                    sourceProductionContext.AddSource(hintName, formattedText);
+                }
+                catch (Exception e) when (!Debugger.IsAttached)
+                {
+                    var location = typeToAugment.TypeSymbol.DeclaringSyntaxReferences.Length > 0
+                        ? Location.Create(
+                            typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].SyntaxTree,
+                            typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].Span)
+                        : Location.None;
+                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            $"{NoosonGeneratorContext.IdPrefix}0011",
+                            "",
+                            $"Error occured while trying to generate serializer code for '{typeToAugment.TypeSymbol.ToDisplayString()}' type: {e.Message}\n{e.StackTrace}",
+                            nameof(NoosonGenerator),
+                            DiagnosticSeverity.Error,
+                            true),
+                            location));
+                }
             }
-
         }
 
 
@@ -282,16 +310,16 @@ namespace NonSucking.Framework.Serialization
         {
             var statements
                 = GenerateStatementsForProps(visitInfo.Properties, context, methodType)
-                .Where(x=>x.Count > 0)
-                .SelectMany(x => x)
+                .Where(x=> x.Statements.Count + x.VariableDeclarations.Count > 0)
+                .SelectMany(x => x.ToMergedBlock())
                 .ToList();
 
             if (methodType == MethodType.Deserialize)
             {
                 try
                 {
-                    var ret = CtorSerializer.CallCtorAndSetProps(visitInfo.TypeSymbol, statements, returnValue, DeclareOrAndAssign.DeclareAndAssign);
-                    statements.AddRange(ret);
+                    var ret = CtorSerializer.CallCtorAndSetProps(visitInfo.TypeSymbol, statements, returnValueMember, returnValue);
+                    statements.AddRange(ret.ToMergedBlock());
                 }
                 catch (NotSupportedException)
                 {
@@ -312,7 +340,7 @@ namespace NonSucking.Framework.Serialization
             }
             return BodyGenerator.Create(statements.ToArray());
         }
-        internal static IEnumerable<List<StatementSyntax>> GenerateStatementsForProps(IReadOnlyCollection<MemberInfo> properties, NoosonGeneratorContext context, MethodType methodType)
+        internal static IEnumerable<GeneratedSerializerCode> GenerateStatementsForProps(IReadOnlyCollection<MemberInfo> properties, NoosonGeneratorContext context, MethodType methodType)
         {
             var propsWithAttr = properties.Select(property => (property, attribute: property.Symbol.GetAttribute(AttributeTemplates.Order)));
             foreach (var propWithAttr in propsWithAttr.OrderBy(x => x.attribute is null ? int.MaxValue : (int)x.attribute.ConstructorArguments[0].Value))
@@ -359,10 +387,11 @@ namespace NonSucking.Framework.Serialization
         }
 
 
-        internal static List<StatementSyntax> CreateStatementForSerializing(MemberInfo property, NoosonGeneratorContext context, string writerName)
+        internal static GeneratedSerializerCode CreateStatementForSerializing(MemberInfo property, NoosonGeneratorContext context, string writerName, bool ignoreNullable = false)
         {
-            List<StatementSyntax> statements = new();
+            GeneratedSerializerCode statements = new();
             _ = CustomMethodCallSerializer.TrySerialize(property, context, writerName, statements)
+                           || !ignoreNullable && NullableSerializer.TrySerialize(property, context, writerName, statements)
                            || SpecialTypeSerializer.TrySerialize(property, context, writerName, statements)
                            || EnumSerializer.TrySerialize(property, context, writerName, statements)
                            || MethodCallSerializer.TrySerialize(property, context, writerName, statements)
@@ -374,10 +403,11 @@ namespace NonSucking.Framework.Serialization
             return statements;
         }
 
-        internal static List<StatementSyntax> CreateStatementForDeserializing(MemberInfo property, NoosonGeneratorContext context, string readerName)
+        internal static GeneratedSerializerCode CreateStatementForDeserializing(MemberInfo property, NoosonGeneratorContext context, string readerName, bool ignoreNullable = false)
         {
-            List<StatementSyntax> statements = new();
+            GeneratedSerializerCode statements = new();
             _ = CustomMethodCallSerializer.TryDeserialize(property, context, readerName, statements)
+                           || !ignoreNullable && NullableSerializer.TryDeserialize(property, context, readerName, statements)
                            || SpecialTypeSerializer.TryDeserialize(property, context, readerName, statements)
                            || EnumSerializer.TryDeserialize(property, context, readerName, statements)
                            || MethodCallSerializer.TryDeserialize(property, context, readerName, statements)
@@ -385,7 +415,6 @@ namespace NonSucking.Framework.Serialization
                            || ListSerializer.TryDeserialize(property, context, readerName, statements)
                            || PublicPropertySerializer.TryDeserialize(property, context, readerName, statements)
                            ;
-
             return statements;
         }
 

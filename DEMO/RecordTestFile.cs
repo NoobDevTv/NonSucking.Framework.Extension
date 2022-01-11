@@ -20,6 +20,6 @@ public partial record TestRecordCustomContract
     protected virtual Type EqualityContract
     {
         [CompilerGenerated]
-        get => typeof(Abc);
+        get => typeof(TestRecordCustomContract);
     }
 }
