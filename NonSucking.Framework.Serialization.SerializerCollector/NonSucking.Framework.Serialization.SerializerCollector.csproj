@@ -11,7 +11,6 @@
         <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
-        <RootNamespace>NonSucking.Framework.Serialization.Generator</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

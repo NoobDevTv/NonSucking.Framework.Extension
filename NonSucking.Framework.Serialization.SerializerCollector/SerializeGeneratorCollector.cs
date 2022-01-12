@@ -7,7 +7,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace NonSucking.Framework.Serialization.Generator;
+namespace NonSucking.Framework.Serialization.SerializerCollector;
 [Generator]
 public class SerializeGeneratorCollector : IIncrementalGenerator
 {
