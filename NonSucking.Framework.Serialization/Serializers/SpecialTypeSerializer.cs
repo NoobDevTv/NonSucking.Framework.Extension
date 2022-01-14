@@ -5,12 +5,14 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
+using NonSucking.Framework.Serialization.Serializers;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 
 using VaVare.Statements;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(20)]
     internal static class SpecialTypeSerializer
     {
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)

@@ -12,9 +12,11 @@ using System.IO;
 using NonSucking.Framework.Serialization.Attributes;
 using System.Linq.Expressions;
 using Microsoft.CodeAnalysis.CSharp;
+using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(0)]
     internal static class CustomMethodCallSerializer
     {
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)

@@ -339,3 +339,4 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /DEMO/GeneratedFiles/NonSucking.Framework.Serialization/NonSucking.Framework.Serialization.NoosonGenerator
+/NonSucking.Framework.Serialization/GeneratedFiles

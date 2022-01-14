@@ -10,9 +10,11 @@ using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using System.Linq;
 using System.IO;
 using NonSucking.Framework.Serialization.Attributes;
+using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(40)]
     internal static class MethodCallSerializer
     {
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)

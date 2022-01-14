@@ -10,6 +10,8 @@
 		<UseNETCoreGenerator>true</UseNETCoreGenerator>
 		<IsRoslynComponent>true</IsRoslynComponent>
 		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+		<CompilerGeneratedFilesOutputPath>GeneratedFiles</CompilerGeneratedFilesOutputPath>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -21,6 +23,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Condition="'$(DesignTimeBuild)'!='true'" Include="..\NonSucking.Framework.Serialization.Generator\NonSucking.Framework.Serialization.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
 
@@ -73,4 +77,9 @@
 		</ItemGroup>
 	</Target>
 
+	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild">
+		<ItemGroup>
+			<Compile Remove="GeneratedFiles\**" />
+		</ItemGroup>
+	</Target>
 </Project>

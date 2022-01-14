@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
+using NonSucking.Framework.Serialization.Serializers;
 using VaVare.Generators.Common;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Models.References;
@@ -16,6 +17,7 @@ using VaVare.Statements;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(50)]
     internal static class DictionarySerializer
     {
 

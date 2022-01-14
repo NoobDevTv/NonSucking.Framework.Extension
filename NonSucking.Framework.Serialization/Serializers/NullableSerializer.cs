@@ -17,6 +17,7 @@ using static NonSucking.Framework.Serialization.NoosonGenerator;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(10)]
     internal static class NullableSerializer
     {
         private static bool CanBeNull(MemberInfo property)
@@ -73,7 +74,7 @@ namespace NonSucking.Framework.Serialization
                 ? GetNullableValue(property, baseTypesLevelProperties)
                 : new MemberInfo(GetNonNullableTypeSymbol(property.TypeSymbol), property.Symbol, property.Name,
                     property.Parent);
-            var innerSerialize = NoosonGenerator.CreateStatementForSerializing(m, context, readerName, true);
+            var innerSerialize = NoosonGenerator.CreateStatementForSerializing(m, context, readerName, excludedSerializers: SerializerMask.NullableSerializer);
             var b = BodyGenerator.Create(innerSerialize.ToMergedBlock().ToArray());
 
             var writeNullable = Statement.Expression.Invoke(writerName, "Write",
@@ -95,7 +96,7 @@ namespace NonSucking.Framework.Serialization
             var elementType = GetNonNullableTypeSymbol(property.TypeSymbol);
             var m = new MemberInfo(elementType, property.Symbol, property.Name + (elementType.IsValueType ? "ValueType" : ""), property.Parent);
 
-            var innerDeserialize = CreateStatementForDeserializing(m, context, readerName, true);
+            var innerDeserialize = CreateStatementForDeserializing(m, context, readerName, excludedSerializers: SerializerMask.NullableSerializer);
 
             LocalDeclarationStatementSyntax Transform(GeneratedSerializerCode.SerializerVariable variable)
             {
