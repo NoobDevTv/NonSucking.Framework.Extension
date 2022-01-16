@@ -17,6 +17,7 @@ using System.Threading;
 
 using VaVare;
 using VaVare.Builders;
+using VaVare.Builders.BuildMembers;
 using VaVare.Generators.Common;
 
 namespace NonSucking.Framework.Serialization
@@ -57,13 +58,16 @@ namespace NonSucking.Framework.Serialization
         }
         internal void AddDiagnostic(string id, string title, string message, ISymbol symbolForLocation, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
         {
+            var loc = symbolForLocation.DeclaringSyntaxReferences.Length == 0
+                ? Location.None
+                : Location.Create(
+                    symbolForLocation.DeclaringSyntaxReferences[0].SyntaxTree,
+                    symbolForLocation.DeclaringSyntaxReferences[0].Span);
             AddDiagnostic(
                 id,
                 title,
                 message,
-                Location.Create(
-                    symbolForLocation.DeclaringSyntaxReferences[0].SyntaxTree,
-                    symbolForLocation.DeclaringSyntaxReferences[0].Span),
+                loc,
                 severity,
                 helpLinkurl,
                 customTags);
@@ -188,13 +192,8 @@ namespace NonSucking.Framework.Serialization
 
                 var propEnumerable 
                     = Helper
-                        .GetMembersWithBase(typeSymbol)
-                        .Where(x => !x.Symbol.ContainingType.IsAbstract);
-                if (typeSymbol.IsRecord)
-                {
-                    // Exclude CompilerGenerated EqualityContract from serialization process
-                    propEnumerable = propEnumerable.Where(x => x.Name != "EqualityContract");
-                }
+                        .GetMembersWithBase(typeSymbol);
+
                 MemberInfo[] properties = propEnumerable.ToArray();
 
                 return new VisitInfo(typeSymbol, attribute, properties);
@@ -211,6 +210,24 @@ namespace NonSucking.Framework.Serialization
             {
                 try
                 {
+                    if (typeToAugment.TypeSymbol.IsAbstract)
+                    {
+                        var location = typeToAugment.TypeSymbol.DeclaringSyntaxReferences.Length > 0
+                            ? Location.Create(
+                                typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].SyntaxTree,
+                                typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].Span)
+                            : Location.None;
+                        sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                            new DiagnosticDescriptor(
+                                $"{NoosonGeneratorContext.IdPrefix}0012",
+                                "",
+                                $"Abstract types are not supported for serializing/deserializing('{typeToAugment.TypeSymbol.ToDisplayString()}').",
+                                nameof(NoosonGenerator),
+                                DiagnosticSeverity.Error,
+                                true),
+                            location));
+                        continue;
+                    }
                     NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeToAugment.TypeSymbol);
                     NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeToAugment.TypeSymbol);
                     var methods =

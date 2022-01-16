@@ -30,10 +30,16 @@ namespace NonSucking.Framework.Serialization
 
             if (symbol is null)
                 yield break;
+            var isRecord = symbol.IsRecord;
             foreach (var member in symbol.GetMembers())
             {
                 if (member is IPropertySymbol propSymbol)
                 {
+                    // Exclude CompilerGenerated EqualityContract from serialization process
+                    if (isRecord && propSymbol.Name == "EqualityContract")
+                    {
+                        continue;
+                    }
                     yield return new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
                 }
                 else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
