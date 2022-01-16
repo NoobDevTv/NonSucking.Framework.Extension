@@ -60,9 +60,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
             {
                 var r = new GeneratedSerializerCode();
-                r.Statements.Add(Statement
-                    .Declaration
-                    .Assign(instanceName, SyntaxFactory.ParseTypeName(" default")));
+                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.ParseExpression("default"));
                 return r;
             }
 
