@@ -90,6 +90,12 @@ public class GeneratedSerializerCode
         }
     }
 
+    public void Clear()
+    {
+        VariableDeclarations.Clear();
+        Statements.Clear();
+    }
+
     public readonly struct SerializerVariable
     {
         public SerializerVariable(LocalDeclarationStatementSyntax declaration, MemberInfo originalMember, string uniqueName, EqualsValueClauseSyntax initialValue)

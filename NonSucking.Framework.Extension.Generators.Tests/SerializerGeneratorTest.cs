@@ -29,15 +29,15 @@ namespace NonSucking.Framework.Serialization.Tests
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
             {
-                //{ recordTestFile, File.ReadAllText(recordTestFile)},
-                //{ structTestFile, File.ReadAllText(structTestFile)},
-                //{ nullableTestFile, File.ReadAllText(nullableTestFile)},
-                //{ secondTestFile, File.ReadAllText(secondTestFile)},
+                { recordTestFile, File.ReadAllText(recordTestFile)},
+                { structTestFile, File.ReadAllText(structTestFile)},
+                { nullableTestFile, File.ReadAllText(nullableTestFile)},
+                { secondTestFile, File.ReadAllText(secondTestFile)},
                 { listsContainer , File.ReadAllText(listsContainer )},
-                //{ sutMessage, File.ReadAllText(sutMessage)},
-                //{ iUser, File.ReadAllText(iUser)},
-                //{ message, File.ReadAllText(message)},
-                //{ singePropTest, File.ReadAllText(singePropTest)},
+                { sutMessage, File.ReadAllText(sutMessage)},
+                { iUser, File.ReadAllText(iUser)},
+                { message, File.ReadAllText(message)},
+                { singePropTest, File.ReadAllText(singePropTest)},
             },
             () => new NoosonGenerator());
 
