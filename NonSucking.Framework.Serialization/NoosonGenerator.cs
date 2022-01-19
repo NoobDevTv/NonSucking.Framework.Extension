@@ -217,7 +217,8 @@ namespace NonSucking.Framework.Serialization
                         containingNamespace,
                         symbol.IsValueType)
                     .WithUsings()
-                    .WithModifiers(Modifiers.Public, Modifiers.Partial).With(nestedMember);
+                    .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                    .With(nestedMember);
                 if (isNestedType)
                     parentNestedType = builder.BuildWithoutNamespace();
                 else
@@ -227,7 +228,8 @@ namespace NonSucking.Framework.Serialization
             {
                 var builder = new StructBuilder(symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
                     .WithUsings()
-                    .WithModifiers(Modifiers.Public, Modifiers.Partial).With(nestedMember);
+                    .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                    .With(nestedMember);
                 if (isNestedType)
                     parentNestedType = builder.BuildWithoutNamespace();
                 else
@@ -237,7 +239,8 @@ namespace NonSucking.Framework.Serialization
             {
                 var builder = new ClassBuilder(symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
                     .WithUsings()
-                    .WithModifiers(Modifiers.Public, Modifiers.Partial).With(nestedMember);
+                    .WithModifiers(Modifiers.Public, Modifiers.Partial)
+                    .With(nestedMember);
                 if (isNestedType)
                     parentNestedType = builder.BuildWithoutNamespace();
                 else
@@ -246,6 +249,7 @@ namespace NonSucking.Framework.Serialization
 
             if (isNestedType)
                 return CreateNesting(symbol.ContainingType, parentNestedType);
+            
             return compilationUnitSyntax;
         }
 
@@ -300,7 +304,7 @@ namespace NonSucking.Framework.Serialization
                     CompilationUnitSyntax sourceCode = null;
                     TypeDeclarationSyntax nestedType = null;
 
-                    bool isNestedType = typeToAugment.TypeSymbol.ContainingType != null;
+                    bool isNestedType = typeToAugment.TypeSymbol.ContainingType is not null;
                     var containingNamespace = isNestedType
                         ? null
                         : typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString();
