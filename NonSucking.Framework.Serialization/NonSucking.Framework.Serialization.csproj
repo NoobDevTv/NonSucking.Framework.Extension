@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Condition="'$(DesignTimeBuild)'!='true'" Include="..\NonSucking.Framework.Serialization.Generator\NonSucking.Framework.Serialization.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+		<ProjectReference Condition="'$(DesignTimeBuild)'!='true'" Include="..\NonSucking.Framework.Serialization.SerializerCollector\NonSucking.Framework.Serialization.SerializerCollector.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
