@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Formatting;
 
 using NonSucking.Framework.Serialization.Attributes;
 using NonSucking.Framework.Serialization.Serializers;
+using NonSucking.Framework.Serialization.Templates;
 
 using System;
 using System.Collections.Generic;
@@ -151,6 +152,14 @@ namespace NonSucking.Framework.Serialization
                 incrementalContext.RegisterSourceOutput(compilationVisitInfos,
                     (context, tuple) => InternalExecute(context, tuple, templates));
 
+                incrementalContext.RegisterPostInitializationOutput(i =>
+                {
+                    foreach (Template template in templates)
+                    {
+                        if (template.Kind != TemplateKind.AdditionalSource)
+                            i.AddSource(template.Name, template.ToString());
+                    }
+                });
             }
             catch (Exception)
             {
@@ -268,7 +277,7 @@ namespace NonSucking.Framework.Serialization
         {
             foreach (Template template in templates)
             {
-                if (source.Compilation.GetTypeByMetadataName(template.FullName) is null)
+                if (template.Kind == TemplateKind.AdditionalSource && source.Compilation.GetTypeByMetadataName(template.FullName) is null)
                     sourceProductionContext.AddSource(template.Name, template.ToString());
             }
             foreach (VisitInfo typeToAugment in source.VisitInfos)
