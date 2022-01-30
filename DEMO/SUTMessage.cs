@@ -84,7 +84,7 @@ namespace DEMO
         }
     }
 
-    [Nooson]
+    // [Nooson]
     public partial class SUTMessage : IEquatable<SUTMessage>
     {
 

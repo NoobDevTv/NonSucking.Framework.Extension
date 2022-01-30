@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NonSucking.Framework.Serialization;
 using System.Collections.Concurrent;
+using System.Drawing;
 
 namespace DEMO;
 
@@ -21,6 +22,8 @@ public partial class ListsContainer
 
     public int[] TestArray { get; set; }
     public int[,,] MultiDemension { get; set; }
+    
+    public IReadOnlyDictionary<short, short> ReadOnlyDicSetable { get; set; }
     public int[][] MultiArray { get; set; }
 
     public List<Queue<int[][][][][]>> YouAreGonnaHateMe { get; set; }

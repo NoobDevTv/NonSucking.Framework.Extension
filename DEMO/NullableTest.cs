@@ -14,7 +14,7 @@ public struct SomeValueData
     public int Abc { get; set; }
 }
 
-[Nooson]
+// [Nooson]
 public partial class NullableEnabledTest
 {
     public SomeData NotNull { get; private set; } = new () { Abc = 12};
