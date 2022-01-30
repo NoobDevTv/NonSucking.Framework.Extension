@@ -6,13 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
-
 using VaVare.Generators.Common;
-
 using VaVare.Models.References;
-
 using VaVare.Statements;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -24,13 +20,14 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(60)]
     internal static class ListSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+            GeneratedSerializerCode statements)
         {
             var type = property.TypeSymbol;
             var collectionInterface
                 = type
-                .AllInterfaces
-                .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.IReadOnlyCollection<"));
+                    .AllInterfaces
+                    .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.IReadOnlyCollection<"));
 
             if (collectionInterface is null)
             {
@@ -43,9 +40,9 @@ namespace NonSucking.Framework.Serialization
 
             var localStatements
                 = NoosonGenerator.CreateStatementForSerializing(
-                        new MemberInfo(genericArgument, genericArgument, itemName),
-                        context,
-                        writerName);
+                    new MemberInfo(genericArgument, genericArgument, itemName),
+                    context,
+                    writerName);
 
             var isArray = type.TypeKind == TypeKind.Array;
 
@@ -68,20 +65,20 @@ namespace NonSucking.Framework.Serialization
                 PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, count);
 
             preIterationStatements.Statements.Add(
-                        Statement
-                        .Expression
-                        .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] { countReference })
-                        .AsStatement());
+                Statement
+                    .Expression
+                    .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] {countReference})
+                    .AsStatement());
 
             var innerStatements = localStatements.MergeBlocksSeperated(statements);
             var iterationStatement
                 = Statement
-                .Iteration
-                 .ForEach(itemName,
-                     typeof(void),
-                     Helper.GetMemberAccessString(property, castToCollection),
-                     BodyGenerator.Create(innerStatements.ToArray()),
-                     useVar: true);
+                    .Iteration
+                    .ForEach(itemName,
+                        typeof(void),
+                        Helper.GetMemberAccessString(property, castToCollection),
+                        BodyGenerator.Create(innerStatements.ToArray()),
+                        useVar: true);
 
 
             //var iterationStatement
@@ -97,7 +94,8 @@ namespace NonSucking.Framework.Serialization
             return true;
         }
 
-        private static ForEachStatementSyntax ForEach(string variableName, string varialeType, string enumerableName, BlockSyntax body)
+        private static ForEachStatementSyntax ForEach(string variableName, string varialeType, string enumerableName,
+            BlockSyntax body)
             => SyntaxFactory.ForEachStatement(
                 SyntaxFactory.IdentifierName(varialeType),
                 SyntaxFactory.Identifier(variableName),
@@ -105,17 +103,17 @@ namespace NonSucking.Framework.Serialization
                 body);
 
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements)
         {
-
             var type = property.TypeSymbol;
             // Ctor Analyze for Count 
             const string readonlyName = "System.Collections.Generic.IReadOnlyCollection<";
             var collectionInterface
-                  = type
-                  .AllInterfaces
-                  .FirstOrDefault(x => x.ToString().StartsWith(readonlyName))
-                    ?? (type.ToString().StartsWith(readonlyName) ? type : null);
+                = type
+                      .AllInterfaces
+                      .FirstOrDefault(x => x.ToString().StartsWith(readonlyName))
+                  ?? (type.ToString().StartsWith(readonlyName) ? type : null);
 
             //TODO: Check for IReadOnlyCollection< self
             IArrayTypeSymbol arrType = null;
@@ -123,7 +121,7 @@ namespace NonSucking.Framework.Serialization
             {
                 if (property.TypeSymbol is not IArrayTypeSymbol arrType2)
                     return false;
-             
+
                 arrType = arrType2;
             }
 
@@ -134,7 +132,7 @@ namespace NonSucking.Framework.Serialization
 
 
             ITypeSymbol genericArgument = arrType?.ElementType ?? GetGenericTypeOf(collectionInterface, out _);
-            
+
 
             var itemDeserialization = NoosonGenerator.CreateStatementForDeserializing(
                 new MemberInfo(genericArgument, genericArgument, genericArgument.Name),
@@ -147,9 +145,9 @@ namespace NonSucking.Framework.Serialization
 
             if (count > -1)
                 PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, count);
-            
+
             var listVariableName = itemDeserialization.VariableDeclarations.Single().UniqueName;
-            
+
             var listName = property.CreateUniqueName();
 
 
@@ -158,10 +156,10 @@ namespace NonSucking.Framework.Serialization
 
 
             ExpressionSyntax invocationExpression
-                        = Statement
-                        .Expression
-                        .Invoke(readerName, nameof(BinaryReader.ReadInt32))
-                        .AsExpression();
+                = Statement
+                    .Expression
+                    .Invoke(readerName, nameof(BinaryReader.ReadInt32))
+                    .AsExpression();
             preIterationStatements.Statements.Add(
                 Statement
                     .Declaration
@@ -170,13 +168,14 @@ namespace NonSucking.Framework.Serialization
             if (type is IArrayTypeSymbol arrayType)
             {
                 var indexName = Helper.GetRandomNameFor("i", "");
-                
+
                 var nullArrayStatement
                     = SyntaxFactory.ParseStatement($"{genericArgument}[] {listName};");
 
                 var addStatement
                     = SyntaxFactory
-                    .ExpressionStatement(SyntaxFactory.ParseExpression($"{listName}[{indexName}]={listVariableName}"));
+                        .ExpressionStatement(
+                            SyntaxFactory.ParseExpression($"{listName}[{indexName}]={listVariableName}"));
 
                 itemDeserialization.Statements.Add(addStatement);
 
@@ -190,20 +189,23 @@ namespace NonSucking.Framework.Serialization
                 else
                 {
                     var index = genericStatement.IndexOf("[]");
-                    arrayCtor = genericStatement.Substring(0, index) + $"[{end.Name}][]" + genericStatement.Substring(index + 2);
+                    arrayCtor = genericStatement.Substring(0, index) + $"[{end.Name}][]" +
+                                genericStatement.Substring(index + 2);
                 }
 
                 var arrayStatement
                     = Statement
-                    .Declaration
-                    .Assign(listName, SyntaxFactory.ParseExpression($"new {arrayCtor}"));
+                        .Declaration
+                        .Assign(listName, SyntaxFactory.ParseExpression($"new {arrayCtor}"));
 
                 var iterationStatement
                     = Statement
-                    .Iteration
-                    .For(start, end, indexName, BodyGenerator.Create(itemDeserialization.ToMergedBlock().ToArray()));
+                        .Iteration
+                        .For(start, end, indexName,
+                            BodyGenerator.Create(itemDeserialization.ToMergedBlock().ToArray()));
 
-                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName($"{genericArgument}[]"), null);
+                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName($"{genericArgument}[]"),
+                    null);
                 statements.MergeWith(preIterationStatements);
                 statements.Statements.Add(arrayStatement);
                 statements.Statements.Add(iterationStatement);
@@ -215,9 +217,9 @@ namespace NonSucking.Framework.Serialization
                 const string fallbackMethodName = nameof(IList.Add) + "_";
 
                 var genericCollectionInterface
-                      = type
-                      .AllInterfaces
-                      .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.ICollection<"));
+                    = type
+                        .AllInterfaces
+                        .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.ICollection<"));
 
                 bool hasCountCtor = false;
 
@@ -225,6 +227,7 @@ namespace NonSucking.Framework.Serialization
                 {
                     methodName = fallbackMethodName;
                 }
+
                 var allmembers = type.GetMembers();
 
                 foreach (var item in allmembers)
@@ -239,6 +242,7 @@ namespace NonSucking.Framework.Serialization
                             _ => ""
                         };
                     }
+
                     if (item is IMethodSymbol methodSymbol
                         && methodSymbol.MethodKind == MethodKind.Constructor
                         && methodSymbol.Parameters.Length == 1
@@ -256,25 +260,24 @@ namespace NonSucking.Framework.Serialization
 
                 var castDeclaration
                     = Statement
-                    .Declaration
-                    .ParseDeclareAndAssing(castedListName,
-                        methodName == fallbackMethodName
-                            ? Helper.Cast(listName, genericCollectionInterface.ToDisplayString())
-                            : listName);
+                        .Declaration
+                        .ParseDeclareAndAssing(castedListName,
+                            methodName == fallbackMethodName
+                                ? Helper.Cast(listName, genericCollectionInterface.ToDisplayString())
+                                : listName);
                 //.ParseDeclareAndAssing(castedListName, cast);
 
                 if (!string.IsNullOrWhiteSpace(methodName))
                 {
                     var addStatement
                         = Statement
-                        .Expression
-                        .Invoke(
-                            castedListName,
-                            methodName.TrimEnd('_'),
-                            arguments: new[] { new VariableArgument(listVariableName) })
-                        .AsStatement();
+                            .Expression
+                            .Invoke(
+                                castedListName,
+                                methodName.TrimEnd('_'),
+                                arguments: new[] {new VariableArgument(listVariableName)})
+                            .AsStatement();
                     itemDeserialization.Statements.Add(addStatement);
-
                 }
                 else
                     ; //Diagnostic
@@ -285,20 +288,21 @@ namespace NonSucking.Framework.Serialization
                 if (!type.IsAbstract && type.TypeKind != TypeKind.Interface)
                 {
                     listInitialize = type.ToDisplayString();
-
                 }
-                else if (type.AllInterfaces.Any(x => x.ToString().StartsWith("System.Collections.Generic.IDictionary<")))
+                else if (HasOrIsInterfaces(type, "System.Collections.Generic.IDictionary<",
+                             "System.Collections.Generic.IReadOnlyDictionary<"))
                 {
                     var namedTypeSymbol = genericArgument as INamedTypeSymbol;
 
-                    listInitialize = $"System.Collections.Generic.Dictionary<{namedTypeSymbol.TypeArguments[0]},{namedTypeSymbol.TypeArguments[1]}>";
+                    listInitialize =
+                        $"System.Collections.Generic.Dictionary<{namedTypeSymbol.TypeArguments[0]},{namedTypeSymbol.TypeArguments[1]}>";
                 }
-                else if (type.AllInterfaces.Any(x => x.ToString().StartsWith("System.Collections.IList<"))
-                    || type.AllInterfaces.Any(x => x.ToString().StartsWith("System.Collections.Generic.IReadOnlyCollection<")))
+                else if (HasOrIsInterfaces(type, "System.Collections.IList<",
+                             "System.Collections.Generic.IReadOnlyCollection<"))
                 {
                     listInitialize = $"System.Collections.Generic.List<{genericArgument}>";
                 }
-                else 
+                else
                 {
                     statements.Clear();
                     //TODO Warning / Error
@@ -308,27 +312,42 @@ namespace NonSucking.Framework.Serialization
 
                 ExpressionSyntax ctorInvocationExpression
                     = Statement
-                    .Expression
-                    .Invoke(
-                        $"new {listInitialize}",
-                        arguments: hasCountCtor
-                            ? new[] { new ValueArgument((object)end.Name) }
-                            : Array.Empty<IArgument>())
-                    .AsExpression();
+                        .Expression
+                        .Invoke(
+                            $"new {listInitialize}",
+                            arguments: hasCountCtor
+                                ? new[] {new ValueArgument((object) end.Name)}
+                                : Array.Empty<IArgument>())
+                        .AsExpression();
 
                 var iterationStatement
                     = Statement
-                    .Iteration
-                    .For(start, end, Helper.GetRandomNameFor("i", ""), BodyGenerator.Create(itemDeserialization.ToMergedBlock().ToArray()));
+                        .Iteration
+                        .For(start, end, Helper.GetRandomNameFor("i", ""),
+                            BodyGenerator.Create(itemDeserialization.ToMergedBlock().ToArray()));
 
                 statements.MergeWith(preIterationStatements);
-                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(listInitialize), ctorInvocationExpression);
+                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(listInitialize),
+                    ctorInvocationExpression);
                 statements.Statements.Add(castDeclaration);
                 statements.Statements.Add(iterationStatement);
-
             }
 
             return true;
+        }
+
+        private static bool HasOrIsInterfaces(ITypeSymbol symbol, params string[] interfaces)
+        {
+            foreach (var @interface in interfaces)
+            {
+                if (symbol.ToDisplayString().StartsWith(@interface)
+                    || symbol.AllInterfaces.Any(x => x.ToString().StartsWith(@interface)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
 
@@ -350,7 +369,6 @@ namespace NonSucking.Framework.Serialization
             {
                 if (typeForIter is INamedTypeSymbol nts)
                 {
-
                     if (nts.TypeArguments.Length > 0)
                     {
                         genericArgument = nts.TypeArguments[0];

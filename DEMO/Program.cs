@@ -71,22 +71,22 @@ namespace DEMO
             using (var ms = new FileStream("sut.save", FileMode.OpenOrCreate))
             {
                 using var bw = new BinaryWriter(ms);
-                sutMessage.Serialize(bw);
+                // sutMessage.Serialize(bw);
             }
 
             using (var ms = new FileStream("sut.save", FileMode.Open))
             {
                 using var br = new BinaryReader(ms);
-                var sutMessageDes = SUTMessage.Deserialize(br);
+                // var sutMessageDes = SUTMessage.Deserialize(br);
 
-                if (sutMessageDes == sutMessage)
-                {
-                    Console.WriteLine("Success");
-                }
-                else
-                {
-                    Console.WriteLine("Failure");
-                }
+                // if (sutMessageDes == sutMessage)
+                // {
+                //     Console.WriteLine("Success");
+                // }
+                // else
+                // {
+                //     Console.WriteLine("Failure");
+                // }
 
             }
 
