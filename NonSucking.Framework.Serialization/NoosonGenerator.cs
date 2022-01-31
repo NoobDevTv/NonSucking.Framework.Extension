@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Formatting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 
@@ -169,7 +168,7 @@ namespace NonSucking.Framework.Serialization
         {
             return syntaxNode is ClassDeclarationSyntax { AttributeLists: { Count: > 0 } }
                 or RecordDeclarationSyntax { AttributeLists: { Count: > 0 } }
-                or StructDeclarationSyntax {AttributeLists: {Count: > 0 }};
+                or StructDeclarationSyntax { AttributeLists: { Count: > 0 } };
         }
 
         private static VisitInfo Transform(GeneratorSyntaxContext syntaxContext, CancellationToken cancellationToken)
@@ -190,7 +189,7 @@ namespace NonSucking.Framework.Serialization
                     return VisitInfo.Empty;
                 }
 
-                var propEnumerable 
+                var propEnumerable
                     = Helper
                         .GetMembersWithBase(typeSymbol);
 
@@ -249,7 +248,7 @@ namespace NonSucking.Framework.Serialization
 
             if (isNestedType)
                 return CreateNesting(symbol.ContainingType, parentNestedType);
-            
+
             return compilationUnitSyntax;
         }
 
@@ -346,21 +345,35 @@ namespace NonSucking.Framework.Serialization
 
                     if (isNestedType)
                         sourceCode = CreateNesting(typeToAugment.TypeSymbol.ContainingType, nestedType);
-                            
+
                     string hintName = TypeNameToSummaryName($"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs");
 
-                    using var workspace = new AdhocWorkspace() { };
-                    var options = workspace.Options
-                        .WithChangedOption(CSharpFormattingOptions.NewLineForElse, true)
-                        .WithChangedOption(CSharpFormattingOptions.NewLineForFinally, true)
-                        .WithChangedOption(CSharpFormattingOptions.NewLineForCatch, true)
-                        .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInMethods, true)
-                        .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInTypes, true)
-                        .WithChangedOption(CSharpFormattingOptions.IndentBlock, false)
-                        ;
-                    var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
+                    //using var workspace = new AdhocWorkspace() { };
+                    //var options = workspace.Options
+                    //    .WithChangedOption(CSharpFormattingOptions.NewLineForElse, true)
+                    //    .WithChangedOption(CSharpFormattingOptions.NewLineForFinally, true)
+                    //    .WithChangedOption(CSharpFormattingOptions.NewLineForCatch, true)
+                    //    .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInMethods, true)
+                    //    .WithChangedOption(CSharpFormattingOptions.NewLinesForBracesInTypes, true)
+                    //    .WithChangedOption(CSharpFormattingOptions.IndentBlock, false)
+                    //    ;
+                    //var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
 
-                    sourceProductionContext.AddSource(hintName, formattedText);
+                    sourceProductionContext.AddSource(hintName, sourceCode.NormalizeWhitespace().ToFullString() /*formattedText*/);
+                }
+                catch (ReflectionTypeLoadException loaderException)
+                {
+                    var exceptions = string.Join(" | ", loaderException.LoaderExceptions.Select(x => x.ToString()));
+
+                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                    new DiagnosticDescriptor(
+                        $"{NoosonGeneratorContext.IdPrefix}0012",
+                        "",
+                        $"Missing dependencies for generation of serializer code for '{typeToAugment.TypeSymbol.ToDisplayString()}'. Amount: {loaderException.LoaderExceptions.Length}, {loaderException.Message}, {exceptions}",
+                        nameof(NoosonGenerator),
+                        DiagnosticSeverity.Error,
+                        true),
+                         Location.None));
                 }
                 catch (Exception e) when (!Debugger.IsAttached)
                 {
@@ -369,15 +382,17 @@ namespace NonSucking.Framework.Serialization
                             typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].SyntaxTree,
                             typeToAugment.TypeSymbol.DeclaringSyntaxReferences[0].Span)
                         : Location.None;
+
+
                     sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            $"{NoosonGeneratorContext.IdPrefix}0011",
-                            "",
-                            $"Error occured while trying to generate serializer code for '{typeToAugment.TypeSymbol.ToDisplayString()}' type: {e.Message}\n{e.StackTrace}",
-                            nameof(NoosonGenerator),
-                            DiagnosticSeverity.Error,
-                            true),
-                            location));
+                    new DiagnosticDescriptor(
+                        $"{NoosonGeneratorContext.IdPrefix}0011",
+                        "",
+                        $"Error occured while trying to generate serializer code for '{typeToAugment.TypeSymbol.ToDisplayString()}' type: {e.Message}\n{e.StackTrace}",
+                        nameof(NoosonGenerator),
+                        DiagnosticSeverity.Error,
+                        true),
+                        location));
                 }
             }
         }
@@ -415,7 +430,7 @@ namespace NonSucking.Framework.Serialization
         {
             var statements
                 = GenerateStatementsForProps(visitInfo.Properties, context, methodType)
-                .Where(x=> x.Statements.Count + x.VariableDeclarations.Count > 0)
+                .Where(x => x.Statements.Count + x.VariableDeclarations.Count > 0)
                 .SelectMany(x => x.ToMergedBlock())
                 .ToList();
 
