@@ -21,7 +21,7 @@ public partial class ListsContainer
     public List<Queue<int>> ListWithQueue { get; set; }
 
     public int[] TestArray { get; set; }
-    public int[,,] MultiDemension { get; set; }
+    public int[,,] MultiDimension { get; set; }
     
     public IReadOnlyDictionary<short, short> ReadOnlyDicSetable { get; set; }
     public int[][] MultiArray { get; set; }

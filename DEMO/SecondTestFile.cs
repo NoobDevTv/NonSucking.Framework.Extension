@@ -121,7 +121,6 @@ public abstract class BaseSmarthomeMessage
 [Nooson]
 public partial class BinarySmarthomeMessage : BaseSmarthomeMessage
 {
-    //public MyEnumerable<int> MyEnumerable { get; set; }
     public SmarthomeHeader Header { get; set; }
     public override uint NodeId { get => base.NodeId; set => base.NodeId = value; }
     public override MessageType MessageType { get => base.MessageType; set => base.MessageType = value; }
