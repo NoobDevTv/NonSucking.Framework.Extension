@@ -1,18 +1,11 @@
-﻿using Newtonsoft.Json.Converters;
-using Newtonsoft.Json;
-
+﻿
 using NonSucking.Framework.Serialization;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using static DEMO.SUTMessage;
 
 namespace DEMO
 {
@@ -84,7 +77,7 @@ namespace DEMO
         }
     }
 
-    // [Nooson]
+    [Nooson]
     public partial class SUTMessage : IEquatable<SUTMessage>
     {
 

@@ -1,19 +1,18 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+using NonSucking.Framework.Serialization.Serializers;
+
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using VaVare.Generators.Common.Arguments.ArgumentTypes;
+
 using VaVare.Generators.Common;
+using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Models.References;
 using VaVare.Statements;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Text;
-using System.Drawing;
-using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
 {
@@ -67,7 +66,7 @@ namespace NonSucking.Framework.Serialization
             preIterationStatements.Statements.Add(
                 Statement
                     .Expression
-                    .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] {countReference})
+                    .Invoke(writerName, nameof(BinaryWriter.Write), arguments: new[] { countReference })
                     .AsStatement());
 
             var innerStatements = localStatements.MergeBlocksSeperated(statements);
@@ -219,7 +218,7 @@ namespace NonSucking.Framework.Serialization
                 var genericCollectionInterface
                     = type
                         .AllInterfaces
-                        .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.ICollection<"));
+                        .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.ICollection<"))?.ToDisplayString();
 
                 bool hasCountCtor = false;
 
@@ -258,29 +257,8 @@ namespace NonSucking.Framework.Serialization
 
                 var castedListName = Helper.GetRandomNameFor("localList");
 
-                var castDeclaration
-                    = Statement
-                        .Declaration
-                        .ParseDeclareAndAssing(castedListName,
-                            methodName == fallbackMethodName
-                                ? Helper.Cast(listName, genericCollectionInterface.ToDisplayString())
-                                : listName);
                 //.ParseDeclareAndAssing(castedListName, cast);
 
-                if (!string.IsNullOrWhiteSpace(methodName))
-                {
-                    var addStatement
-                        = Statement
-                            .Expression
-                            .Invoke(
-                                castedListName,
-                                methodName.TrimEnd('_'),
-                                arguments: new[] {new VariableArgument(listVariableName)})
-                            .AsStatement();
-                    itemDeserialization.Statements.Add(addStatement);
-                }
-                else
-                    ; //Diagnostic
 
                 string listInitialize;
 
@@ -296,11 +274,17 @@ namespace NonSucking.Framework.Serialization
 
                     listInitialize =
                         $"System.Collections.Generic.Dictionary<{namedTypeSymbol.TypeArguments[0]},{namedTypeSymbol.TypeArguments[1]}>";
+                    genericCollectionInterface = $"System.Collections.Generic.ICollection< System.Collections.Generic.KeyValuePair<{namedTypeSymbol.TypeArguments[0]},{namedTypeSymbol.TypeArguments[1]}>>";
+                    methodName = fallbackMethodName;
+
+
                 }
                 else if (HasOrIsInterfaces(type, "System.Collections.IList<",
                              "System.Collections.Generic.IReadOnlyCollection<"))
                 {
                     listInitialize = $"System.Collections.Generic.List<{genericArgument}>";
+                    genericCollectionInterface = $"System.Collections.Generic.ICollection<{genericArgument}>";
+                    methodName = nameof(IList.Add);
                 }
                 else
                 {
@@ -310,13 +294,36 @@ namespace NonSucking.Framework.Serialization
                 }
 
 
+                var castDeclaration
+                    = Statement
+                        .Declaration
+                        .ParseDeclareAndAssing(castedListName,
+                            methodName == fallbackMethodName
+                                ? Helper.Cast(listName, genericCollectionInterface)
+                                : listName);
+
+                if (!string.IsNullOrWhiteSpace(methodName))
+                {
+                    var addStatement
+                        = Statement
+                            .Expression
+                            .Invoke(
+                                castedListName,
+                                methodName.TrimEnd('_'),
+                                arguments: new[] { new VariableArgument(listVariableName) })
+                            .AsStatement();
+                    itemDeserialization.Statements.Add(addStatement);
+                }
+                else
+                    ; //Diagnostic
+
                 ExpressionSyntax ctorInvocationExpression
                     = Statement
                         .Expression
                         .Invoke(
                             $"new {listInitialize}",
                             arguments: hasCountCtor
-                                ? new[] {new ValueArgument((object) end.Name)}
+                                ? new[] { new ValueArgument((object)end.Name) }
                                 : Array.Empty<IArgument>())
                         .AsExpression();
 
