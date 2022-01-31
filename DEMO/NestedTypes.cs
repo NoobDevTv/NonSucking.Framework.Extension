@@ -10,15 +10,15 @@ public partial class NestedTypes
         public int Prop { get; set; }
     }
 
-    // [Nooson]
+    [Nooson]
     public partial record NestedRecord(int Prop);
 
-    // [Nooson]
+    [Nooson]
     public partial record struct NestedRecordStruct(int Prop);
 
     public partial class NestedGeneric<T>
     {
-        // [Nooson]
+        [Nooson]
         public partial class NestedGenericClass
         {
             public int Prop { get; set; }
