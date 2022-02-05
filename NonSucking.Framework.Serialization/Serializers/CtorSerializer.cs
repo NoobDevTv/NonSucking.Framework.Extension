@@ -75,7 +75,6 @@ namespace NonSucking.Framework.Serialization.Serializers
             var ret = new GeneratedSerializerCode();
             
             ret.VariableDeclarations.Add(ctorCallStatement);
-            //ret.Statements.AddRange(propertyAssignments);
             return ret;
         }
 
