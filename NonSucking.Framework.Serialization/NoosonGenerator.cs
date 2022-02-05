@@ -413,12 +413,9 @@ namespace NonSucking.Framework.Serialization
         }
 
         private static bool BaseHasNoosonAttribute(INamedTypeSymbol typeSymbol)
-        {
-            if (typeSymbol == null)
-                return false;
-            return typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute) is not null ||
-                   BaseHasNoosonAttribute(typeSymbol.BaseType);
-        }
+            => typeSymbol is not null
+               && (typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute) is not null
+                   || BaseHasNoosonAttribute(typeSymbol.BaseType));
 
         internal static BaseMethodDeclarationSyntax GenerateSerializeMethod(VisitInfo visitInfo, NoosonGeneratorContext context)
         {
