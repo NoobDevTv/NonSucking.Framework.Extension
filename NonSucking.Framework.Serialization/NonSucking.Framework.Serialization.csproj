@@ -16,10 +16,12 @@
 
 	<ItemGroup>
 		<Compile Remove="Templates\Attribute\**\*.cs" />
+		<Compile Remove="Templates\AdditionalSource\**\*.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Include="Templates\Attribute\**\*.cs" />
+		<EmbeddedResource Include="Templates\AdditionalSource\**\*.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

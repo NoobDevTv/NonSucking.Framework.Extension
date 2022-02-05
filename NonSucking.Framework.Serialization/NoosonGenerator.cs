@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.Formatting;
 
 using NonSucking.Framework.Serialization.Attributes;
 using NonSucking.Framework.Serialization.Serializers;
+using NonSucking.Framework.Serialization.Templates;
 
 using System;
 using System.Collections.Generic;
@@ -23,6 +24,7 @@ namespace NonSucking.Framework.Serialization
 {
     public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol)
     {
+        public HashSet<string> Usings { get; } = new();
         internal const string Category = "SerializationGenerator";
         internal const string IdPrefix = "NSG";
 
@@ -133,13 +135,6 @@ namespace NonSucking.Framework.Serialization
                         .CreateSyntaxProvider(Predicate, Transform)
                         .Where(static visitInfo => visitInfo != VisitInfo.Empty);
 
-                var compilationVisitInfos
-                    = incrementalContext
-                        .CompilationProvider
-                        .Combine(visitInfos.Collect());
-
-                incrementalContext.RegisterSourceOutput(compilationVisitInfos, InternalExecute);
-
                 List<Template> templates
                     = Assembly
                         .GetAssembly(typeof(Template))
@@ -147,13 +142,21 @@ namespace NonSucking.Framework.Serialization
                         .Where(t => typeof(Template).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
                         .Select(t => (Template)Activator.CreateInstance(t))
                         .ToList();
+                
+                var compilationVisitInfos
+                    = incrementalContext
+                        .CompilationProvider
+                        .Combine(visitInfos.Collect());
 
+                incrementalContext.RegisterSourceOutput(compilationVisitInfos,
+                    (context, tuple) => InternalExecute(context, tuple, templates));
 
                 incrementalContext.RegisterPostInitializationOutput(i =>
                 {
                     foreach (Template template in templates)
                     {
-                        i.AddSource(template.Name, template.ToString());
+                        if (template.Kind != TemplateKind.AdditionalSource)
+                            i.AddSource(template.Name, template.ToString());
                     }
                 });
             }
@@ -268,8 +271,14 @@ namespace NonSucking.Framework.Serialization
             return summaryName.ToString();
         }
 
-        private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation, ImmutableArray<VisitInfo> VisitInfos) source)
+        private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation,
+            ImmutableArray<VisitInfo> VisitInfos) source, List<Template> templates)
         {
+            foreach (Template template in templates)
+            {
+                if (template.Kind == TemplateKind.AdditionalSource && source.Compilation.GetTypeByMetadataName(template.FullName) is null)
+                    sourceProductionContext.AddSource(template.Name, template.ToString());
+            }
             foreach (VisitInfo typeToAugment in source.VisitInfos)
             {
                 try
@@ -300,6 +309,12 @@ namespace NonSucking.Framework.Serialization
                             GenerateDeserializeMethod(typeToAugment, deserializeContext)
                         };
 
+                    var usings = new HashSet<string>();
+                    usings.UnionWith(serializeContext.Usings);
+                    usings.UnionWith(deserializeContext.Usings);
+
+                    var usingsArray = usings.ToArray();
+
                     CompilationUnitSyntax sourceCode = null;
                     TypeDeclarationSyntax nestedType = null;
 
@@ -312,7 +327,7 @@ namespace NonSucking.Framework.Serialization
                         var builder = new RecordBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
                                 containingNamespace,
                                 typeToAugment.TypeSymbol.IsValueType)
-                            .WithUsings()
+                            .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
                         if (isNestedType)
@@ -323,7 +338,7 @@ namespace NonSucking.Framework.Serialization
                     else if (typeToAugment.TypeSymbol.IsValueType)
                     {
                         var builder = new StructBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
-                            .WithUsings()
+                            .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
                         if (isNestedType)
@@ -334,7 +349,7 @@ namespace NonSucking.Framework.Serialization
                     else
                     {
                         var builder = new ClassBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
-                            .WithUsings()
+                            .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
                         if (isNestedType)

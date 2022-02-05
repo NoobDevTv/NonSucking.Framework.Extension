@@ -62,7 +62,7 @@ namespace NonSucking.Framework.Serialization
 
                 var typeSyntax
                     = SyntaxFactory
-                    .ParseTypeName(typeSymbol.Name);
+                    .ParseTypeName(typeSymbol.ToDisplayString());
 
                 invocationExpression
                     = SyntaxFactory
