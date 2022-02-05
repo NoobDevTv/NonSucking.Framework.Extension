@@ -31,7 +31,7 @@ namespace NonSucking.Framework.Serialization.Tests
                  { structTestFile, File.ReadAllText(structTestFile)},
                  { nullableTestFile, File.ReadAllText(nullableTestFile)},
                  { secondTestFile, File.ReadAllText(secondTestFile)},
-                { listsContainer , File.ReadAllText(listsContainer )},
+                 { listsContainer , File.ReadAllText(listsContainer )},
                  { sutMessage, File.ReadAllText(sutMessage)},
                  { iUser, File.ReadAllText(iUser)},
                  { message, File.ReadAllText(message)},
