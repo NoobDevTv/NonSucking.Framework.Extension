@@ -30,7 +30,7 @@ namespace NonSucking.Framework.Serialization
 
             GeneratedSerializerCode preIterationStatements = new();
 
-            var countNames = new string [rank];
+            var countNames = new string[rank];
             var randomIs = new string[rank];
 
             for (var i = 0; i < rank; i++)
@@ -113,7 +113,7 @@ namespace NonSucking.Framework.Serialization
 
             GeneratedSerializerCode preIterationStatements = new();
 
-            var countNames = new string [rank];
+            var countNames = new string[rank];
             var randomIs = new string[rank];
 
             for (var i = 0; i < rank; i++)
