@@ -314,6 +314,8 @@ namespace NonSucking.Framework.Serialization
                     usings.UnionWith(serializeContext.Usings);
                     usings.UnionWith(deserializeContext.Usings);
 
+                    var usingsArray = usings.ToArray();
+
                     CompilationUnitSyntax sourceCode = null;
                     TypeDeclarationSyntax nestedType = null;
 
@@ -326,7 +328,7 @@ namespace NonSucking.Framework.Serialization
                         var builder = new RecordBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
                                 containingNamespace,
                                 typeToAugment.TypeSymbol.IsValueType)
-                            .WithUsings(usings.ToArray())
+                            .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
                         if (isNestedType)
@@ -337,7 +339,7 @@ namespace NonSucking.Framework.Serialization
                     else if (typeToAugment.TypeSymbol.IsValueType)
                     {
                         var builder = new StructBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
-                            .WithUsings(usings.ToArray())
+                            .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
                         if (isNestedType)
@@ -348,7 +350,7 @@ namespace NonSucking.Framework.Serialization
                     else
                     {
                         var builder = new ClassBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
-                            .WithUsings(usings.ToArray())
+                            .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
                         if (isNestedType)
