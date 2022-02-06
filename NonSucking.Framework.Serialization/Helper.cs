@@ -33,6 +33,9 @@ namespace NonSucking.Framework.Serialization
             var isRecord = symbol.IsRecord;
             foreach (var member in symbol.GetMembers())
             {
+                if (member.TryGetAttribute(AttributeTemplates.Ignore, out _))
+                    continue;
+
                 if (member is IPropertySymbol propSymbol)
                 {
                     // Exclude CompilerGenerated EqualityContract from serialization process

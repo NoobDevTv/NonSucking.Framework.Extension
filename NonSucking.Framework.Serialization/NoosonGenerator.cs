@@ -514,8 +514,7 @@ namespace NonSucking.Framework.Serialization
 
                 string propertyName = property.Name;
 
-                if (!IsPropertySupported(property, context)
-                    || property.Symbol.TryGetAttribute(AttributeTemplates.Ignore, out _))
+                if (!IsPropertySupported(property, context))
                 {
                     continue;
                 }
@@ -540,6 +539,17 @@ namespace NonSucking.Framework.Serialization
                     context.AddDiagnostic("0007",
                            "",
                            "Properties that are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                           property.Symbol,
+                           DiagnosticSeverity.Error
+                           );
+                    return false;
+                }
+                else if (propSymbol.SetMethod is not null && propSymbol.SetMethod.IsInitOnly)
+                {
+
+                    context.AddDiagnostic("0011",
+                           "",
+                           "Properties who are init only are (currently) not supported. Implemented a custom serializer method or ignore this property.",
                            property.Symbol,
                            DiagnosticSeverity.Error
                            );

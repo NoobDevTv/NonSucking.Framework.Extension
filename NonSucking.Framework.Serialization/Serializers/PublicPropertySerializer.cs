@@ -20,13 +20,14 @@ namespace NonSucking.Framework.Serialization
 
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, int baseTypesLevelProperties = int.MaxValue)
         {
-            var props
-                = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
+            var propsAndFields
+                = Helper
+                .GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                 .Where(property =>
                     property.Name != "this[]")
                .Select(x => x with { Parent = property.Name });
-
-            var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
+            var props = propsAndFields.Select(x => x.Symbol).OfType<IPropertySymbol>();
+            var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
             {
                 context.AddDiagnostic("0007",
@@ -37,11 +38,22 @@ namespace NonSucking.Framework.Serialization
                        );
             }
 
-            props = FilterPropsForNotWriteOnly(props);
+            var initOnlies = props.Where(x => x.SetMethod?.IsInitOnly ?? false);
+            foreach (var onlyWrite in initOnlies)
+            {
+                context.AddDiagnostic("0011",
+                       "",
+                       "Properties who are init only are (currently) not supported. Implemented a custom serializer method or ignore this property.",
+                       property.TypeSymbol,
+                       DiagnosticSeverity.Error
+                       );
+            }
 
-            statements.Statements.AddRange(
+            propsAndFields = FilterPropsForNotWriteOnly(propsAndFields);
+
+            statements.AddRange(
                 GenerateStatementsForProps(
-                   props
+                   propsAndFields
                        .Select(x => x with { Parent = property.FullName })
                        .ToArray(),
                    context,
@@ -58,6 +70,8 @@ namespace NonSucking.Framework.Serialization
             {
                 if (x.Symbol is IPropertySymbol ps
                     && !ps.IsWriteOnly
+                    && ps.SetMethod is not null
+                    && !ps.SetMethod.IsInitOnly
                     && ps.GetMethod is not null)
                 {
                     return true;
@@ -74,13 +88,15 @@ namespace NonSucking.Framework.Serialization
 
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, int baseTypesLevelProperties = int.MaxValue)
         {
-            var props
-               = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
+            var propsAndFields
+               = Helper
+               .GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                .Where(property =>
                    property.Name != "this[]")
                .Select(x => x with { Parent = property.Name });
+            var props = propsAndFields.Select(x => x.Symbol).OfType<IPropertySymbol>();
 
-            var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
+            var writeOnlies = props.Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
             {
                 context.AddDiagnostic("0007",
@@ -91,13 +107,24 @@ namespace NonSucking.Framework.Serialization
                        );
             }
 
-            props = FilterPropsForNotWriteOnly(props);
+            var initOnlies = props.Where(x => x.SetMethod?.IsInitOnly ?? false);
+            foreach (var onlyWrite in initOnlies)
+            {
+                context.AddDiagnostic("0011",
+                       "",
+                       "Properties who are init only are (currently) not supported. Implemented a custom serializer method or ignore this property.",
+                       property.TypeSymbol,
+                       DiagnosticSeverity.Error
+                       );
+            }
+
+            propsAndFields = FilterPropsForNotWriteOnly(propsAndFields);
 
 
             string randomForThisScope = Helper.GetRandomNameFor("", property.Parent);
             var statementList
                 = GenerateStatementsForProps(
-                    props.ToArray(),
+                    propsAndFields.ToArray(),
                     context,
                     MethodType.Deserialize
                 ).SelectMany(x => x.ToMergedBlock()).ToList();

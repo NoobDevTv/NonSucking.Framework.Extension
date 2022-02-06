@@ -1,0 +1,26 @@
+<Project>
+    <PropertyGroup>
+        <Version>${VERSION_FULL}</Version>
+        <AssemblyVersion>${VERSION_LONG}</AssemblyVersion>
+        <Authors>${AUTHORS}</Authors>
+        <Copyright>${COPYRIGHT}</Copyright>
+        <Company>${COMPANY}</Company>
+        <Title>${TITLE}</Title>
+        <Description>${DESCRIPTION_RX}</Description>
+        <PackageReleaseNotes>
+          This is a first preview version and not intended for productive use. Not everything has been tested or commented yet.
+
+        New in this version:
+        * Added Variant sum type for .NET 5.0
+        </PackageReleaseNotes>
+        <PackageTags>
+        ${TAGS_RX}
+        </PackageTags>
+        <!-- <PackageIconUrl>${ICON_URL}</PackageIconUrl> -->
+        <RepositoryUrl>${REPO_URL}</RepositoryUrl>
+        <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+        <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <NeutralLanguage>en-US</NeutralLanguage>
+    </PropertyGroup>
+</Project>

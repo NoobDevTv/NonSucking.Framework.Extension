@@ -13,16 +13,16 @@ namespace NonSucking.Framework.Serialization.Tests
         [Test]
         public static void Debug()
         {
-            const string demoPath = @"../../../../DEMO/";
-            var secondTestFile = @$"{demoPath}SecondTestFile.cs";
-            var sutMessage = @$"{demoPath}SUTMessage.cs";
-            var iUser = @$"{demoPath}IUser.cs";
-            var message = @$"{demoPath}Message.cs";
-            var singePropTest = @$"{demoPath}SinglePropTest.cs";
-            var recordTestFile = @$"{demoPath}RecordTestFile.cs";
-            var structTestFile = @$"{demoPath}StructTestFile.cs";
-            var nullableTestFile = @$"{demoPath}NullableTest.cs";
-            var listsContainer = @$"{demoPath}ListsContainer.cs";
+            const demoPath= Path.Combine("..", "..", "..", "..", "DEMO");
+            var secondTestFile = Path.Combine(demoPath, "SecondTestFile.cs");
+            var sutMessage = Path.Combine(demoPath, "SUTMessage.cs");
+            var iUser = Path.Combine(demoPath, "IUser.cs");
+            var message = Path.Combine(demoPath, "Message.cs");
+            var singePropTest = Path.Combine(demoPath, "SinglePropTest.cs");
+            var recordTestFile = Path.Combine(demoPath, "RecordTestFile.cs");
+            var structTestFile = Path.Combine(demoPath, "StructTestFile.cs");
+            var nullableTestFile = Path.Combine(demoPath, "NullableTest.cs");
+            var listsContainer = Path.Combine(demoPath, "ListsContainer.cs");
 
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
