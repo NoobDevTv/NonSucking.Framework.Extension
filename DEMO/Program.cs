@@ -26,7 +26,6 @@ namespace DEMO
             bll.NameOfList = "ABC";
 
             var conv = Newtonsoft.Json.JsonConvert.SerializeObject(bll);
-            ;
             var sutMessage = new SUTMessage()
             {
                 AlternativUser = new User { Name = "Okay" },
