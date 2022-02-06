@@ -412,6 +412,10 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
+        private static bool BaseHasNoosonAttribute(INamedTypeSymbol typeSymbol)
+            => typeSymbol is not null
+               && (typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute) is not null
+                   || BaseHasNoosonAttribute(typeSymbol.BaseType));
 
         internal static BaseMethodDeclarationSyntax GenerateSerializeMethod(VisitInfo visitInfo, NoosonGeneratorContext context)
         {
@@ -420,8 +424,18 @@ namespace NonSucking.Framework.Serialization
             var body
                 = CreateBlock(visitInfo with { Properties = visitInfo.Properties.Select(x => x with { Parent = "" }).ToArray() }, context, MethodType.Serialize);
 
+            var modifiers = new List<Modifiers> { Modifiers.Public };
+
+            if (!visitInfo.TypeSymbol.IsValueType)
+            {
+                if (BaseHasNoosonAttribute(visitInfo.TypeSymbol.BaseType))
+                    modifiers.Add(Modifiers.Override);
+                else
+                    modifiers.Add(Modifiers.Virtual);
+            }
+
             return new MethodBuilder("Serialize")
-                .WithModifiers(Modifiers.Public)
+                .WithModifiers(modifiers.ToArray())
                 .WithParameters(parameter.Parameters.ToArray())
                 .WithBody(body)
                 .Build();
@@ -433,8 +447,17 @@ namespace NonSucking.Framework.Serialization
             var body
                 = CreateBlock(visitInfo, context, MethodType.Deserialize);
 
+            var modifiers = new List<Modifiers> { Modifiers.Public };
+
+            if (!visitInfo.TypeSymbol.IsValueType)
+            {
+                if (BaseHasNoosonAttribute(visitInfo.TypeSymbol.BaseType))
+                    modifiers.Add(Modifiers.New);
+            }
+            modifiers.Add(Modifiers.Static);
+
             return new MethodBuilder("Deserialize")
-                .WithModifiers(Modifiers.Public, Modifiers.Static)
+                .WithModifiers(modifiers.ToArray())
                 .WithReturnType(SyntaxFactory.ParseTypeName(visitInfo.TypeSymbol.Name))
                 .WithParameters(parameter.Parameters.ToArray())
                 .WithBody(body)
