@@ -23,7 +23,7 @@ namespace NonSucking.Framework.Serialization
             endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-zA-Z]{{1,6}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
-        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
+        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol? symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
         {
             if(currentIteration++ > maxRecursion)
                 yield break;
@@ -110,13 +110,13 @@ namespace NonSucking.Framework.Serialization
             return $"{variableName}{localVariableSuffix}{name}{localVariableSuffix}{IntToString(Interlocked.Increment(ref uniqueNumber))}";
         }
 
-        internal static ValueArgument GetValueArgumentFrom(MemberInfo memberInfo, ITypeSymbol castTo = null)
+        internal static ValueArgument GetValueArgumentFrom(MemberInfo memberInfo, ITypeSymbol? castTo = null)
         {
             object referenceValue = GetMemberAccessString(memberInfo, castTo);
             return new ValueArgument(referenceValue);
         }
 
-        internal static string GetMemberAccessString(MemberInfo memberInfo, ITypeSymbol castTo = null)
+        internal static string GetMemberAccessString(MemberInfo memberInfo, ITypeSymbol? castTo = null)
         {
             if (string.IsNullOrEmpty(memberInfo.Parent))
             {
@@ -128,7 +128,7 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        internal static string Cast(string value, string castType = null)
+        internal static string Cast(string value, string? castType = null)
         {
             if (!string.IsNullOrWhiteSpace(castType))
                 return $"(({castType}){value})";

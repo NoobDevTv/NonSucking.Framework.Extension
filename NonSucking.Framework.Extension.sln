@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DEMO", "DEMO\DEMO.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Generators.Tests", "NonSucking.Framework.Extension.Generators.Tests\NonSucking.Framework.Extension.Generators.Tests.csproj", "{D329A6BB-2373-45C4-8F5B-F8B73C9CD430}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Serialization.SerializerCollector", "NonSucking.Framework.Serialization.SerializerCollector\NonSucking.Framework.Serialization.SerializerCollector.csproj", "{5748C3A7-CB3B-434B-B4EB-9F3C6701916D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serialization.SerializerCollector", "NonSucking.Framework.Serialization.SerializerCollector\NonSucking.Framework.Serialization.SerializerCollector.csproj", "{5748C3A7-CB3B-434B-B4EB-9F3C6701916D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

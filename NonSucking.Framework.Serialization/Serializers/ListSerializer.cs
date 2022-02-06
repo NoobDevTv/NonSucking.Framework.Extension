@@ -115,7 +115,7 @@ namespace NonSucking.Framework.Serialization
                   ?? (type.ToString().StartsWith(readonlyName) ? type : null);
 
             //TODO: Check for IReadOnlyCollection< self
-            IArrayTypeSymbol arrType = null;
+            IArrayTypeSymbol? arrType = null;
             if (collectionInterface is null)
             {
                 if (property.TypeSymbol is not IArrayTypeSymbol arrType2)
@@ -211,7 +211,7 @@ namespace NonSucking.Framework.Serialization
             }
             else
             {
-                string methodName = null;
+                string? methodName = null;
 
                 const string fallbackMethodName = nameof(IList.Add) + "_";
 
@@ -270,7 +270,7 @@ namespace NonSucking.Framework.Serialization
                 else if (HasOrIsInterfaces(type, "System.Collections.Generic.IDictionary<",
                              "System.Collections.Generic.IReadOnlyDictionary<"))
                 {
-                    var namedTypeSymbol = genericArgument as INamedTypeSymbol;
+                    var namedTypeSymbol = (INamedTypeSymbol)genericArgument;
 
                     listInitialize =
                         $"System.Collections.Generic.Dictionary<{namedTypeSymbol.TypeArguments[0]},{namedTypeSymbol.TypeArguments[1]}>";
@@ -309,7 +309,7 @@ namespace NonSucking.Framework.Serialization
                             .Expression
                             .Invoke(
                                 castedListName,
-                                methodName.TrimEnd('_'),
+                                methodName!.TrimEnd('_'),
                                 arguments: new[] { new VariableArgument(listVariableName) })
                             .AsStatement();
                     itemDeserialization.Statements.Add(addStatement);
@@ -358,7 +358,7 @@ namespace NonSucking.Framework.Serialization
         }
 
 
-        private static int GetIterationAmount(ITypeSymbol type, int lastAmount = -1)
+        private static int GetIterationAmount(ITypeSymbol? type, int lastAmount = -1)
         {
             if (type is null || type is IArrayTypeSymbol)
                 return lastAmount;
@@ -368,9 +368,9 @@ namespace NonSucking.Framework.Serialization
             return GetIterationAmount(type.BaseType, ++lastAmount);
         }
 
-        private static ITypeSymbol GetGenericTypeOf(ITypeSymbol type, out bool isTypeGeneric)
+        private static ITypeSymbol GetGenericTypeOf(ITypeSymbol? type, out bool isTypeGeneric)
         {
-            ITypeSymbol genericArgument = null;
+            ITypeSymbol? genericArgument = null;
             var typeForIter = type;
             while (genericArgument is null)
             {

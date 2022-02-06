@@ -31,7 +31,7 @@ namespace NonSucking.Framework.Serialization
 
             }
 
-            if (propAttrData.NamedArguments.IsEmpty)
+            if (propAttrData!.NamedArguments.IsEmpty)
             {
                 context.AddDiagnostic("0010", "", $"You must atleast provide one argument for {AttributeTemplates.Custom.Name}. Otherwise this value won't be deserialized!", property.Symbol, DiagnosticSeverity.Error);
                 return true;
@@ -95,7 +95,7 @@ namespace NonSucking.Framework.Serialization
 
             }
 
-            if (propAttrData.NamedArguments.IsEmpty)
+            if (propAttrData!.NamedArguments.IsEmpty)
             {
                 context.AddDiagnostic("0009", "", $"You must atleast provide one argument for {AttributeTemplates.Custom.Name}. Otherwise this value won't be serialized!", property.Symbol, DiagnosticSeverity.Error);
                 return true;

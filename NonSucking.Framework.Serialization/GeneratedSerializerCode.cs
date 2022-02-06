@@ -27,7 +27,7 @@ public class GeneratedSerializerCode
     }
 
     public IEnumerable<StatementSyntax> MergeBlocksSeperated(GeneratedSerializerCode other,
-        Func<SerializerVariable, LocalDeclarationStatementSyntax> variableTransformer = null)
+        Func<SerializerVariable, LocalDeclarationStatementSyntax>? variableTransformer = null)
     {
         foreach (var declaration in VariableDeclarations)
         {
@@ -67,12 +67,12 @@ public class GeneratedSerializerCode
     }
     
     
-    public void DeclareAndAssign(MemberInfo member, string memberName, ITypeSymbol type, ExpressionSyntax valueExpression)
+    public void DeclareAndAssign(MemberInfo member, string memberName, ITypeSymbol type, ExpressionSyntax? valueExpression)
     {
         var typeSyntax = SyntaxFactory.ParseTypeName(type.ToDisplayString()); // TODO better type handling?
         DeclareAndAssign(member, memberName, typeSyntax, valueExpression);
     }
-    public void DeclareAndAssign(MemberInfo member, string memberName, TypeSyntax typeSyntax, ExpressionSyntax valueExpression)
+    public void DeclareAndAssign(MemberInfo member, string memberName, TypeSyntax typeSyntax, ExpressionSyntax? valueExpression)
     {
         var variableDeclaration = Statement.Declaration.Declare(memberName, typeSyntax);
         if (Statements.Count == 0)
@@ -98,7 +98,7 @@ public class GeneratedSerializerCode
 
     public readonly struct SerializerVariable
     {
-        public SerializerVariable(LocalDeclarationStatementSyntax declaration, MemberInfo originalMember, string uniqueName, EqualsValueClauseSyntax initialValue)
+        public SerializerVariable(LocalDeclarationStatementSyntax declaration, MemberInfo originalMember, string uniqueName, EqualsValueClauseSyntax? initialValue)
         {
             Declaration = declaration ?? throw new ArgumentNullException(nameof(declaration));
             OriginalMember = originalMember;
@@ -110,7 +110,7 @@ public class GeneratedSerializerCode
         
         public MemberInfo OriginalMember { get; }
         public string UniqueName { get; }
-        public EqualsValueClauseSyntax InitialValue { get; }
+        public EqualsValueClauseSyntax? InitialValue { get; }
 
         public EqualsValueClauseSyntax CreateDefaultValue()
         {
@@ -125,7 +125,7 @@ public class GeneratedSerializerCode
                 throw new NotSupportedException("Multiple declaration and assignments in a single statement not supported.");
             }
 
-            return Statement.Declaration.Assign(variables[0].Identifier.ToFullString(), InitialValue.Value);
+            return Statement.Declaration.Assign(variables[0].Identifier.ToFullString(), InitialValue?.Value);
         }
 
         public LocalDeclarationStatementSyntax ToDeclarationAndAssignment()

@@ -28,7 +28,7 @@ internal static class KnownSimpleTypeSerializer
             SyntaxFactory.StackAllocArrayCreationExpression(
                 SyntaxFactory
                     .ArrayType(SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.ByteKeyword)))
-                    .WithRankSpecifiers(SyntaxFactory.SingletonList<ArrayRankSpecifierSyntax>(
+                    .WithRankSpecifiers(SyntaxFactory.SingletonList(
                         SyntaxFactory.ArrayRankSpecifier(
                             SyntaxFactory.SingletonSeparatedList(size)))));
         var bufferName = Helper.GetRandomNameFor("buffer", propName);

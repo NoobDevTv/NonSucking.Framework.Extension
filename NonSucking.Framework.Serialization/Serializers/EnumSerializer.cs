@@ -52,7 +52,7 @@ namespace NonSucking.Framework.Serialization
 
             if (type is INamedTypeSymbol typeSymbol)
             {
-                SpecialType specialType = typeSymbol.EnumUnderlyingType.SpecialType;
+                SpecialType specialType = typeSymbol.EnumUnderlyingType!.SpecialType;
 
                 ExpressionSyntax invocationExpression
                         = Statement

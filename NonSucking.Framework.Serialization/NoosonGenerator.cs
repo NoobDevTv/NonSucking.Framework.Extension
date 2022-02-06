@@ -43,7 +43,7 @@ namespace NonSucking.Framework.Serialization
                     location: location));
         }
 
-        internal void AddDiagnostic(string id, string title, string message, Location location, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
+        internal void AddDiagnostic(string id, string title, string message, Location location, DiagnosticSeverity severity, string? helpLinkurl = null, params string[] customTags)
         {
             GeneratorContext.ReportDiagnostic(Diagnostic.Create(
                  new DiagnosticDescriptor(
@@ -57,7 +57,7 @@ namespace NonSucking.Framework.Serialization
                      customTags: customTags),
                  location));
         }
-        internal void AddDiagnostic(string id, string title, string message, ISymbol symbolForLocation, DiagnosticSeverity severity, string helpLinkurl = null, params string[] customTags)
+        internal void AddDiagnostic(string id, string title, string message, ISymbol symbolForLocation, DiagnosticSeverity severity, string? helpLinkurl = null, params string[] customTags)
         {
             var loc = symbolForLocation.DeclaringSyntaxReferences.Length == 0
                 ? Location.None
@@ -87,24 +87,19 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        public static AttributeData GetAttribute(this ISymbol symbol, Template attributeTemplate)
+        public static AttributeData? GetAttribute(this ISymbol symbol, Template attributeTemplate)
         {
             if (attributeTemplate is null)
                 throw new ArgumentNullException(nameof(attributeTemplate));
-            else if (attributeTemplate.Kind != Templates.TemplateKind.Attribute)
+            else if (attributeTemplate.Kind != TemplateKind.Attribute)
                 throw new ArgumentException(nameof(attributeTemplate) + " is not attribute");
 
-            return symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass.ToDisplayString() == attributeTemplate.FullName);
+            return symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass?.ToDisplayString() == attributeTemplate.FullName);
         }
 
-        public static bool TryGetAttribute(this ISymbol symbol, Template attributeTemplate, out AttributeData attributeData)
+        public static bool TryGetAttribute(this ISymbol symbol, Template attributeTemplate, out AttributeData? attributeData)
         {
-            if (attributeTemplate is null)
-                throw new ArgumentNullException(nameof(attributeTemplate));
-            else if (attributeTemplate.Kind != Templates.TemplateKind.Attribute)
-                throw new ArgumentException(nameof(attributeTemplate) + " is not attribute");
-
-            attributeData = symbol.GetAttributes().FirstOrDefault(x => x.AttributeClass.ToDisplayString() == attributeTemplate.FullName);
+            attributeData = GetAttribute(symbol, attributeTemplate);
             return attributeData is not null;
         }
     }
@@ -120,7 +115,7 @@ namespace NonSucking.Framework.Serialization
 
         static NoosonGenerator()
         {
-            returnValueMember = new MemberInfo(null, null, ReturnValueBaseName, "");
+            returnValueMember = new MemberInfo(default!, default!, ReturnValueBaseName, "");
             returnValue = returnValueMember.CreateUniqueName();
         }
 
@@ -142,7 +137,7 @@ namespace NonSucking.Framework.Serialization
                         .Where(t => typeof(Template).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
                         .Select(t => (Template)Activator.CreateInstance(t))
                         .ToList();
-                
+
                 var compilationVisitInfos
                     = incrementalContext
                         .CompilationProvider
@@ -179,18 +174,21 @@ namespace NonSucking.Framework.Serialization
             try
             {
 
-                var typeDeclarationSyntax = syntaxContext.Node as TypeDeclarationSyntax;
+                if (syntaxContext.Node is not TypeDeclarationSyntax typeDeclarationSyntax)
+                    return VisitInfo.Empty;
 
-                INamedTypeSymbol typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(typeDeclarationSyntax);
+
+                INamedTypeSymbol? typeSymbol = syntaxContext.SemanticModel.GetDeclaredSymbol(typeDeclarationSyntax);
+                if (typeSymbol == default)
+                    return VisitInfo.Empty;
+
                 System.Collections.Immutable.ImmutableArray<AttributeData> attributes = typeSymbol.GetAttributes();
                 var attribute
                     = attributes
-                        .FirstOrDefault(d => d?.AttributeClass.ToDisplayString() == AttributeTemplates.GenSerializationAttribute.FullName);
+                        .FirstOrDefault(d => d.AttributeClass?.ToDisplayString() == AttributeTemplates.GenSerializationAttribute.FullName);
 
                 if (attribute == default)
-                {
                     return VisitInfo.Empty;
-                }
 
                 var propEnumerable
                     = Helper
@@ -206,13 +204,13 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        private static CompilationUnitSyntax CreateNesting(ITypeSymbol symbol, TypeDeclarationSyntax nestedType)
+        private static CompilationUnitSyntax CreateNesting(ITypeSymbol symbol, TypeDeclarationSyntax? nestedType)
         {
-            bool isNestedType = symbol.ContainingType != null;
+            bool isNestedType = symbol.ContainingType is not null;
             var containingNamespace = isNestedType ? null : symbol.ContainingNamespace.ToDisplayString();
             var nestedMember = new ClassBuildMember(nestedType);
-            TypeDeclarationSyntax parentNestedType = null;
-            CompilationUnitSyntax compilationUnitSyntax = null;
+            TypeDeclarationSyntax? parentNestedType = null;
+            CompilationUnitSyntax? compilationUnitSyntax = null;
             if (symbol.IsRecord)
             {
                 var builder = new RecordBuilder(symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
@@ -250,9 +248,9 @@ namespace NonSucking.Framework.Serialization
             }
 
             if (isNestedType)
-                return CreateNesting(symbol.ContainingType, parentNestedType);
+                return CreateNesting(symbol.ContainingType!, parentNestedType);
 
-            return compilationUnitSyntax;
+            return compilationUnitSyntax!;
         }
 
         private static string TypeNameToSummaryName(string typeName)
@@ -315,13 +313,15 @@ namespace NonSucking.Framework.Serialization
 
                     var usingsArray = usings.ToArray();
 
-                    CompilationUnitSyntax sourceCode = null;
-                    TypeDeclarationSyntax nestedType = null;
+                    CompilationUnitSyntax? sourceCode = null;
+                    TypeDeclarationSyntax? nestedType = null;
 
                     bool isNestedType = typeToAugment.TypeSymbol.ContainingType is not null;
                     var containingNamespace = isNestedType
                         ? null
                         : typeToAugment.TypeSymbol.ContainingNamespace.ToDisplayString();
+
+
                     if (typeToAugment.TypeSymbol.IsRecord)
                     {
                         var builder = new RecordBuilder(typeToAugment.TypeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat),
@@ -330,6 +330,8 @@ namespace NonSucking.Framework.Serialization
                             .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
                             .WithMethods(methods);
+
+
                         if (isNestedType)
                             nestedType = builder.BuildWithoutNamespace();
                         else
@@ -359,9 +361,11 @@ namespace NonSucking.Framework.Serialization
                     }
 
                     if (isNestedType)
-                        sourceCode = CreateNesting(typeToAugment.TypeSymbol.ContainingType, nestedType);
+                    {
+                        sourceCode = CreateNesting(typeToAugment.TypeSymbol.ContainingType!, nestedType);
+                    }
 
-                    string hintName = TypeNameToSummaryName($"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.cs");
+                    string hintName = TypeNameToSummaryName($"{typeToAugment.TypeSymbol.ToDisplayString()}.Nooson.g.cs");
 
                     //using var workspace = new AdhocWorkspace() { };
                     //var options = workspace.Options
@@ -374,7 +378,9 @@ namespace NonSucking.Framework.Serialization
                     //    ;
                     //var formattedText = Formatter.Format(sourceCode, workspace, options).NormalizeWhitespace().ToFullString();
 
-                    sourceProductionContext.AddSource(hintName, sourceCode.NormalizeWhitespace().ToFullString() /*formattedText*/);
+                    string autoGeneratedComment = "//---------------------- // <auto-generated> // Nooson // </auto-generated> //----------------------" + Environment.NewLine;
+
+                    sourceProductionContext.AddSource(hintName, $"{autoGeneratedComment}{sourceCode!.NormalizeWhitespace().ToFullString()}" /*formattedText*/);
                 }
                 catch (ReflectionTypeLoadException loaderException)
                 {
@@ -412,7 +418,7 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        private static bool BaseHasNoosonAttribute(INamedTypeSymbol typeSymbol)
+        private static bool BaseHasNoosonAttribute(INamedTypeSymbol? typeSymbol)
             => typeSymbol is not null
                && (typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute) is not null
                    || BaseHasNoosonAttribute(typeSymbol.BaseType));
@@ -501,7 +507,7 @@ namespace NonSucking.Framework.Serialization
         internal static IEnumerable<GeneratedSerializerCode> GenerateStatementsForProps(IReadOnlyCollection<MemberInfo> properties, NoosonGeneratorContext context, MethodType methodType)
         {
             var propsWithAttr = properties.Select(property => (property, attribute: property.Symbol.GetAttribute(AttributeTemplates.Order)));
-            foreach (var propWithAttr in propsWithAttr.OrderBy(x => x.attribute is null ? int.MaxValue : (int)x.attribute.ConstructorArguments[0].Value))
+            foreach (var propWithAttr in propsWithAttr.OrderBy(x => x.attribute is null ? int.MaxValue : (int)x.attribute.ConstructorArguments[0].Value!))
             {
                 var property = propWithAttr.property;
                 ITypeSymbol propertyType = property.TypeSymbol;

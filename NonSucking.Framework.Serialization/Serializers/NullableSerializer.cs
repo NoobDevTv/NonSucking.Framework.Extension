@@ -110,7 +110,7 @@ namespace NonSucking.Framework.Serialization
                 return d;
             }
 
-            IEnumerable<StatementSyntax> innerStatements = null;
+            IEnumerable<StatementSyntax> innerStatements;
             if (elementType.IsValueType)
             {
                 var propName = property.CreateUniqueName();

@@ -37,7 +37,9 @@ namespace DEMO
         public string Origin { get; }
         //public string Never { set => valueNever = value; }
         [NoosonOrder(5)]
+#nullable enable
         public string Ultimate { get; private set; }
+#nullable disable
 
         [NoosonInclude]
         private readonly string valueNever;

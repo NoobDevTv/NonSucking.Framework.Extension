@@ -71,7 +71,7 @@ namespace NonSucking.Framework.Serialization
 
             var innerStatements = localStatements.MergeBlocksSeperated(statements);
 
-            ForStatementSyntax currentForLoop = null;
+            ForStatementSyntax? currentForLoop = null;
             for (var i = rank - 1; i >= 0; i--)
             {
                 var countName = countNames[i];
@@ -87,7 +87,7 @@ namespace NonSucking.Framework.Serialization
 
 
             statements.MergeWith(preIterationStatements);
-            statements.Statements.Add(currentForLoop);
+            statements.Statements.Add(currentForLoop!);
 
             return true;
         }
@@ -159,7 +159,7 @@ namespace NonSucking.Framework.Serialization
             
             var innerStatements = localStatements.ToMergedBlock();
 
-            ForStatementSyntax currentForLoop = null;
+            ForStatementSyntax? currentForLoop = null;
             for (var i = rank - 1; i >= 0; i--)
             {
                 var countName = countNames[i];
@@ -180,7 +180,7 @@ namespace NonSucking.Framework.Serialization
             }
 
             statements.MergeWith(preIterationStatements);
-            statements.Statements.Add(currentForLoop);
+            statements.Statements.Add(currentForLoop!);
 
             return true;
         }
