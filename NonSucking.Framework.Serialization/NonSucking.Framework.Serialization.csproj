@@ -90,5 +90,9 @@
 		</ItemGroup>
 	</Target>
 
-	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild" />
+	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild">
+		<ItemGroup>
+			<Compile Remove="GeneratedFiles\**" />
+		</ItemGroup>
+	</Target>
 </Project>
