@@ -19,14 +19,16 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(60)]
     internal static class ListSerializer
     {
+        const string readonlyName = "System.Collections.Generic.IReadOnlyCollection<";
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
             GeneratedSerializerCode statements)
         {
             var type = property.TypeSymbol;
             var collectionInterface
-                = type
-                    .AllInterfaces
-                    .FirstOrDefault(x => x.ToString().StartsWith("System.Collections.Generic.IReadOnlyCollection<"));
+               = type
+                     .AllInterfaces
+                     .FirstOrDefault(x => x.ToString().StartsWith(readonlyName))
+                 ?? (type.ToString().StartsWith(readonlyName) ? type : null);
 
             if (collectionInterface is null)
             {
@@ -107,7 +109,6 @@ namespace NonSucking.Framework.Serialization
         {
             var type = property.TypeSymbol;
             // Ctor Analyze for Count 
-            const string readonlyName = "System.Collections.Generic.IReadOnlyCollection<";
             var collectionInterface
                 = type
                       .AllInterfaces
@@ -266,6 +267,12 @@ namespace NonSucking.Framework.Serialization
                 if (!type.IsAbstract && type.TypeKind != TypeKind.Interface)
                 {
                     listInitialize = type.ToDisplayString();
+                }
+                else if (HasOrIsInterfaces(type, "System.Collections.Generic.IReadOnlySet<"))
+                {
+                    listInitialize = $"System.Collections.Generic.HashSet<{genericArgument}>";
+                    genericCollectionInterface = $"System.Collections.Generic.ICollection<{genericArgument}>";
+                    methodName = nameof(IList.Add);
                 }
                 else if (HasOrIsInterfaces(type, "System.Collections.Generic.IDictionary<",
                              "System.Collections.Generic.IReadOnlyDictionary<"))

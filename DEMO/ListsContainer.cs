@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using NonSucking.Framework.Serialization;
+﻿using NonSucking.Framework.Serialization;
+
 using System.Collections.Concurrent;
-using System.Drawing;
+using System.Collections.Generic;
 
 namespace DEMO;
 
@@ -11,6 +11,9 @@ namespace DEMO;
 public partial class ListsContainer
 {
     public IReadOnlyCollection<int> ReadOnly { get; set; }
+    public IReadOnlyList<int> ReadOnlyList { get; set; }
+    public IReadOnlyDictionary<int, int> ReadOnlyDictionary { get; set; }
+    public IReadOnlySet<int> ReadOnlySet { get; set; }
 
     public Dictionary<int, string> ABC { get; set; }
     public HashSet<bool> HashSet { get; set; }
@@ -20,9 +23,10 @@ public partial class ListsContainer
     public Stack<bool> Stack { get; set; }
     public List<Queue<int>> ListWithQueue { get; set; }
 
+
     public int[] TestArray { get; set; }
     public int[,,] MultiDimension { get; set; }
-    
+
     public IReadOnlyDictionary<short, short> ReadOnlyDicSetable { get; set; }
     public int[][] MultiArray { get; set; }
 
