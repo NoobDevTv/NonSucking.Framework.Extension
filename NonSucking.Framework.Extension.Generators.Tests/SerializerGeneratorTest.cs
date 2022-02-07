@@ -13,7 +13,7 @@ namespace NonSucking.Framework.Serialization.Tests
         [Test]
         public static void Debug()
         {
-            const string demoPath = Path.Combine("..", "..", "..", "..", "DEMO");
+            const string demoPath = @"../../../../DEMO/";
             var secondTestFile = Path.Combine(demoPath, "SecondTestFile.cs");
             var sutMessage = Path.Combine(demoPath, "SUTMessage.cs");
             var iUser = Path.Combine(demoPath, "IUser.cs");
