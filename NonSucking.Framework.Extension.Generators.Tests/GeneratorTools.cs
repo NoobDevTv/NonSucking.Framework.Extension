@@ -68,6 +68,9 @@ namespace dotVariant.Generator.Test
                             MetadataReference.CreateFromFile(typeof(System.Text.Json.Serialization.JsonIgnoreAttribute).GetTypeInfo().Assembly.Location),
                             MetadataReference.CreateFromFile(typeof(System.ComponentModel.DescriptionAttribute).GetTypeInfo().Assembly.Location),
                             MetadataReference.CreateFromFile(typeof(System.Drawing.Point).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(System.Collections.Generic.SortedSet<>).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(System.Collections.SortedList).GetTypeInfo().Assembly.Location),
+                            MetadataReference.CreateFromFile(typeof(System.Collections.Concurrent.ConcurrentBag<>).GetTypeInfo().Assembly.Location),
                 },
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 

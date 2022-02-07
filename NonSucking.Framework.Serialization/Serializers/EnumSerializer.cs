@@ -5,15 +5,16 @@ using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
 using System.Text;
-
+using NonSucking.Framework.Serialization.Serializers;
 using VaVare.Statements;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(30)]
     internal static class EnumSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
         {
 
             var type = property.TypeSymbol;
@@ -27,7 +28,7 @@ namespace NonSucking.Framework.Serialization
             {
                 ValueArgument argument = Helper.GetValueArgumentFrom(property, typeSymbol.EnumUnderlyingType);
 
-                statements.Add(Statement
+                statements.Statements.Add(Statement
                         .Expression
                         .Invoke(writerName, "Write", arguments: new[] { argument })
                         .AsStatement());
@@ -39,7 +40,7 @@ namespace NonSucking.Framework.Serialization
             }
 
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,List<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
         {
             
             var type = property.TypeSymbol;
@@ -51,8 +52,7 @@ namespace NonSucking.Framework.Serialization
 
             if (type is INamedTypeSymbol typeSymbol)
             {
-                SpecialType specialType = typeSymbol.EnumUnderlyingType.SpecialType;
-                string localName = $"{Helper.GetRandomNameFor(property.Name, property.Parent)}";
+                SpecialType specialType = typeSymbol.EnumUnderlyingType!.SpecialType;
 
                 ExpressionSyntax invocationExpression
                         = Statement
@@ -62,15 +62,13 @@ namespace NonSucking.Framework.Serialization
 
                 var typeSyntax
                     = SyntaxFactory
-                    .ParseTypeName(typeSymbol.Name);
+                    .ParseTypeName(typeSymbol.ToDisplayString());
 
                 invocationExpression
                     = SyntaxFactory
                     .CastExpression(typeSyntax, invocationExpression);
 
-                statements.Add(Statement
-                    .Declaration
-                    .DeclareAndAssign(localName, invocationExpression));
+                statements.DeclareAndAssign(property, property.CreateUniqueName(), typeSymbol, invocationExpression);
 
                 return true;
             }

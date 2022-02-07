@@ -14,7 +14,7 @@ namespace NonSucking.Framework.Serialization
 
         public IReadOnlyCollection<MemberInfo> Properties { get; init; }
 
-        public VisitInfo(INamedTypeSymbol typeSymbol = default, AttributeData attribute = default, MemberInfo[] properties = default)
+        public VisitInfo(INamedTypeSymbol typeSymbol, AttributeData attribute, MemberInfo[] properties)
         {
             TypeSymbol = typeSymbol;
             Attribute = attribute;

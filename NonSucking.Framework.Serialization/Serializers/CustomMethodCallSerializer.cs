@@ -11,12 +11,15 @@ using System.Linq;
 using System.IO;
 using NonSucking.Framework.Serialization.Attributes;
 using System.Linq.Expressions;
+using Microsoft.CodeAnalysis.CSharp;
+using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(0)]
     internal static class CustomMethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, List<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
         {
             var methodName = "Deserialize";
             bool isClassAttribute = false;
@@ -28,7 +31,7 @@ namespace NonSucking.Framework.Serialization
 
             }
 
-            if (propAttrData.NamedArguments.IsEmpty)
+            if (propAttrData!.NamedArguments.IsEmpty)
             {
                 context.AddDiagnostic("0010", "", $"You must atleast provide one argument for {AttributeTemplates.Custom.Name}. Otherwise this value won't be deserialized!", property.Symbol, DiagnosticSeverity.Error);
                 return true;
@@ -43,7 +46,7 @@ namespace NonSucking.Framework.Serialization
             var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "DeserializeImplementationType").Value.Value as ISymbol;
             InvocationExpressionSyntax invocationExpression;
 
-            if (customType != null)
+            if (customType is not null)
             {
                 //Static call
                 invocationExpression
@@ -71,9 +74,7 @@ namespace NonSucking.Framework.Serialization
                         .AsExpression();
             }
 
-            statements.Add(Statement
-                .Declaration
-                .DeclareAndAssign($"{Helper.GetRandomNameFor(property.Name, property.Parent)}", invocationExpression));
+            statements.DeclareAndAssign(property, property.CreateUniqueName(), property.TypeSymbol, invocationExpression);
 
             return true;
         }
@@ -81,7 +82,7 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
         {
             
             var methodName = "Serialize";
@@ -94,7 +95,7 @@ namespace NonSucking.Framework.Serialization
 
             }
 
-            if (propAttrData.NamedArguments.IsEmpty)
+            if (propAttrData!.NamedArguments.IsEmpty)
             {
                 context.AddDiagnostic("0009", "", $"You must atleast provide one argument for {AttributeTemplates.Custom.Name}. Otherwise this value won't be serialized!", property.Symbol, DiagnosticSeverity.Error);
                 return true;
@@ -107,7 +108,7 @@ namespace NonSucking.Framework.Serialization
             }
             StatementSyntax statement;
             var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeImplementationType").Value.Value as ISymbol;
-            if (customType != null)
+            if (customType is not null)
             {
                 //Static call
                 statement
@@ -135,7 +136,7 @@ namespace NonSucking.Framework.Serialization
                         .AsStatement();
             }
 
-            statements.Add(statement);
+            statements.Statements.Add(statement);
 
             return true;
 

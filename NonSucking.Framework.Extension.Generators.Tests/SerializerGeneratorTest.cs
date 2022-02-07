@@ -1,11 +1,9 @@
 ﻿using dotVariant.Generator.Test;
+
 using NUnit.Framework;
-using System;
+
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace NonSucking.Framework.Serialization.Tests
 {
@@ -15,19 +13,29 @@ namespace NonSucking.Framework.Serialization.Tests
         [Test]
         public static void Debug()
         {
-            string demoPath= Path.Combine("..", "..", "..", "..", "DEMO");
+            const string demoPath = @"../../../../DEMO/";
+            var secondTestFile = Path.Combine(demoPath, "SecondTestFile.cs");
             var sutMessage = Path.Combine(demoPath, "SUTMessage.cs");
             var iUser = Path.Combine(demoPath, "IUser.cs");
             var message = Path.Combine(demoPath, "Message.cs");
             var singePropTest = Path.Combine(demoPath, "SinglePropTest.cs");
+            var recordTestFile = Path.Combine(demoPath, "RecordTestFile.cs");
+            var structTestFile = Path.Combine(demoPath, "StructTestFile.cs");
+            var nullableTestFile = Path.Combine(demoPath, "NullableTest.cs");
+            var listsContainer = Path.Combine(demoPath, "ListsContainer.cs");
 
             var compilate
             = GeneratorTools.GetGeneratorDiagnostics(new Dictionary<string, string>()
             {
-                { sutMessage, File.ReadAllText(sutMessage)},
-                { iUser, File.ReadAllText(iUser)},
-                { message, File.ReadAllText(message)},
-                { singePropTest, File.ReadAllText(singePropTest)},
+                 { recordTestFile, File.ReadAllText(recordTestFile)},
+                 { structTestFile, File.ReadAllText(structTestFile)},
+                 { nullableTestFile, File.ReadAllText(nullableTestFile)},
+                 { secondTestFile, File.ReadAllText(secondTestFile)},
+                 { listsContainer , File.ReadAllText(listsContainer )},
+                 { sutMessage, File.ReadAllText(sutMessage)},
+                 { iUser, File.ReadAllText(iUser)},
+                 { message, File.ReadAllText(message)},
+                 { singePropTest, File.ReadAllText(singePropTest)},
             },
             () => new NoosonGenerator());
 

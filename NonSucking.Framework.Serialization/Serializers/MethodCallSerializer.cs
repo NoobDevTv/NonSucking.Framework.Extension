@@ -10,12 +10,14 @@ using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using System.Linq;
 using System.IO;
 using NonSucking.Framework.Serialization.Attributes;
+using NonSucking.Framework.Serialization.Serializers;
 
 namespace NonSucking.Framework.Serialization
 {
+    [StaticSerializer(40)]
     internal static class MethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,List<StatementSyntax> statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
         {
             
             var type = property.TypeSymbol;
@@ -44,9 +46,7 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(type.ToString(), "Deserialize", arguments: new[] { new ValueArgument((object)readerName) })
                         .AsExpression();
 
-                statements.Add(Statement
-                        .Declaration
-                        .DeclareAndAssign($"{Helper.GetRandomNameFor(property.Name, property.Parent)}", invocationExpression));
+                statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocationExpression);
             }
 
             return isUsable;
@@ -55,7 +55,7 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,List<StatementSyntax> statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
         {
             
             var type = property.TypeSymbol;
@@ -79,7 +79,7 @@ namespace NonSucking.Framework.Serialization
 
             if (isUsable)
             {
-                statements.Add(Statement
+                statements.Statements.Add(Statement
                         .Expression
                         .Invoke(Helper.GetMemberAccessString(property), "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement());

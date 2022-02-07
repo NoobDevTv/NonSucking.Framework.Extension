@@ -6,6 +6,7 @@
 		<IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
 		<CompilerGeneratedFilesOutputPath>GeneratedFiles</CompilerGeneratedFilesOutputPath>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -18,8 +19,9 @@
 
 	</ItemGroup>
 
+
 	<ItemGroup>
-	  <Folder Include="GeneratedFiles\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.NoosonGenerator\" />
+	  <Folder Include="GeneratedFiles\**" />
 	</ItemGroup>
 
 	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild">

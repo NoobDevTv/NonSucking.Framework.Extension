@@ -16,17 +16,21 @@ namespace NonSucking.Framework.Serialization
         private static readonly Regex endsWithOurSuffixAndGuid;
         internal const string localVariableSuffix = "__";
         internal const string doubleLocalVariableSuffix = localVariableSuffix + localVariableSuffix;
-        internal static int uniqueNumber = -1;
+        internal static int uniqueNumber = 8;
         static Helper()
         {
             //endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-zA-Z]{{1,6}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
 
-        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol symbol)
+        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol? symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
         {
+            if(currentIteration++ > maxRecursion)
+                yield break;
+
             if (symbol is null)
                 yield break;
+            var isRecord = symbol.IsRecord;
             foreach (var member in symbol.GetMembers())
             {
                 if (member.TryGetAttribute(AttributeTemplates.Ignore, out _))
@@ -34,6 +38,11 @@ namespace NonSucking.Framework.Serialization
 
                 if (member is IPropertySymbol propSymbol)
                 {
+                    // Exclude CompilerGenerated EqualityContract from serialization process
+                    if (isRecord && propSymbol.Name == "EqualityContract")
+                    {
+                        continue;
+                    }
                     yield return new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
                 }
                 else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
@@ -41,7 +50,7 @@ namespace NonSucking.Framework.Serialization
                     yield return new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
                 }
             }
-            foreach (var item in GetMembersWithBase(symbol.BaseType))
+            foreach (var item in GetMembersWithBase(symbol.BaseType, maxRecursion, currentIteration))
             {
                 yield return item;
             }
@@ -104,13 +113,13 @@ namespace NonSucking.Framework.Serialization
             return $"{variableName}{localVariableSuffix}{name}{localVariableSuffix}{IntToString(Interlocked.Increment(ref uniqueNumber))}";
         }
 
-        internal static ValueArgument GetValueArgumentFrom(MemberInfo memberInfo, ITypeSymbol castTo = null)
+        internal static ValueArgument GetValueArgumentFrom(MemberInfo memberInfo, ITypeSymbol? castTo = null)
         {
             object referenceValue = GetMemberAccessString(memberInfo, castTo);
             return new ValueArgument(referenceValue);
         }
 
-        internal static string GetMemberAccessString(MemberInfo memberInfo, ITypeSymbol castTo = null)
+        internal static string GetMemberAccessString(MemberInfo memberInfo, ITypeSymbol? castTo = null)
         {
             if (string.IsNullOrEmpty(memberInfo.Parent))
             {
@@ -122,10 +131,10 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        internal static string Cast(string value, string castType = null)
+        internal static string Cast(string value, string? castType = null)
         {
             if (!string.IsNullOrWhiteSpace(castType))
-                return $"({castType}){value}";
+                return $"(({castType}){value})";
 
             return value;
         }
