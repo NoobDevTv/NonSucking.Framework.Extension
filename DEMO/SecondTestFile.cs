@@ -42,7 +42,7 @@ public class ByteLengthList2 : ByteLengthList
     }
 }
 
-// [Nooson] - Not supported to directly generate nooson for class inheriting from ListSerializer types.
+[Nooson]
 public partial class ByteLengthList : List<byte[]>
 {
     public string NameOfList { get; set; }

@@ -14,7 +14,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(30)]
     internal static class EnumSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
         {
 
             var type = property.TypeSymbol;
@@ -40,7 +40,7 @@ namespace NonSucking.Framework.Serialization
             }
 
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
         {
             
             var type = property.TypeSymbol;

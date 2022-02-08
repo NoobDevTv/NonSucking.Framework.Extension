@@ -18,13 +18,13 @@ namespace NonSucking.Framework.Serialization
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                 .Where(property =>
                     property.Name != "this[]")
-               .Select(x => x with { Parent = property.Name });
+               .Select(x => x with { Parent = property.FullName });
 
             var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
@@ -39,14 +39,13 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
-            statements.Statements.AddRange(
-                GenerateStatementsForProps(
-                   props
-                       .Select(x => x with { Parent = property.FullName })
-                       .ToArray(),
-                   context,
-                   MethodType.Serialize
-               ).SelectMany(x => x.ToMergedBlock()));
+            foreach (var prop in OrderProps(props))
+            {
+                var propCode = GenerateStatementsForMember(prop, context, MethodType.Serialize);
+                if (propCode == null)
+                    continue;
+                statements.Statements.AddRange(propCode.ToMergedBlock());
+            }
 
             return true;
 
@@ -72,7 +71,18 @@ namespace NonSucking.Framework.Serialization
             return props;
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, int baseTypesLevelProperties = int.MaxValue)
+        private static IEnumerable<MemberInfo> OrderProps(IEnumerable<MemberInfo> props)
+        {
+            return props.OrderBy(x =>
+                                 {
+                                     var attr = x.Symbol.GetAttribute(AttributeTemplates.Order);
+                                     if (attr == null)
+                                         return int.MaxValue;
+                                     return (int)attr.ConstructorArguments[0].Value!;
+                                 });
+        }
+
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
                = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
@@ -93,16 +103,14 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
+            foreach (var prop in OrderProps(props))
+            {
+                var propCode = GenerateStatementsForMember(prop, context, MethodType.Deserialize);
+                if (propCode == null)
+                    continue;
+                statements.Statements.AddRange(propCode.ToMergedBlock());
+            }
 
-            string randomForThisScope = Helper.GetRandomNameFor("", property.Parent);
-            var statementList
-                = GenerateStatementsForProps(
-                    props.ToArray(),
-                    context,
-                    MethodType.Deserialize
-                ).SelectMany(x => x.ToMergedBlock()).ToList();
-
-            statements.Statements.AddRange(statementList);
             try
             {
 

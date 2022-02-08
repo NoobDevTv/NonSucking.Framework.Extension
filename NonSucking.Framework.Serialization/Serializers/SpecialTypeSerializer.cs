@@ -15,7 +15,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(20)]
     internal static class SpecialTypeSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             switch ((int)type.SpecialType)
@@ -34,7 +34,7 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
 

@@ -130,7 +130,7 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
             }
             var s = serializers[i];
             var serializerName = s.declaration.Identifier.ToFullString().Trim();
-            tw.WriteLine($"(includedSerializers & SerializerMask.{serializerName}) != SerializerMask.None && {serializerName}.{methodName}(property, context, {paramName}, statements)");
+            tw.WriteLine($"(includedSerializers & SerializerMask.{serializerName}) != SerializerMask.None && {serializerName}.{methodName}(property, context, {paramName}, statements, includedSerializers)");
         }
         tw.WriteLine(";");
 
