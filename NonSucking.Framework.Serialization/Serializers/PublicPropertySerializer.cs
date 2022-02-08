@@ -106,7 +106,7 @@ namespace NonSucking.Framework.Serialization
             try
             {
 
-                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)property.TypeSymbol, statementList, property, property.CreateUniqueName());
+                var ctorSyntax = CtorSerializer.CallCtorAndSetProps((INamedTypeSymbol)property.TypeSymbol, statements.Statements, property, property.CreateUniqueName());
                 statements.MergeWith(ctorSyntax);
 
             }
