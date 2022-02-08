@@ -141,16 +141,8 @@ namespace NonSucking.Framework.Serialization
             );
 
             GeneratedSerializerCode preIterationStatements = new();
+            
             var count = GetIterationAmount(property.TypeSymbol);
-
-            if (count > -1)
-                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, count);
-
-            var listVariableName = itemDeserialization.VariableDeclarations.Single().UniqueName;
-
-            var listName = property.CreateUniqueName();
-
-
             var start = new VariableReference("0");
             var end = new VariableReference(Helper.GetRandomNameFor("count", property.Name));
 
@@ -164,6 +156,19 @@ namespace NonSucking.Framework.Serialization
                 Statement
                     .Declaration
                     .DeclareAndAssign(end.Name, invocationExpression));
+
+            string listName;
+            if (count > -1)
+            {
+                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, count);
+                listName = preIterationStatements.VariableDeclarations.Single().UniqueName;
+            }
+            else
+            {
+                listName = property.CreateUniqueName();
+            }
+            var listVariableName = itemDeserialization.VariableDeclarations.Single().UniqueName;
+
 
             if (type is IArrayTypeSymbol arrayType)
             {
@@ -341,8 +346,9 @@ namespace NonSucking.Framework.Serialization
                             BodyGenerator.Create(itemDeserialization.ToMergedBlock().ToArray()));
 
                 statements.MergeWith(preIterationStatements);
-                statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(listInitialize),
-                    ctorInvocationExpression);
+                if (count == -1)
+                    statements.DeclareAndAssign(property, listName, SyntaxFactory.ParseTypeName(listInitialize),
+                        ctorInvocationExpression);
                 statements.Statements.Add(castDeclaration);
                 statements.Statements.Add(iterationStatement);
             }
