@@ -139,7 +139,7 @@ internal static class KnownSimpleTypeSerializer
 
                     var addressFamilySer = NoosonGenerator.GenerateStatementsForMember(addressFamilyProp, context,
                         MethodType.Serialize);
-                    if (addressFamilySer == null)
+                    if (addressFamilySer is null)
                         throw new InvalidCastException("Could not serialize AddressFamily enum value!");
                     statements.MergeWith(addressFamilySer);
 
@@ -232,7 +232,7 @@ internal static class KnownSimpleTypeSerializer
 
                     var addressFamilySer = NoosonGenerator.GenerateStatementsForMember(addressFamilyProp, context,
                         MethodType.Deserialize);
-                    if (addressFamilySer == null)
+                    if (addressFamilySer is null)
                         throw new InvalidCastException("Could not serialize AddressFamily enum value!");
                     statements.Statements.AddRange(addressFamilySer.ToMergedBlock());
 

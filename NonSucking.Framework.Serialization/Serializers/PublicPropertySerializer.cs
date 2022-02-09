@@ -42,7 +42,7 @@ namespace NonSucking.Framework.Serialization
             foreach (var prop in OrderProps(props))
             {
                 var propCode = GenerateStatementsForMember(prop, context, MethodType.Serialize);
-                if (propCode == null)
+                if (propCode is null)
                     continue;
                 statements.Statements.AddRange(propCode.ToMergedBlock());
             }
@@ -106,7 +106,7 @@ namespace NonSucking.Framework.Serialization
             foreach (var prop in OrderProps(props))
             {
                 var propCode = GenerateStatementsForMember(prop, context, MethodType.Deserialize);
-                if (propCode == null)
+                if (propCode is null)
                     continue;
                 statements.Statements.AddRange(propCode.ToMergedBlock());
             }
