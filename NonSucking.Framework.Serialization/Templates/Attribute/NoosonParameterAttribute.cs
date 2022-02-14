@@ -3,11 +3,11 @@
 namespace NonSucking.Framework.Serialization
 {
     [AttributeUsage(AttributeTargets.Parameter, Inherited = false, AllowMultiple = false)]
-    public class NoosonParameterAttribute : Attribute
+    internal class NoosonParameterAttribute : Attribute
     {
-        public string PropertyName { get;  }
+        internal string PropertyName { get; }
 
-        public NoosonParameterAttribute(string propertyName)
+        internal NoosonParameterAttribute(string propertyName)
         {
             PropertyName = propertyName;
         }
