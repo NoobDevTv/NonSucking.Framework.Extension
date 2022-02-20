@@ -3,11 +3,11 @@
 namespace NonSucking.Framework.Serialization
 {
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-    public class NoosonOrderAttribute : Attribute
+    internal class NoosonOrderAttribute : Attribute
     {
-        public int Order { get;  }
+        internal int Order { get; }
 
-        public NoosonOrderAttribute(int order)
+        internal NoosonOrderAttribute(int order)
         {
             Order = order;
         }
