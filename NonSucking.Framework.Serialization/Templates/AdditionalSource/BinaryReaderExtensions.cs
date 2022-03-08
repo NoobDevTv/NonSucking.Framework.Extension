@@ -10,7 +10,13 @@ namespace NonSucking.Framework.Serialization
             int read = 0;
             do
             {
+#if NETSTANDARD2_1_OR_GREATER
                 var res = reader.Read(buffer.Slice(read));
+#else
+                var tmpBuffer = new byte[buffer.Length - read];
+                var res = reader.Read(tmpBuffer, 0, tmpBuffer.Length);
+                new Span<byte>(tmpBuffer, 0, read).CopyTo(buffer.Slice(read));
+#endif
                 if (res == -1)
                     throw new EndOfStreamException();
                 read += res;

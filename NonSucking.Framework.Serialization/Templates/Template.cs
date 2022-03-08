@@ -20,7 +20,7 @@ namespace NonSucking.Framework.Serialization.Attributes
 
             using var ressourceStream
                 = Assembly
-                 .GetAssembly(typeof(NoosonAttributeTemplate))
+                 .GetAssembly(typeof(Template))
                  .GetManifestResourceStream(ressourceName);
 
             using var reader = new StreamReader(ressourceStream);

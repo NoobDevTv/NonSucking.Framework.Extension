@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -130,6 +131,35 @@ namespace NonSucking.Framework.Serialization
                 return $"(({castType}){value})";
 
             return value;
+        }
+
+        internal static void GetGenAttributeData(AttributeData attributeData, out bool generateDefaultReader,
+            out bool generateDefaultWriter, out INamedTypeSymbol?[] directReaders, out INamedTypeSymbol?[] directWriters)
+        {
+            bool GetGenerateDefault(int i, bool defaultValue)
+            {
+                if (attributeData!.ConstructorArguments.Length <= i)
+                    return defaultValue;
+                var val = (int)(attributeData.ConstructorArguments[i].Value ?? throw new Exception());
+                return val switch
+                {
+                    -1 => defaultValue,
+                    0 => false,
+                    1 => true,
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+
+            generateDefaultReader = GetGenerateDefault(0, true);
+            generateDefaultWriter = GetGenerateDefault(1, true);
+            directReaders =
+                attributeData.ConstructorArguments.Length > 2 &&  !attributeData.ConstructorArguments[2].Values.IsDefaultOrEmpty
+                ? attributeData.ConstructorArguments[2].Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
+                : Array.Empty<INamedTypeSymbol>();
+            directWriters =
+                attributeData.ConstructorArguments.Length > 3 && !attributeData.ConstructorArguments[3].Values.IsDefaultOrEmpty
+                ? attributeData.ConstructorArguments[3].Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
+                : Array.Empty<INamedTypeSymbol>();
         }
     }
 }
