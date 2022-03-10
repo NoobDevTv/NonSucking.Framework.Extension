@@ -106,8 +106,10 @@ namespace NonSucking.Framework.Serialization
             foreach (var prop in OrderProps(props))
             {
                 var propCode = GenerateStatementsForMember(prop, context, MethodType.Deserialize);
+                
                 if (propCode is null)
                     continue;
+                    
                 statements.Statements.AddRange(propCode.ToMergedBlock());
             }
 
