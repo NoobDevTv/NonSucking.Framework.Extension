@@ -19,7 +19,7 @@ namespace NonSucking.Framework.Serialization
     internal static class MultiDimensionArraySerializer
     {
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-            GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+            GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             if (type is not IArrayTypeSymbol arrayTypeSymbol || arrayTypeSymbol.Rank < 2)
@@ -102,7 +102,7 @@ namespace NonSucking.Framework.Serialization
 
 
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+            GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             if (type is not IArrayTypeSymbol arrayTypeSymbol || arrayTypeSymbol.Rank < 2)

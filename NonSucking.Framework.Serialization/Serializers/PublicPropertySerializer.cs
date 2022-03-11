@@ -18,7 +18,7 @@ namespace NonSucking.Framework.Serialization
     internal static class PublicPropertySerializer
     {
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
@@ -82,7 +82,7 @@ namespace NonSucking.Framework.Serialization
                                  });
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             var props
                = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)

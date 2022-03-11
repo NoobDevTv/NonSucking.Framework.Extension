@@ -19,7 +19,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(0)]
     internal static class CustomMethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var methodName = "Deserialize";
             bool isClassAttribute = false;
@@ -82,7 +82,7 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             
             var methodName = "Serialize";

@@ -187,14 +187,13 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
         tw.WriteLine("");
         tw.WriteLine("namespace NonSucking.Framework.Serialization;");
         tw.WriteLine("");
-        
+
+        WriteEnum(tw, sortedSerializers);
         
         tw.WriteLine("public partial class NoosonGenerator");
         tw.WriteLine("{");
 
         tw.Indent++;
-
-        WriteEnum(tw, sortedSerializers);
         WriteSerialize(tw, sortedSerializers);
         WriteDeserialize(tw, sortedSerializers);
 

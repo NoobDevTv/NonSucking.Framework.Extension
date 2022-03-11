@@ -54,7 +54,7 @@ namespace NonSucking.Framework.Serialization
                                => p.Name == "Value");
             return p with { Parent = property.Name };
         }
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             if (!CanBeNull(property))
                 return false;
@@ -88,7 +88,7 @@ namespace NonSucking.Framework.Serialization
 
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
+        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             if (!CanBeNull(property))
                 return false;

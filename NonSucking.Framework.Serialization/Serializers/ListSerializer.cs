@@ -21,7 +21,7 @@ namespace NonSucking.Framework.Serialization
     {
         const string readonlyName = "System.Collections.Generic.IReadOnlyCollection<";
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-            GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+            GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             var collectionInterface
@@ -63,7 +63,7 @@ namespace NonSucking.Framework.Serialization
 
             var count = GetIterationAmount(property.TypeSymbol);
             if (count > -1)
-                PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, NoosonGenerator.SerializerMask.All, count);
+                PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, SerializerMask.All, count);
 
             preIterationStatements.Statements.Add(
                 Statement
@@ -105,7 +105,7 @@ namespace NonSucking.Framework.Serialization
 
 
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+            GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             // Ctor Analyze for Count 
@@ -160,7 +160,7 @@ namespace NonSucking.Framework.Serialization
             string listName;
             if (count > -1)
             {
-                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, NoosonGenerator.SerializerMask.All, count);
+                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, SerializerMask.All, count);
                 listName = preIterationStatements.VariableDeclarations.Single().UniqueName;
             }
             else

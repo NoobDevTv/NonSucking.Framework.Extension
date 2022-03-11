@@ -116,7 +116,7 @@ internal static class KnownSimpleTypeSerializer
     }
 
     internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-        GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+        GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
         var type = property.TypeSymbol;
         if (type is INamedTypeSymbol typeSymbol)
@@ -210,7 +210,7 @@ internal static class KnownSimpleTypeSerializer
     }
 
     internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-        GeneratedSerializerCode statements, NoosonGenerator.SerializerMask includedSerializers)
+        GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
         var type = property.TypeSymbol;
 
