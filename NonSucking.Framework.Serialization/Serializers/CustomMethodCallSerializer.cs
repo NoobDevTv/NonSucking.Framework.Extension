@@ -114,7 +114,7 @@ namespace NonSucking.Framework.Serialization
                 statement
                    = Statement
                    .Expression
-                   .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)writerName), new ValueArgument((object)property.Name) })
+                   .Invoke(customType.ToDisplayString(), methodName, arguments: new[] { new ValueArgument((object)writerName), new ValueArgument((object)property.FullName) })
                    .AsStatement();
             }
             else if (isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
@@ -126,13 +126,22 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(Helper.GetMemberAccessString(property), methodName, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
-            else
+            else if (property.Parent == "this")
             {
                 //Non Static on this
                 statement
                         = Statement
                         .Expression
                         .Invoke(methodName, arguments: new[] { new ValueArgument((object)writerName) })
+                        .AsStatement();
+            }
+            else
+            {
+                //Non Static on this
+                statement
+                    = Statement
+                        .Expression
+                        .Invoke(property.Parent, methodName, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
 

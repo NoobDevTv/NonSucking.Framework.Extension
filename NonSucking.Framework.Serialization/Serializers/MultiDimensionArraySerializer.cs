@@ -60,7 +60,7 @@ namespace NonSucking.Framework.Serialization
             var declareForLoopMember 
                 = Statement.Declaration.ParseDeclareAndAssing(
                     itemName, 
-                    $"{property.Name}[{string.Join(",", randomIs)}]");
+                    $"{property.FullName}[{string.Join(",", randomIs)}]");
             
             var localStatements
                 = NoosonGenerator.CreateStatementForSerializing(
