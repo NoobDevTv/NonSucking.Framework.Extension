@@ -130,7 +130,7 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
             }
             var s = serializers[i];
             var serializerName = s.declaration.Identifier.ToFullString().Trim();
-            tw.WriteLine($"(includedSerializers & SerializerMask.{serializerName}) != SerializerMask.None && {serializerName}.{methodName}(property, context, {paramName}, statements)");
+            tw.WriteLine($"(includedSerializers & SerializerMask.{serializerName}) != SerializerMask.None && {serializerName}.{methodName}(property, context, {paramName}, statements, includedSerializers)");
         }
         tw.WriteLine(";");
 
@@ -187,14 +187,13 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
         tw.WriteLine("");
         tw.WriteLine("namespace NonSucking.Framework.Serialization;");
         tw.WriteLine("");
-        
+
+        WriteEnum(tw, sortedSerializers);
         
         tw.WriteLine("public partial class NoosonGenerator");
         tw.WriteLine("{");
 
         tw.Indent++;
-
-        WriteEnum(tw, sortedSerializers);
         WriteSerialize(tw, sortedSerializers);
         WriteDeserialize(tw, sortedSerializers);
 

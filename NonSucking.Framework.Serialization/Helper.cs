@@ -121,14 +121,7 @@ namespace NonSucking.Framework.Serialization
 
         internal static string GetMemberAccessString(MemberInfo memberInfo, ITypeSymbol? castTo = null)
         {
-            if (string.IsNullOrEmpty(memberInfo.Parent))
-            {
-                return Cast(memberInfo.Name, castTo?.ToDisplayString());
-            }
-            else
-            {
-                return Cast($"{memberInfo.Parent}.{memberInfo.Name}", castTo?.ToDisplayString());
-            }
+            return Cast(memberInfo.FullName, castTo?.ToDisplayString());
         }
 
         internal static string Cast(string value, string? castType = null)

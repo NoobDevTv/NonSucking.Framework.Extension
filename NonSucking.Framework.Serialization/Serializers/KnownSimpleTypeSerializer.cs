@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -115,12 +116,13 @@ internal static class KnownSimpleTypeSerializer
     }
 
     internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-        GeneratedSerializerCode statements)
+        GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
         var type = property.TypeSymbol;
         if (type is INamedTypeSymbol typeSymbol)
         {
             var propName = property.FullName;
+            var propNameEscaped = string.IsNullOrEmpty(property.Parent) ? property.Name : $"{property.Parent}_{property.Name}";
             string? bufferName = null;
             bool hasOutSize = false;
             switch (GetKnownType(type))
@@ -135,16 +137,14 @@ internal static class KnownSimpleTypeSerializer
                             "AddressFamily",
                             propName);
 
-                    var addressFamilySer =
-                        NoosonGenerator.GenerateStatementsForProps(
-                            new[] { addressFamilyProp }, context, MethodType.Serialize);
-                    foreach (var item in addressFamilySer)
-                    {
-                        statements.MergeWith(item);
-                    }
+                    var addressFamilySer = NoosonGenerator.GenerateStatementsForMember(addressFamilyProp, context,
+                        MethodType.Serialize);
+                    if (addressFamilySer is null)
+                        throw new InvalidCastException("Could not serialize AddressFamily enum value!");
+                    statements.MergeWith(addressFamilySer);
 
                     bufferName = AddBuffer(statements,
-                        propName,
+                        propNameEscaped,
                         CreateIpSize(SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.IdentifierName(propName),
@@ -153,14 +153,14 @@ internal static class KnownSimpleTypeSerializer
                     break;
                 case KnownTypes.Guid:
                     bufferName = AddBuffer(statements,
-                        propName,
+                        propNameEscaped,
                         SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
                             SyntaxFactory.Literal(16)));
                     break;
                 case KnownTypes.BigInteger:
                     hasOutSize = true;
                     var bigIntSize = CreateBigIntSize(propName);
-                    var sizeName = Helper.GetRandomNameFor("size", propName);
+                    var sizeName = Helper.GetRandomNameFor("size", propNameEscaped);
                     var bigIntSizeVar = Statement.Declaration.DeclareAndAssign(sizeName, bigIntSize);
                     statements.Statements.Add(bigIntSizeVar);
                     statements.Statements.Add(Statement
@@ -168,7 +168,7 @@ internal static class KnownSimpleTypeSerializer
                         .Invoke(writerName, "Write", arguments: new[] { new VariableArgument(sizeName) })
                         .AsStatement());
 
-                    bufferName = AddBuffer(statements, propName, SyntaxFactory.IdentifierName(sizeName));
+                    bufferName = AddBuffer(statements, propNameEscaped, SyntaxFactory.IdentifierName(sizeName));
                     break;
                 default:
                     return false;
@@ -210,7 +210,7 @@ internal static class KnownSimpleTypeSerializer
     }
 
     internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-        GeneratedSerializerCode statements)
+        GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
         var type = property.TypeSymbol;
 
@@ -230,9 +230,10 @@ internal static class KnownSimpleTypeSerializer
                             "AddressFamily",
                             propName);
 
-                    var addressFamilySer =
-                        NoosonGenerator.GenerateStatementsForProps(
-                            new[] { addressFamilyProp }, context, MethodType.Deserialize).Single();
+                    var addressFamilySer = NoosonGenerator.GenerateStatementsForMember(addressFamilyProp, context,
+                        MethodType.Deserialize);
+                    if (addressFamilySer is null)
+                        throw new InvalidCastException("Could not serialize AddressFamily enum value!");
                     statements.Statements.AddRange(addressFamilySer.ToMergedBlock());
 
                     var addrFamilyName =
