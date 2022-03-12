@@ -9,7 +9,7 @@ namespace NonSucking.Framework.Serialization
 {
     class ThrowHelper
     {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
         [DoesNotReturn]
 #endif
         public static void ThrowIndexOutOfRange() => throw new IndexOutOfRangeException();
@@ -57,7 +57,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(char ch)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             ReadOnlySpan<char> chars = stackalloc char[] { ch};
             var b = encoding.GetByteCount(chars);
             if (b != encoding.GetBytes(chars, buffer.Slice(offset)))
@@ -99,7 +99,7 @@ namespace NonSucking.Framework.Serialization
         
         public void Write(double value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -110,7 +110,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(short value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -122,7 +122,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(int value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -134,7 +134,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(long value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -151,7 +151,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(ReadOnlySpan<char> chars)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var b = encoding.GetByteCount(chars);
             if (b != encoding.GetBytes(chars, buffer.Slice(offset)))
                 ThrowHelper.ThrowIndexOutOfRange();
@@ -172,7 +172,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(float value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -190,7 +190,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(ushort value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -202,7 +202,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(uint value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else
@@ -214,7 +214,7 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(ulong value)
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             if (!BitConverter.TryWriteBytes(this.buffer.Slice(offset), value))
                 ThrowHelper.ThrowIndexOutOfRange();
 #else

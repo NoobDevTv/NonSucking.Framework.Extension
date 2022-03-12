@@ -48,7 +48,7 @@ namespace NonSucking.Framework.Serialization
 
             charBytes ??= new byte[MaxCharBytesSize];
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             Span<char> singleChar = stackalloc char[1];
 #else
             var singleChar = new char[1];
@@ -93,7 +93,7 @@ namespace NonSucking.Framework.Serialization
 
                 try
                 {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
                     charsRead = decoder.GetChars(new ReadOnlySpan<byte>(charBytes, 0, numBytes), singleChar,
                         flush: false);
 #else
@@ -143,7 +143,7 @@ namespace NonSucking.Framework.Serialization
             while (!buffer.IsEmpty)
             {
                 int numBytes = buffer.Length;
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
                 int charsRead = decoder.GetChars(this.buffer.Slice(offset), buffer, false);
                 offset += encoding.GetByteCount(buffer.Slice(0, charsRead));
                 buffer = buffer.Slice(charsRead);
@@ -293,7 +293,7 @@ namespace NonSucking.Framework.Serialization
 
         public double ReadDouble()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToDouble(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -306,7 +306,7 @@ namespace NonSucking.Framework.Serialization
 
         public short ReadInt16()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToInt16(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -319,7 +319,7 @@ namespace NonSucking.Framework.Serialization
 
         public int ReadInt32()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToInt32(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -332,7 +332,7 @@ namespace NonSucking.Framework.Serialization
 
         public long ReadInt64()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToInt64(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -350,7 +350,7 @@ namespace NonSucking.Framework.Serialization
 
         public float ReadSingle()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToSingle(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -368,7 +368,7 @@ namespace NonSucking.Framework.Serialization
                 throw new IOException("BinaryReader encountered an invalid string length of -1 characters.");
             if (byteSize == 0)
                 return string.Empty;
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var slice = this.buffer.Slice(offset, byteSize);
 #else
             var slice = new byte[buffer.Length - offset];
@@ -379,7 +379,7 @@ namespace NonSucking.Framework.Serialization
 
         public ushort ReadUInt16()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToUInt16(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -392,7 +392,7 @@ namespace NonSucking.Framework.Serialization
 
         public uint ReadUInt32()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToUInt32(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];
@@ -405,7 +405,7 @@ namespace NonSucking.Framework.Serialization
 
         public ulong ReadUInt64()
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var ret = BitConverter.ToUInt64(buffer.Slice(offset));
 #else
             var slice = new byte[sizeof(double)];

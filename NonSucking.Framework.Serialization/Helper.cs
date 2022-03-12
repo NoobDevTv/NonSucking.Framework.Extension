@@ -140,7 +140,7 @@ namespace NonSucking.Framework.Serialization
             {
                 if (attributeData!.ConstructorArguments.Length <= i)
                     return defaultValue;
-                var val = (int)(attributeData.ConstructorArguments[i].Value ?? throw new Exception());
+                var val = (int)(attributeData.ConstructorArguments[i].Value!);
                 return val switch
                 {
                     -1 => defaultValue,

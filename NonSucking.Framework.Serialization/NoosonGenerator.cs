@@ -286,8 +286,7 @@ namespace NonSucking.Framework.Serialization
                         continue;
                     }
 
-                    var attributeData = typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute)
-                                        ?? throw new Exception();
+                    var attributeData = typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute)!;
                     
                     Helper.GetGenAttributeData(attributeData, out var generateDefaultReader, out var generateDefaultWriter,
                         out var directReaders, out var directWriters);

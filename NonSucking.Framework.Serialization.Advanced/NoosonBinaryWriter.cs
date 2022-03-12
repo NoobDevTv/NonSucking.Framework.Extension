@@ -9,9 +9,7 @@ public class NoosonBinaryWriter : System.IO.BinaryWriter, IBinaryWriter
     {
         throw new NotImplementedException();
     }
-#endif
 
-#if NETSTANDARD2_0
     public void Write(ReadOnlySpan<char> chars)
     {
         throw new NotImplementedException();
@@ -20,11 +18,14 @@ public class NoosonBinaryWriter : System.IO.BinaryWriter, IBinaryWriter
     public new void Write7BitEncodedInt(int value)
         => base.Write7BitEncodedInt(value);
 
+#if NET5_0_OR_GREATER
+    public new void Write7BitEncodedInt64(long value)
+    {
+        base.Write7BitEncodedInt64(value);
+    }
+#else
     public void Write7BitEncodedInt64(long value)
     {
-#if NET5_0_OR_GREATER
-        base.Write7BitEncodedInt64(value);
-#else
         uint uValue = (uint)value;
 
         // Write out an int 7 bits at a time. The high bit of the byte,
@@ -40,6 +41,6 @@ public class NoosonBinaryWriter : System.IO.BinaryWriter, IBinaryWriter
         }
 
         Write((byte)uValue);
-#endif
     }
+#endif
 }

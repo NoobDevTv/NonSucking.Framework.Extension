@@ -35,11 +35,14 @@ public class NoosonBinaryReader : BinaryReader, IBinaryReader
     public new int Read7BitEncodedInt()
         => base.Read7BitEncodedInt();
 
+#if NET5_0_OR_GREATER
+    public new long Read7BitEncodedInt64()
+    {
+        return base.Read7BitEncodedInt64();
+    }
+#else
     public long Read7BitEncodedInt64()
     {
-#if NET5_0_OR_GREATER
-        return base.Read7BitEncodedInt64();
-#else
         ulong result = 0;
         byte byteReadJustNow;
 
@@ -76,15 +79,15 @@ public class NoosonBinaryReader : BinaryReader, IBinaryReader
 
         result |= (ulong)byteReadJustNow << (MaxBytesWithoutOverflow * 7);
         return (long)result;
-#endif
     }
+#endif
 
     public void ReadBytes(Span<byte> buffer)
     {
         int read = 0;
         do
         {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
             var res = base.Read(buffer[read..]);
 #else
             var tmpBuffer = new byte[buffer.Length - read];
