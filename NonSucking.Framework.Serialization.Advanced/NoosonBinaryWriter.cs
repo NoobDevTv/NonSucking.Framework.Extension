@@ -22,7 +22,7 @@ public class NoosonBinaryWriter : System.IO.BinaryWriter, IBinaryWriter
 
     public void Write7BitEncodedInt64(long value)
     {
-#if NET5_OR_GREATER
+#if NET5_0_OR_GREATER
         base.Write7BitEncodedInt64(value);
 #else
         uint uValue = (uint)value;

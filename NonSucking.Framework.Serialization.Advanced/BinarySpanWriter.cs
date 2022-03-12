@@ -84,9 +84,9 @@ namespace NonSucking.Framework.Serialization
 
         public void Write(decimal value)
         {
-#if NET5_OR_GREATER
+#if NET5_0_OR_GREATER
             Span<int> buffer = stackalloc int[sizeof(decimal) / sizeof(int)];
-            _ = decimal.TryGetBits(value, buffer, out _);
+            decimal.GetBits(value, buffer);
 #else
             var buffer = decimal.GetBits(value);
 #endif

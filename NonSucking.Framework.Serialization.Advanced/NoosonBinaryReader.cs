@@ -21,30 +21,23 @@ public class NoosonBinaryReader : BinaryReader, IBinaryReader
     {
     }
 
+#if NETSTANDARD2_0
     public int Read(Span<byte> buffer)
     {
-#if NETSTANDARD2_1_OR_GREATER
-        return base.Read(buffer);
-#else
         throw new NotImplementedException();
-#endif
     }
 
     public int Read(Span<char> buffer)
     {
-#if NETSTANDARD2_1_OR_GREATER
-        return base.Read(buffer);
-#else
         throw new NotImplementedException();
-#endif
     }
-
+#endif
     public new int Read7BitEncodedInt()
         => base.Read7BitEncodedInt();
 
     public long Read7BitEncodedInt64()
     {
-#if NET5_OR_GREATER
+#if NET5_0_OR_GREATER
         return base.Read7BitEncodedInt64();
 #else
         ulong result = 0;
