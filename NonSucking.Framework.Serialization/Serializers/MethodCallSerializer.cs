@@ -46,7 +46,7 @@ namespace NonSucking.Framework.Serialization
             }
             bool isUsable
                 = shouldBeGenerated
-                    || member.Any(m => CheckSignature(context, m, "IBinaryReader"));
+                    || member.Any(m => m.IsStatic && CheckSignature(context, m, "IBinaryReader"));
 
             if (isUsable)
             {
@@ -82,6 +82,8 @@ namespace NonSucking.Framework.Serialization
                     .GetMembers("Serialize")
                     .OfType<IMethodSymbol>();
 
+            bool useStaticCall = true;
+            
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
 
             bool shouldBeGenerated = hasAttribute;
@@ -99,16 +101,27 @@ namespace NonSucking.Framework.Serialization
                                                return name == context.WriterTypeName || name == binaryWriterName;
                                            });
             }
-            
+
+            var m = member.FirstOrDefault(m => CheckSignature(context, m, "IBinaryWriter"));
             bool isUsable
-                = shouldBeGenerated || member.Any(m => CheckSignature(context, m, "IBinaryWriter"));
+                = shouldBeGenerated || m is not null;
 
             if (isUsable)
             {
-                statements.Statements.Add(Statement
+                if (shouldBeGenerated || m!.IsStatic)
+                {
+                    statements.Statements.Add(Statement
+                        .Expression
+                        .Invoke(type.ToDisplayString(), "Serialize", arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
+                        .AsStatement());
+                }
+                else if (!m!.IsStatic)
+                {
+                    statements.Statements.Add(Statement
                         .Expression
                         .Invoke(Helper.GetMemberAccessString(property), "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement());
+                }
             }
             else if (hasAttribute)
             {
@@ -131,14 +144,14 @@ namespace NonSucking.Framework.Serialization
 
         private static bool CheckSignature(NoosonGeneratorContext context, IMethodSymbol m, string? typeName)
         {
-            if (m.Parameters.Length != 1)
+            if (!(m.IsStatic && m.Parameters.Length == 2 || !m.IsStatic && m.Parameters.Length == 1))
                 return false;
             if (!(context.ReaderTypeName is null && context.WriterTypeName is null))
-                return m.Parameters[0].Type.ToDisplayString() == context.WriterTypeName;
-            if (m.Parameters[0].Type.TypeKind != TypeKind.TypeParameter || !m.IsGenericMethod)
+                return m.Parameters.Last().Type.ToDisplayString() == context.WriterTypeName;
+            if (m.Parameters.Last().Type.TypeKind != TypeKind.TypeParameter || !m.IsGenericMethod)
                 return false;
 
-            var typeParameter = m.TypeParameters.FirstOrDefault(x => x.Name == m.Parameters[0].Type.Name);
+            var typeParameter = m.TypeParameters.FirstOrDefault(x => x.Name == m.Parameters.Last().Type.Name);
 
             return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.Name == typeName);
 
