@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Numerics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -23,7 +24,7 @@ internal static class KnownSimpleTypeSerializer
         BigInteger
     }
 
-    private static string AddBuffer(GeneratedSerializerCode statements, string propName, ExpressionSyntax size)
+    private static string AddBuffer(GeneratedSerializerCode statements, string propName, ExpressionSyntax size, ExpressionSyntax? fallback)
     {
         var newBufferStatement =
             SyntaxFactory.StackAllocArrayCreationExpression(
@@ -33,11 +34,21 @@ internal static class KnownSimpleTypeSerializer
                         SyntaxFactory.ArrayRankSpecifier(
                             SyntaxFactory.SingletonSeparatedList(size)))));
         var bufferName = Helper.GetRandomNameFor("buffer", propName);
+
+        statements.Statements.Add(Statement.Declaration.DeclareAndAssign(bufferName, fallback)
+            .WithLeadingTrivia(
+                SyntaxFactory.TriviaList(
+                    SyntaxFactory.Trivia(SyntaxFactory.IfDirectiveTrivia(SyntaxFactory.IdentifierName("!(NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER)"), true, true, true))))
+            .WithTrailingTrivia(SyntaxFactory.TriviaList(
+                SyntaxFactory.Trivia(SyntaxFactory.ElseDirectiveTrivia(true, true)))));
+        
         statements.Statements.Add(Statement
             .Declaration
             .DeclareAndAssign(bufferName,
                 newBufferStatement,
                 SyntaxFactory.ParseName("System.Span<byte>")));
+
+
         return bufferName;
     }
     private static SwitchExpressionSyntax CreateIpSize(ExpressionSyntax addrFamily)
@@ -115,6 +126,23 @@ internal static class KnownSimpleTypeSerializer
         return KnownTypes.None;
     }
 
+    private static ExpressionSyntax CreateSerializeFallback(string propName, string byteMethodName)
+    {
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName(propName),SyntaxFactory.IdentifierName(byteMethodName)));
+    }
+
+    private static ExpressionSyntax CreateDeserializeFallback(string readerName, ExpressionSyntax size)
+    {
+        return SyntaxFactory.InvocationExpression(
+            SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName(readerName),
+                SyntaxFactory.IdentifierName("ReadBytes")),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[] { SyntaxFactory.Argument(size) })));
+    }
+    
     internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
         GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
@@ -148,14 +176,14 @@ internal static class KnownSimpleTypeSerializer
                         CreateIpSize(SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.IdentifierName(propName),
-                        SyntaxFactory.IdentifierName("AddressFamily"))));
+                        SyntaxFactory.IdentifierName("AddressFamily"))), CreateSerializeFallback(propName, "GetAddressBytes"));
 
                     break;
                 case KnownTypes.Guid:
                     bufferName = AddBuffer(statements,
                         propNameEscaped,
                         SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                            SyntaxFactory.Literal(16)));
+                            SyntaxFactory.Literal(16)), CreateSerializeFallback(propName, "ToByteArray"));
                     break;
                 case KnownTypes.BigInteger:
                     hasOutSize = true;
@@ -168,7 +196,7 @@ internal static class KnownSimpleTypeSerializer
                         .Invoke(writerName, "Write", arguments: new[] { new VariableArgument(sizeName) })
                         .AsStatement());
 
-                    bufferName = AddBuffer(statements, propNameEscaped, SyntaxFactory.IdentifierName(sizeName));
+                    bufferName = AddBuffer(statements, propNameEscaped, SyntaxFactory.IdentifierName(sizeName), CreateSerializeFallback(propName, "ToByteArray"));
                     break;
                 default:
                     return false;
@@ -198,7 +226,8 @@ internal static class KnownSimpleTypeSerializer
                                 SyntaxFactory.IdentifierName("TryWriteBytes")),
                             SyntaxFactory.ArgumentList(
                                 SyntaxFactory.SeparatedList<ArgumentSyntax>(
-                                    tryWriteParams))))));
+                                    tryWriteParams))))).WithTrailingTrivia(SyntaxFactory.Trivia(SyntaxFactory.EndIfDirectiveTrivia(true))));
+            
             statements.Statements.Add(Statement
                 .Expression
                 .Invoke(writerName, "Write", arguments: new[] { new VariableArgument(bufferName) })
@@ -238,13 +267,14 @@ internal static class KnownSimpleTypeSerializer
 
                     var addrFamilyName =
                         addressFamilySer.VariableDeclarations.First(x => x.OriginalMember == addressFamilyProp).UniqueName;
-
-                    bufferName = AddBuffer(statements, propName, CreateIpSize(SyntaxFactory.IdentifierName(addrFamilyName)));
+                    var ipSize = CreateIpSize(SyntaxFactory.IdentifierName(addrFamilyName));
+                    bufferName = AddBuffer(statements, propName, ipSize, CreateDeserializeFallback(readerName, ipSize));
 
                     break;
                 case KnownTypes.Guid:
-                    bufferName = AddBuffer(statements, propName, SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                        SyntaxFactory.Literal(16)));
+                    var guidSize = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                        SyntaxFactory.Literal(16));
+                    bufferName = AddBuffer(statements, propName, guidSize, CreateDeserializeFallback(readerName, guidSize));
                     break;
                 case KnownTypes.BigInteger:
                     var sizeName = Helper.GetRandomNameFor("size", propName);
@@ -254,7 +284,8 @@ internal static class KnownSimpleTypeSerializer
                         .AsExpression();
                     var bigIntSizeVar = Statement.Declaration.DeclareAndAssign(sizeName, bigIntSize);
                     statements.Statements.Add(bigIntSizeVar);
-                    bufferName = AddBuffer(statements, propName, SyntaxFactory.IdentifierName(sizeName));
+                    var bigIntSizeId = SyntaxFactory.IdentifierName(sizeName);
+                    bufferName = AddBuffer(statements, propName, bigIntSizeId, CreateDeserializeFallback(readerName, bigIntSizeId));
                     break;
                 default:
                     return false;
@@ -264,7 +295,7 @@ internal static class KnownSimpleTypeSerializer
             statements.Statements.Add(Statement
                 .Expression
                 .Invoke(readerName, "ReadBytes", arguments: new[] { new VariableArgument(bufferName) })
-                .AsStatement());
+                .AsStatement().WithTrailingTrivia(SyntaxFactory.Trivia(SyntaxFactory.EndIfDirectiveTrivia(true))));
 
             var createObj =
                 SyntaxFactory.ObjectCreationExpression(SyntaxFactory.ParseTypeName(type.ToDisplayString()),
