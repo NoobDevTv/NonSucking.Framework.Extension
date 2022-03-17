@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
+        <RootNamespace>NonSucking.Framework.Serialization</RootNamespace>
+        <LangVersion>10.0</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="System.Memory" Version="4.5.4" />
+    </ItemGroup>
+</Project>

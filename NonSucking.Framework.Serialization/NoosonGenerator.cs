@@ -19,10 +19,11 @@ using VaVare;
 using VaVare.Builders;
 using VaVare.Builders.BuildMembers;
 using VaVare.Generators.Common;
+using VaVare.Models;
 
 namespace NonSucking.Framework.Serialization
 {
-    public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol)
+    public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol, bool UseAdvancedTypes, string? WriterTypeName = null, string? ReaderTypeName = null)
     {
         public HashSet<string> Usings { get; } = new();
         internal const string Category = "SerializationGenerator";
@@ -256,6 +257,7 @@ namespace NonSucking.Framework.Serialization
         private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation,
             ImmutableArray<ITypeSymbol?> VisitInfos) source, List<Template> templates)
         {
+            bool useAdvancedTypes = source.Compilation.GetTypeByMetadataName("NonSucking.Framework.Serialization.IBinaryReader") is not null;
             foreach (Template template in templates)
             {
                 if (template.Kind == TemplateKind.AdditionalSource && source.Compilation.GetTypeByMetadataName(template.FullName) is null)
@@ -283,19 +285,64 @@ namespace NonSucking.Framework.Serialization
                             location));
                         continue;
                     }
-                    NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeSymbol);
-                    NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeSymbol);
-                    var methods =
-                        new[] {
-                            GenerateSerializeMethod(typeSymbol, serializeContext),
-                            GenerateDeserializeMethod(typeSymbol, deserializeContext)
-                        };
+
+                    var attributeData = typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute)!;
+                    
+                    Helper.GetGenAttributeData(attributeData, out var generateDefaultReader, out var generateDefaultWriter,
+                        out var directReaders, out var directWriters);
+                    
+                    NoosonGeneratorContext serializeContext = new(sourceProductionContext, writerName, typeSymbol, useAdvancedTypes);
+                    NoosonGeneratorContext deserializeContext = new(sourceProductionContext, readerName, typeSymbol, useAdvancedTypes);
+
+
+                    const string binaryWriterName = "System.IO.BinaryWriter";
+                    const string binaryReaderName = "System.IO.BinaryReader";
+                    
+                    
+                    var methods = new List<BaseMethodDeclarationSyntax>();
+                    if (useAdvancedTypes)
+                    {
+                        if (generateDefaultReader)
+                            methods.Add(GenerateSerializeMethod(typeSymbol,
+                                serializeContext with { WriterTypeName = null }));
+                        if (generateDefaultWriter)
+                            methods.Add(GenerateDeserializeMethod(typeSymbol,
+                                deserializeContext with { ReaderTypeName = null }));
+                    }
+                    else
+                    {
+                        if (generateDefaultReader)
+                            methods.Add(GenerateSerializeMethod(typeSymbol,
+                                serializeContext with { WriterTypeName = binaryWriterName}));
+                        if (generateDefaultWriter)
+                            methods.Add(GenerateDeserializeMethod(typeSymbol,
+                                deserializeContext with { ReaderTypeName = binaryReaderName}));
+                    }
+
+                    foreach (var directWriter in directWriters)
+                    {
+                        var directWriterName = directWriter?.ToDisplayString();
+                        if (directWriterName == binaryWriterName && !useAdvancedTypes && generateDefaultWriter)
+                            continue;
+                        methods.Add(GenerateSerializeMethod(typeSymbol,
+                            serializeContext with { WriterTypeName =  directWriterName}));
+                    }
+                    
+                    foreach (var directReader in directReaders)
+                    {
+                        var directReaderName = directReader?.ToDisplayString();
+                        if (directReaderName == binaryReaderName && !useAdvancedTypes && generateDefaultReader)
+                            continue;
+                        methods.Add(GenerateDeserializeMethod(typeSymbol,
+                            deserializeContext with { ReaderTypeName = directReaderName }));
+                    }
 
                     var usings = new HashSet<string>();
                     usings.UnionWith(serializeContext.Usings);
                     usings.UnionWith(deserializeContext.Usings);
 
                     var usingsArray = usings.ToArray();
+                    var methodsArray = methods.ToArray();
 
                     CompilationUnitSyntax? sourceCode = null;
                     TypeDeclarationSyntax? nestedType = null;
@@ -313,7 +360,7 @@ namespace NonSucking.Framework.Serialization
                                 typeSymbol.IsValueType)
                             .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                            .WithMethods(methods);
+                            .WithMethods(methodsArray);
 
 
                         if (isNestedType)
@@ -326,7 +373,7 @@ namespace NonSucking.Framework.Serialization
                         var builder = new StructBuilder(typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
                             .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                            .WithMethods(methods);
+                            .WithMethods(methodsArray);
                         if (isNestedType)
                             nestedType = builder.BuildWithoutNamespace();
                         else
@@ -337,7 +384,7 @@ namespace NonSucking.Framework.Serialization
                         var builder = new ClassBuilder(typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), containingNamespace)
                             .WithUsings(usingsArray)
                             .WithModifiers(Modifiers.Public, Modifiers.Partial)
-                            .WithMethods(methods);
+                            .WithMethods(methodsArray);
                         if (isNestedType)
                             nestedType = builder.BuildWithoutNamespace();
                         else
@@ -409,7 +456,11 @@ namespace NonSucking.Framework.Serialization
 
         internal static BaseMethodDeclarationSyntax GenerateSerializeMethod(ITypeSymbol typeSymbol, NoosonGeneratorContext context)
         {
-            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryWriter {context.ReaderWriterName}");
+            const string genericParameterName = "TNonSuckingWriter";
+            var generateGeneric = context.WriterTypeName is null;
+            var generateConstraint = generateGeneric;
+            var typeName = context.WriterTypeName ?? genericParameterName;
+            var parameter = SyntaxFactory.ParseParameterList($"${typeName} {context.ReaderWriterName}");
 
             var member = new MemberInfo(typeSymbol, typeSymbol, "this");
             var body
@@ -420,13 +471,20 @@ namespace NonSucking.Framework.Serialization
             if (!typeSymbol.IsValueType)
             {
                 if (BaseHasNoosonAttribute(typeSymbol.BaseType))
+                {
                     modifiers.Add(Modifiers.Override);
+                    generateConstraint = false;
+                }
                 else
                     modifiers.Add(Modifiers.Virtual);
             }
 
             return new MethodBuilder("Serialize")
                 .WithModifiers(modifiers.ToArray())
+                .WithTypeParameters(generateGeneric ? new []{ new TypeParameter(genericParameterName) }  : Array.Empty<TypeParameter>())
+                .WithTypeConstraintClauses(generateConstraint
+                    ? new[] { new TypeParameterConstraintClause(genericParameterName, new TypeParameterConstraint("NonSucking.Framework.Serialization.IBinaryWriter")) }
+                    : Array.Empty<TypeParameterConstraintClause>())
                 .WithParameters(parameter.Parameters.ToArray())
                 .WithBody(body)
                 .Build();
@@ -434,8 +492,12 @@ namespace NonSucking.Framework.Serialization
 
         internal static BaseMethodDeclarationSyntax GenerateDeserializeMethod(ITypeSymbol typeSymbol, NoosonGeneratorContext context)
         {
+            const string genericParameterName = "TNonSuckingReader";
+            
+            var generateGeneric = context.ReaderTypeName is null;
+            var typeName = context.ReaderTypeName ?? genericParameterName;
             var member = new MemberInfo(typeSymbol, typeSymbol, ReturnValueBaseName);
-            var parameter = SyntaxFactory.ParseParameterList($"System.IO.BinaryReader {context.ReaderWriterName}");
+            var parameter = SyntaxFactory.ParseParameterList($"{typeName} {context.ReaderWriterName}");
             var body
                 = CreateBlock(member, context, MethodType.Deserialize);
 
@@ -451,6 +513,10 @@ namespace NonSucking.Framework.Serialization
             return new MethodBuilder("Deserialize")
                 .WithModifiers(modifiers.ToArray())
                 .WithReturnType(SyntaxFactory.ParseTypeName(typeSymbol.Name))
+                .WithTypeParameters(generateGeneric ? new []{ new TypeParameter(genericParameterName) }  : Array.Empty<TypeParameter>())
+                .WithTypeConstraintClauses(generateGeneric
+                    ? new[] { new TypeParameterConstraintClause(genericParameterName, new TypeParameterConstraint("NonSucking.Framework.Serialization.IBinaryReader")) }
+                    : Array.Empty<TypeParameterConstraintClause>())
                 .WithParameters(parameter.Parameters.ToArray())
                 .WithBody(body)
                 .Build();

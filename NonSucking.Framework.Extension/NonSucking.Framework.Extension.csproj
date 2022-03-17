@@ -6,6 +6,8 @@
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
 		<NeutralLanguage>en</NeutralLanguage>
+		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+		<CompilerGeneratedFilesOutputPath>GeneratedFiles</CompilerGeneratedFilesOutputPath>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -18,5 +20,13 @@
 	<ItemGroup>
 		<ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
+	<ItemGroup>
+		<Folder Include="GeneratedFiles\**" />
+	</ItemGroup>
 
+	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild">
+		<ItemGroup>
+			<Compile Remove="GeneratedFiles\**" />
+		</ItemGroup>
+	</Target>
 </Project>
