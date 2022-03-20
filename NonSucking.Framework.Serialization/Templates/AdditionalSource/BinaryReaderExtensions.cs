@@ -10,7 +10,7 @@ namespace NonSucking.Framework.Serialization
             int read = 0;
             do
             {
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
                 var res = reader.Read(buffer.Slice(read));
 #else
                 var tmpBuffer = new byte[buffer.Length - read];

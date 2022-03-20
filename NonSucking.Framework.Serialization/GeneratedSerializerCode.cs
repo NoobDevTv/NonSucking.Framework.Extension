@@ -86,7 +86,8 @@ public class GeneratedSerializerCode
         else
         {
             VariableDeclarations.Add(new SerializerVariable(variableDeclaration, member, memberName, null));
-            Statements.Add(Statement.Declaration.Assign(memberName, valueExpression));
+            if (valueExpression is not null)
+                Statements.Add(Statement.Declaration.Assign(memberName, valueExpression));
         }
     }
 
