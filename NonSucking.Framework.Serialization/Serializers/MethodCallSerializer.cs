@@ -82,8 +82,6 @@ namespace NonSucking.Framework.Serialization
                     .GetMembers("Serialize")
                     .OfType<IMethodSymbol>();
 
-            bool useStaticCall = true;
-            
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
 
             bool shouldBeGenerated = hasAttribute;

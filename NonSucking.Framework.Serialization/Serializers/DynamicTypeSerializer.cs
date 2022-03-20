@@ -53,11 +53,11 @@ namespace NonSucking.Framework.Serialization
         }
         private static ThrowStatementSyntax ThrowNotSupportedException()
         {
-            return ThrowException("System.NotSupportedException");
+            return ThrowException($"{nameof(System)}.{nameof(NotSupportedException)}");
         }
         private static ThrowStatementSyntax ThrowInvalidCastException()
         {
-            return ThrowException("System.InvalidCastException");
+            return ThrowException($"{nameof(System)}.{nameof(InvalidCastException)}");
         }
         
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,

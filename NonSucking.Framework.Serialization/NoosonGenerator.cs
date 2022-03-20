@@ -305,7 +305,7 @@ namespace NonSucking.Framework.Serialization
                     var methods = new List<BaseMethodDeclarationSyntax>();
                     if (useAdvancedTypes)
                     {
-                        if (generateDefaultReader){}
+                        if (generateDefaultReader)
                             AddSerializeMethods(methods, typeSymbol,
                                 serializeContext with { WriterTypeName = null });
                         if (generateDefaultWriter)
@@ -495,6 +495,7 @@ namespace NonSucking.Framework.Serialization
 
             return GenerateSerialize(modifiers.ToArray(), context, member, generateGeneric, generateConstraint, body, null);
         }
+
         internal static BaseMethodDeclarationSyntax GenerateSerializeMethod(ITypeSymbol typeSymbol, NoosonGeneratorContext context)
         {
             var member = new MemberInfo(typeSymbol, typeSymbol, "that");
