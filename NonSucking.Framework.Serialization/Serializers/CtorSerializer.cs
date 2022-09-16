@@ -95,6 +95,9 @@ namespace NonSucking.Framework.Serialization.Serializers
 
             foreach (var item in Helper.GetMembersWithBase(typeSymbol))
             {
+                if (item.Symbol.IsStatic)
+                    continue;
+
                 if (item.Symbol is IPropertySymbol property
                     && !property.IsReadOnly
                     && property.SetMethod is not null
