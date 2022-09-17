@@ -28,7 +28,8 @@ namespace NonSucking.Framework.Serialization
 #else
                 var tmpBuffer = new byte[buffer.Length - read];
                 var res = reader.Read(tmpBuffer, 0, tmpBuffer.Length);
-                new Span<byte>(tmpBuffer, 0, read).CopyTo(buffer.Slice(read));
+                var copySpan = new Span<byte>(tmpBuffer, 0, res);
+                copySpan.CopyTo(buffer.Slice(read));
 #endif
                 if (res == -1)
                     throw new EndOfStreamException();
