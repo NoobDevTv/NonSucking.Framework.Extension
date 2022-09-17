@@ -17,7 +17,11 @@ namespace NonSucking.Framework.Serialization;
 [StaticSerializer(31)]
 internal static class UnmanagedTypeSerializer
 {
-
+    private static bool IsManagedType(ITypeSymbol typeSymbol)
+    {
+        return !typeSymbol.IsUnmanagedType
+               || typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.TypeArguments.Any(IsManagedType);
+    }
     private static InvocationExpressionSyntax GetGenericMethodSyntax(string variable, string methodName, ITypeSymbol type)
     {
         var method = SyntaxFactory.GenericName(
@@ -34,7 +38,7 @@ internal static class UnmanagedTypeSerializer
         GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
         var typeSymbol = property.TypeSymbol;
-        if (!typeSymbol.IsUnmanagedType)
+        if (IsManagedType(typeSymbol))
         {
             return false;
         }
@@ -59,7 +63,7 @@ internal static class UnmanagedTypeSerializer
         GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
         var typeSymbol = property.TypeSymbol;
-        if (!typeSymbol.IsUnmanagedType)
+        if (IsManagedType(typeSymbol))
         {
             return false;
         }
