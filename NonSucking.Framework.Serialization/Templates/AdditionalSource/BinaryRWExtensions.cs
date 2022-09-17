@@ -25,14 +25,16 @@ namespace NonSucking.Framework.Serialization
             {
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
                 var res = reader.Read(buffer.Slice(read));
+                if (res == -1)
+                    throw new EndOfStreamException();
 #else
                 var tmpBuffer = new byte[buffer.Length - read];
                 var res = reader.Read(tmpBuffer, 0, tmpBuffer.Length);
+                if (res == -1)
+                    throw new EndOfStreamException();
                 var copySpan = new Span<byte>(tmpBuffer, 0, res);
                 copySpan.CopyTo(buffer.Slice(read));
 #endif
-                if (res == -1)
-                    throw new EndOfStreamException();
                 read += res;
             } while (read < buffer.Length);
         }
