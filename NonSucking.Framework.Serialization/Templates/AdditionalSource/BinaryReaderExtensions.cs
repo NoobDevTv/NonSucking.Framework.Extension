@@ -3,8 +3,19 @@ using System.IO;
 
 namespace NonSucking.Framework.Serialization
 {
+    /// <summary>
+    /// Extension methods for <see cref="BinaryReader"/>.
+    /// </summary>
     public static class BinaryReaderExtensions
     {
+        /// <summary>
+        /// Read exact number of bytes from <see cref="BinaryReader"/>.
+        /// </summary>
+        /// <param name="reader">The reader to read bytes from.</param>
+        /// <param name="buffer">The buffer to read bytes into.</param>
+        /// <exception cref="EndOfStreamException">
+        /// Thrown when the <paramref name="reader"/> base stream is finished before completing the read.
+        /// </exception>
         public static void ReadBytes(this BinaryReader reader, Span<byte> buffer)
         {
             int read = 0;

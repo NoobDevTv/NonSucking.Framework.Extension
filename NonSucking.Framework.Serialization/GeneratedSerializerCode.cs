@@ -115,7 +115,7 @@ public class GeneratedSerializerCode
 
         public EqualsValueClauseSyntax CreateDefaultValue()
         {
-            return SyntaxFactory.EqualsValueClause(SyntaxFactory.DefaultExpression(Declaration.Declaration.Type));
+            return SyntaxFactory.EqualsValueClause(SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, SyntaxFactory.DefaultExpression(Declaration.Declaration.Type)));
         }
 
         public StatementSyntax GetAssignment()

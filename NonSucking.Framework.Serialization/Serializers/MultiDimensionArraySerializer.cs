@@ -58,7 +58,7 @@ namespace NonSucking.Framework.Serialization
 
             var itemName = Helper.GetRandomNameFor("item", property.Name);
             var declareForLoopMember 
-                = Statement.Declaration.ParseDeclareAndAssing(
+                = Statement.Declaration.ParseDeclareAndAssign(
                     itemName, 
                     $"{property.FullName}[{string.Join(",", randomIs)}]");
             

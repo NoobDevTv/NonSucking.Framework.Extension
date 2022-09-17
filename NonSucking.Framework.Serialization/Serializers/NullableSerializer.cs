@@ -58,7 +58,6 @@ namespace NonSucking.Framework.Serialization
         {
             if (!CanBeNull(property))
                 return false;
-            var localIsNotNullName = Helper.GetRandomNameFor("isNotNull", Helper.GetRandomNameFor(property.Name, property.Parent.Replace('.', '_')));
 
             var nullLiteral = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
             var propertyAccessorName = Helper.GetMemberAccessString(property);
@@ -66,9 +65,6 @@ namespace NonSucking.Framework.Serialization
             var isNotNullCheck = SyntaxFactory.IsPatternExpression(
                 SyntaxFactory.IdentifierName(propertyAccessorName),
                 SyntaxFactory.UnaryPattern(SyntaxFactory.ConstantPattern(nullLiteral)));
-
-            var isNotNullDeclaration = Statement.Declaration.DeclareAndAssign(localIsNotNullName, isNotNullCheck);
-            statements.Statements.Add(isNotNullDeclaration);
 
             var m = property.TypeSymbol.IsValueType
                 ? GetNullableValue(property, baseTypesLevelProperties)
@@ -78,10 +74,10 @@ namespace NonSucking.Framework.Serialization
             var b = BodyGenerator.Create(innerSerialize.ToMergedBlock().ToArray());
 
             var writeNullable = Statement.Expression.Invoke(writerName, "Write",
-                new[] { new VariableArgument(localIsNotNullName) });
+                new[] { new InvocationArgument(isNotNullCheck) });
                 
             statements.Statements.Add(writeNullable.AsStatement());
-            statements.Statements.Add(SyntaxFactory.IfStatement(SyntaxFactory.IdentifierName(localIsNotNullName), b));
+            statements.Statements.Add(SyntaxFactory.IfStatement(isNotNullCheck, b));
             
 
             return true;
