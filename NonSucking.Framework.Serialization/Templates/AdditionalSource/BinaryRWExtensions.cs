@@ -37,6 +37,22 @@ namespace NonSucking.Framework.Serialization
         }
 
         /// <summary>
+        /// Write bytes to a <see cref="BinaryWriter"/>.
+        /// </summary>
+        /// <param name="writer">The writer to write bytes into.</param>
+        /// <param name="buffer">The buffer to write.</param>
+        public static void WriteBytes(this BinaryWriter writer, Span<byte> buffer)
+        {
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+            writer.Write(buffer);
+#else
+            var tmpBuffer = new byte[buffer.Length];
+            buffer.CopyTo(tmpBuffer);
+            writer.Write(tmpBuffer, 0, tmpBuffer.Length);
+#endif
+        }
+
+        /// <summary>
         /// Read an unmanaged type <typeparamref name="T"/> from the <see cref="BinaryReader"/>.
         /// </summary>
         /// <param name="reader">The reader to read from.</param>
@@ -61,7 +77,7 @@ namespace NonSucking.Framework.Serialization
         {
             Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
             MemoryMarshal.Write(buffer, ref value);
-            writer.Write(buffer);
+            writer.WriteBytes(buffer);
         }
     }
 }
