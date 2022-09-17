@@ -21,6 +21,7 @@
 
 
 	<ItemGroup>
+	  <Folder Include="GeneratedFiles" />
 	  <Folder Include="GeneratedFiles\**" />
 	</ItemGroup>
 

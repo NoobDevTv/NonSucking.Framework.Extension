@@ -56,6 +56,7 @@ namespace DEMO
                 Type = 897987414,
                 UsersList = new List<User>() { new User() { Name = "1User" }, new User() { Name = "2User" }, new User() { Name = "3User" }, new User() { Name = "4User" } },
                 X = 123123,
+                UnmanagedTypes = new() { SomePos = new Point(1, 2), SomeTime = DateTime.Parse("2022-02-22 12:34")}
             };
 
             //var sut = new SinglePropTest

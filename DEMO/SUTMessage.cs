@@ -85,6 +85,8 @@ namespace DEMO
     public partial class SUTMessage : IEquatable<SUTMessage>
     {
 
+        public UnmanagedTypes UnmanagedTypes { get; set; } = new();
+        
         public Point[] Positions { get; set; }
         //[NoosonIgnore]
         public int Type { get; set; }
@@ -164,7 +166,8 @@ namespace DEMO
             && X == other.X
             && countPositions == other.countPositions
             && randomField == other.randomField
-            && forCtor == other.forCtor;
+            && forCtor == other.forCtor
+            && UnmanagedTypes == other.UnmanagedTypes;
         /*
          EqualityComparer<List<User>>.Default.Equals(UsersList, other.UsersList) && EqualityComparer<List<ComplainBase>>.Default.Equals(ComplainsBases, other.ComplainsBases) && EqualityComparer<List<short>>.Default.Equals(Countings, other.Countings) && EqualityComparer<Dictionary<short, ComplainBase>>.Default.Equals(CountingDic, other.CountingDic) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountings, other.ReadOnlyCountings) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountingsButSetable, other.ReadOnlyCountingsButSetable)         
         */

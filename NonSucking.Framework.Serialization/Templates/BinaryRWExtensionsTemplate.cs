@@ -3,10 +3,10 @@ using NonSucking.Framework.Serialization.Templates;
 
 namespace NonSucking.Framework.Serialization.AdditionalSource
 {
-    public class BinaryReaderExtensionsTemplate : Template
+    public class BinaryRWExtensionsTemplate : Template
     {
         public override string Namespace { get; } = "NonSucking.Framework.Serialization";
-        public override string Name { get; } = "BinaryReaderExtensions";
+        public override string Name { get; } = "BinaryRWExtensions";
         public override TemplateKind Kind { get; } = TemplateKind.AdditionalSource;
     }
 }
