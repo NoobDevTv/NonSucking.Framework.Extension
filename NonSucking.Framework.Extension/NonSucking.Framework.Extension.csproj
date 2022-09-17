@@ -21,6 +21,7 @@
 		<ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 	<ItemGroup>
+		<Folder Include="GeneratedFiles" />
 		<Folder Include="GeneratedFiles\**" />
 	</ItemGroup>
 
