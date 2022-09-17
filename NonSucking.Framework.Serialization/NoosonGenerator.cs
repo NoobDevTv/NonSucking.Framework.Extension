@@ -517,14 +517,15 @@ namespace NonSucking.Framework.Serialization
             var typeName = context.WriterTypeName ?? genericParameterName;
 
             var baseParameterList = additionalParameter is null
-                ? Enumerable.Empty<ParameterSyntax>()
-                : new [] {additionalParameter};
-            var parameters = baseParameterList.Append(SyntaxFactory.Parameter(SyntaxFactory.Identifier(context.ReaderWriterName))
-                .WithType(SyntaxFactory.ParseTypeName(typeName))).ToArray();
+                ? Enumerable.Empty<(ParameterSyntax, string)>()
+                : new [] {(additionalParameter, "The instance to serialize.")};
+            var parameters = baseParameterList.Append((SyntaxFactory.Parameter(SyntaxFactory.Identifier(context.ReaderWriterName))
+                .WithType(SyntaxFactory.ParseTypeName(typeName)), $"The <see cref=\"{typeName}\"/> to serialize to.")).ToArray();
 
             return new MethodBuilder("Serialize")
+                .WithSummary(additionalParameter is null ? "Serializes this instance." : $"Serializes the given <see cref=\"{member.TypeSymbol.Name}\"/> instance.")
                 .WithModifiers(modifiers)
-                .WithTypeParameters(generateGeneric ? new []{ new TypeParameter(genericParameterName) }  : Array.Empty<TypeParameter>())
+                .WithTypeParameters(generateGeneric ? new []{ new TypeParameter(genericParameterName, xmlDocumentation: "The type of the instance to serialize.") }  : Array.Empty<TypeParameter>())
                 .WithTypeConstraintClauses(generateConstraint
                     ? new[] { new TypeParameterConstraintClause(genericParameterName, new TypeParameterConstraint("NonSucking.Framework.Serialization.IBinaryWriter")) }
                     : Array.Empty<TypeParameterConstraintClause>())
@@ -554,9 +555,10 @@ namespace NonSucking.Framework.Serialization
             modifiers.Add(Modifiers.Static);
         
             return new MethodBuilder("Deserialize")
+                .WithSummary($"Deserializes a <see cref=\"{typeSymbol.Name}\"/> instance.")
                 .WithModifiers(modifiers.ToArray())
-                .WithReturnType(SyntaxFactory.ParseTypeName(typeSymbol.Name))
-                .WithTypeParameters(generateGeneric ? new []{ new TypeParameter(genericParameterName) }  : Array.Empty<TypeParameter>())
+                .WithReturnType(SyntaxFactory.ParseTypeName(typeSymbol.Name), "The deserialized instance.")
+                .WithTypeParameters(generateGeneric ? new []{ new TypeParameter(genericParameterName, xmlDocumentation: "The type of the instance to serialize.") }  : Array.Empty<TypeParameter>())
                 .WithTypeConstraintClauses(generateGeneric
                     ? new[] { new TypeParameterConstraintClause(genericParameterName, new TypeParameterConstraint("NonSucking.Framework.Serialization.IBinaryReader")) }
                     : Array.Empty<TypeParameterConstraintClause>())

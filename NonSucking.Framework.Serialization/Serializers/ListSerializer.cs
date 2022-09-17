@@ -309,7 +309,7 @@ namespace NonSucking.Framework.Serialization
                 var castDeclaration
                     = Statement
                         .Declaration
-                        .ParseDeclareAndAssing(castedListName,
+                        .ParseDeclareAndAssign(castedListName,
                             methodName == fallbackMethodName
                                 ? Helper.Cast(listName, genericCollectionInterface)
                                 : listName);
