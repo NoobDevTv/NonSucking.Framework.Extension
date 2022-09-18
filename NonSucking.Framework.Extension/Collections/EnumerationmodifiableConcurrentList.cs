@@ -1,4 +1,5 @@
-﻿using NonSucking.Framework.Extension.Threading;
+﻿using NonSucking.Framework.Extension.Pooling;
+using NonSucking.Framework.Extension.Threading;
 
 using System;
 using System.Collections;
@@ -36,7 +37,8 @@ namespace NonSucking.Framework.Extension.Collections
 
 
         private readonly List<T> list;
-        private readonly CountedScopeSemaphore scopeSemaphore = new CountedScopeSemaphore();
+        private readonly EnumeratorPool pool;
+        private readonly CountedScopeSemaphore scopeSemaphore = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EnumerationModifiableConcurrentList{T}"/> class that is empty and has the default initial capacity.
@@ -44,6 +46,7 @@ namespace NonSucking.Framework.Extension.Collections
         public EnumerationModifiableConcurrentList()
         {
             list = new List<T>();
+            pool = new(this);
         }
 
         /// <summary>
@@ -55,6 +58,7 @@ namespace NonSucking.Framework.Extension.Collections
         public EnumerationModifiableConcurrentList(IEnumerable<T> collection)
         {
             list = new List<T>(collection);
+            pool = new(this);
         }
 
         /// <summary>
@@ -66,13 +70,16 @@ namespace NonSucking.Framework.Extension.Collections
         public EnumerationModifiableConcurrentList(int capacity)
         {
             list = new List<T>(capacity);
+            pool = new(this);
         }
 
         /// <inheritdoc/>
         public void Add(T item)
         {
+            var index = list.Count;
             using var _ = scopeSemaphore.EnterExclusivScope();
             list.Add(item);
+            pool.InsertAt(index);
         }
 
         /// <inheritdoc/>
@@ -80,6 +87,7 @@ namespace NonSucking.Framework.Extension.Collections
         {
             using var _ = scopeSemaphore.EnterExclusivScope();
             list.Clear();
+            pool.Clear();
         }
         /// <inheritdoc/>
         public bool Contains(T item)
@@ -104,6 +112,7 @@ namespace NonSucking.Framework.Extension.Collections
         {
             using var _ = scopeSemaphore.EnterExclusivScope();
             list.Insert(index, item);
+            pool.InsertAt(index);
         }
         /// <inheritdoc/>
         public bool Remove(T item)
@@ -120,10 +129,11 @@ namespace NonSucking.Framework.Extension.Collections
         {
             using var _ = scopeSemaphore.EnterExclusivScope();
             list.RemoveAt(index);
+            pool.RemoveAt(index);
         }
 
         /// <inheritdoc cref="IEnumerable{T}.GetEnumerator"/>
-        public Enumerator GetEnumerator() => new Enumerator(this);
+        public Enumerator GetEnumerator() => pool.Get();
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -131,7 +141,7 @@ namespace NonSucking.Framework.Extension.Collections
         /// <summary>
         /// Enumerates the elements of a <see cref="EnumerationModifiableConcurrentList{T}"/>.
         /// </summary>
-        public sealed class Enumerator : IEnumerator<T>
+        public sealed class Enumerator : IEnumerator<T>, IPoolElement
         {
             /// <inheritdoc/>
             public T Current { get; private set; }
@@ -139,11 +149,13 @@ namespace NonSucking.Framework.Extension.Collections
 
             private int currentIndex = -1;
             private readonly EnumerationModifiableConcurrentList<T> parent;
-            private readonly CountedScopeSemaphore scopeSemaphore = new CountedScopeSemaphore();
+            private readonly EnumeratorPool pool;
+            private readonly CountedScopeSemaphore scopeSemaphore = new();
 
             internal Enumerator(EnumerationModifiableConcurrentList<T> list)
             {
                 parent = list;
+                pool = list.pool;
             }
 
             internal void RemoveAt(int index)
@@ -172,14 +184,9 @@ namespace NonSucking.Framework.Extension.Collections
             }
 
             /// <inheritdoc/>
-            public void Reset()
-            {
-                currentIndex = -1;
-                Current = default;
-            }
-            /// <inheritdoc/>
             public void Dispose()
             {
+                Release();
             }
 
             /// <inheritdoc/>
@@ -195,7 +202,96 @@ namespace NonSucking.Framework.Extension.Collections
                 return true;
             }
 
+            /// <inheritdoc/>
+            public void Reset()
+            {
+                currentIndex = -1;
+                Current = default;
+            }
+
+            /// <inheritdoc/>
+            public void Init(IPool pool)
+            {
+                Reset();
+            }
+
+            /// <inheritdoc/>
+            public void Release()
+            {
+                pool.Push(this);
+            }
         }
 
+        private sealed class EnumeratorPool : IPool<Enumerator>
+        {
+            private readonly Stack<Enumerator> pool = new();
+            private readonly HashSet<Enumerator> gottem = new();
+
+            private readonly EnumerationModifiableConcurrentList<T> list;
+            private readonly CountedScopeSemaphore scopeSemaphore = new();
+
+            public EnumeratorPool(EnumerationModifiableConcurrentList<T> list)
+            {
+                this.list = list;
+            }
+
+
+            internal void RemoveAt(int index)
+            {
+                using var _ = scopeSemaphore.EnterCountScope();
+                foreach (var item in gottem)
+                    item.RemoveAt(index);
+            }
+
+            internal void InsertAt(int index)
+            {
+                using var _ = scopeSemaphore.EnterCountScope();
+                foreach (var item in gottem)
+                    item.InsertAt(index);
+            }
+            internal void Clear()
+            {
+                using var _ = scopeSemaphore.EnterCountScope();
+                foreach (var item in gottem)
+                    item.Reset();
+            }
+
+
+            public Enumerator Get()
+            {
+                if (pool.Count > 0)
+                {
+                    Enumerator item;
+                    using (var __ = scopeSemaphore.EnterExclusivScope())
+                    {
+                        item = pool.Pop();
+                        item.Reset();
+                        gottem.Add(item);
+                    }
+                    return item;
+                }
+
+                var e = new Enumerator(list);
+                e.Init(this);
+                using var _ = scopeSemaphore.EnterExclusivScope();
+                gottem.Add(e);
+                return e;
+            }
+
+            public void Push(Enumerator obj)
+            {
+                using var _ = scopeSemaphore.EnterExclusivScope();
+                gottem.Remove(obj);
+                pool.Push(obj);
+            }
+
+            public void Push(IPoolElement obj)
+            {
+                if (obj is Enumerator e)
+                    pool.Push(e);
+                else
+                    throw new ArgumentException(nameof(obj));
+            }
+        }
     }
 }
