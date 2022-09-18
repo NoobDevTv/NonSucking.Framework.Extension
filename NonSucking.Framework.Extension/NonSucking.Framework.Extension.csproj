@@ -6,6 +6,7 @@
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
 		<NeutralLanguage>en</NeutralLanguage>
+		<LangVersion>10</LangVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

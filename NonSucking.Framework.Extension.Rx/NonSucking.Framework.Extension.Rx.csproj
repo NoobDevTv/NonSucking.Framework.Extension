@@ -2,7 +2,7 @@
 <!-- !#USE_Nuget -->
 <Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.Rx.props" Condition="'$(Configuration)'=='Release'" />
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

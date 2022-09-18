@@ -14,7 +14,7 @@ namespace NonSucking.Framework.Extension.Collections
     /// List that can be modified during enumeration, but is not threadsafe
     /// </summary>
     /// <typeparam name="T">Type to hold in the list</typeparam>
-    public class EnumerationmodifiableList<T> : IList<T>, IReadOnlyCollection<T>
+    public class EnumerationModifiableList<T> : IList<T>, IReadOnlyCollection<T>
     {
         T IList<T>.this[int index]
         {
@@ -38,33 +38,33 @@ namespace NonSucking.Framework.Extension.Collections
         private readonly EnumeratorPool pool;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EnumerationmodifiableList{T}"/> class that is empty and has the default initial capacity.
+        /// Initializes a new instance of the <see cref="EnumerationModifiableList{T}"/> class that is empty and has the default initial capacity.
         /// </summary>
-        public EnumerationmodifiableList()
+        public EnumerationModifiableList()
         {
             list = new List<T>();
             pool = new(this);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EnumerationmodifiableList{T}"/> class that contains elements copied from the specified collection and has sufficient capacity to accommodate the number of elements copied.
+        /// Initializes a new instance of the <see cref="EnumerationModifiableList{T}"/> class that contains elements copied from the specified collection and has sufficient capacity to accommodate the number of elements copied.
         /// </summary>
         /// <param name="collection">The collection whose elements are copied to the new list.</param>
         /// <exception cref="ArgumentNullException">
         /// <paramref name="collection" /> is <see langword="null" />.</exception>
-        public EnumerationmodifiableList(IEnumerable<T> collection)
+        public EnumerationModifiableList(IEnumerable<T> collection)
         {
             list = new List<T>(collection);
             pool = new(this);
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="EnumerationmodifiableList{T}"/> class that is empty and has the specified initial capacity.
+        /// Initializes a new instance of the <see cref="EnumerationModifiableList{T}"/> class that is empty and has the specified initial capacity.
         /// </summary>
         /// <param name="capacity">The number of elements that the new list can initially store.</param>
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="capacity" /> is less than 0.</exception>
-        public EnumerationmodifiableList(int capacity)
+        public EnumerationModifiableList(int capacity)
         {
             list = new List<T>(capacity);
             pool = new(this);
@@ -129,7 +129,7 @@ namespace NonSucking.Framework.Extension.Collections
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <summary>
-        /// Enumerates the elements of a <see cref="EnumerationmodifiableList{T}"/>.
+        /// Enumerates the elements of a <see cref="EnumerationModifiableList{T}"/>.
         /// </summary>
         public sealed class Enumerator : IEnumerator<T>, IPoolElement
         {
@@ -138,10 +138,10 @@ namespace NonSucking.Framework.Extension.Collections
             object IEnumerator.Current => Current;
 
             private int currentIndex = -1;
-            private readonly EnumerationmodifiableList<T> parent;
+            private readonly EnumerationModifiableList<T> parent;
             private readonly EnumeratorPool pool;
 
-            internal Enumerator(EnumerationmodifiableList<T> list)
+            internal Enumerator(EnumerationModifiableList<T> list)
             {
                 parent = list;
                 pool = list.pool;
@@ -208,9 +208,9 @@ namespace NonSucking.Framework.Extension.Collections
             private readonly Stack<Enumerator> pool = new();
             private readonly HashSet<Enumerator> gottem = new();
 
-            private readonly EnumerationmodifiableList<T> list;
+            private readonly EnumerationModifiableList<T> list;
 
-            public EnumeratorPool(EnumerationmodifiableList<T> list)
+            public EnumeratorPool(EnumerationModifiableList<T> list)
             {
                 this.list = list;
             }

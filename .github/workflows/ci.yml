@@ -55,12 +55,6 @@ jobs:
         with:
           dotnet-version: '3.1.x' # SDK Version to use.
 
-      # setup dotnet with .NET 5.0
-      - name: Setup .NET 5.0
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '5.0.x' # SDK Version to use.
-
       # setup dotnet with .NET 6.0
       - name: Setup .NET 6.0
         uses: actions/setup-dotnet@v1
