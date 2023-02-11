@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using NonSucking.Framework.Serialization.Attributes;
 using NonSucking.Framework.Serialization.Serializers;
+
 using VaVare.Generators.Common;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Statements;
@@ -59,7 +62,7 @@ namespace NonSucking.Framework.Serialization
         {
             return ThrowException($"{nameof(System)}.{nameof(InvalidCastException)}");
         }
-        
+
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
             GeneratedSerializerCode statements, SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
@@ -67,32 +70,32 @@ namespace NonSucking.Framework.Serialization
             if (!IsValidType(property, out var possibleTypes))
                 return false;
 
-            
+
             int typeId = 0;
 
             var switchSections = new List<SwitchSectionSyntax>();
 
             var castedName = Helper.GetRandomNameFor("casted", property.CreateUniqueName());
-            
+
             foreach (var t in possibleTypes!)
             {
                 typeId++;
-                
+
                 if (!IsAssignable(property.TypeSymbol, t))
                     continue;
-                
+
                 var newMemberInfo =
-                    property with { Name = castedName, TypeSymbol = t.WithNullableAnnotation(property.TypeSymbol.NullableAnnotation), Parent = ""};
-                
+                    property with { Name = castedName, TypeSymbol = t.WithNullableAnnotation(property.TypeSymbol.NullableAnnotation), Parent = "" };
+
                 var innerSerialize = NoosonGenerator.CreateStatementForSerializing(newMemberInfo, context, writerName, includedSerializers, SerializerMask.DynamicTypeSerializer);
 
-                
+
                 var invocationExpression
                     = Statement
                         .Expression
-                        .Invoke(writerName, "Write", new []{ new ValueArgument(typeId) })
+                        .Invoke(writerName, "Write", new[] { new ValueArgument(typeId) })
                         .AsStatement();
-                
+
                 var b = BodyGenerator.Create(innerSerialize.ToMergedBlock().Append(SyntaxFactory.BreakStatement()).Prepend(invocationExpression).ToArray());
                 switchSections.Add(SyntaxFactory.SwitchSection(
                     SyntaxFactory.SingletonList<SwitchLabelSyntax>(
@@ -103,7 +106,7 @@ namespace NonSucking.Framework.Serialization
                             , SyntaxFactory.Token(SyntaxKind.ColonToken))),
                     SyntaxFactory.SingletonList<StatementSyntax>(b)
                 ));
-                
+
             }
             switchSections.Add(SyntaxFactory.SwitchSection(
                 SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.DefaultSwitchLabel()),
@@ -134,7 +137,10 @@ namespace NonSucking.Framework.Serialization
                 return false;
             if (SymbolEqualityComparer.Default.Equals(typeToAssignFrom, typeToAssignTo))
                 return true;
-            return IsAssignable(typeToAssignTo, typeToAssignFrom.BaseType);
+            var assignable = IsAssignable(typeToAssignTo, typeToAssignFrom.BaseType);
+            if (!assignable && typeToAssignTo.IsAbstract)
+                return typeToAssignFrom.Interfaces.Any(x => IsAssignable(typeToAssignTo, x));
+            return assignable;
         }
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, SerializerMask includedSerializers,
@@ -142,7 +148,7 @@ namespace NonSucking.Framework.Serialization
         {
             if (!IsValidType(property, out var possibleTypes))
                 return false;
-            
+
             var invocationExpression
                 = Statement
                     .Expression
@@ -154,11 +160,11 @@ namespace NonSucking.Framework.Serialization
             var propName = property.CreateUniqueName();
 
             statements.DeclareAndAssign(property, propName, property.TypeSymbol, null);
-            
+
             int typeId = 0;
 
             var switchSections = new List<SwitchSectionSyntax>();
-            
+
             foreach (var t in possibleTypes!)
             {
                 typeId++;
@@ -171,16 +177,16 @@ namespace NonSucking.Framework.Serialization
                         SyntaxFactory.SingletonList<StatementSyntax>(ThrowInvalidCastException())));
                     continue;
                 }
-                
+
                 var newMemberInfo =
                     property with { TypeSymbol = t.WithNullableAnnotation(property.TypeSymbol.NullableAnnotation) };
 
                 var innerDeserialize = NoosonGenerator.CreateStatementForDeserializing(newMemberInfo, context, readerName, includedSerializers, SerializerMask.DynamicTypeSerializer);
 
                 var resValue = innerDeserialize.VariableDeclarations.Single();
-                
+
                 innerDeserialize.Statements.Add(Statement.Declaration.Assign(propName, SyntaxFactory.IdentifierName(resValue.UniqueName)));
-                
+
                 var b = BodyGenerator.Create(innerDeserialize.ToMergedBlock().Append(SyntaxFactory.BreakStatement()).ToArray());
                 switchSections.Add(SyntaxFactory.SwitchSection(
                     SyntaxFactory.SingletonList<SwitchLabelSyntax>(
