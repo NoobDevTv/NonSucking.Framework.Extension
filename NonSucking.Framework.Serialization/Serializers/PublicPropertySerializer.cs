@@ -11,6 +11,7 @@ using VaVare.Statements;
 using NonSucking.Framework.Serialization.Serializers;
 
 using static NonSucking.Framework.Serialization.NoosonGenerator;
+using static NonSucking.Framework.Serialization.GeneratedSerializerCode;
 
 namespace NonSucking.Framework.Serialization
 {
@@ -24,9 +25,11 @@ namespace NonSucking.Framework.Serialization
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                 .Where(property =>
                     property.Name != "this[]")
-               .Select(x => x with { Parent = property.FullName });
+              .Select(x => x with { Parent = property.FullName });
 
-            var writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>().Where(x => x.IsWriteOnly || x.GetMethod is null);
+            var writeOnlies = props
+                .Select(x => x.Symbol).OfType<IPropertySymbol>()
+                .Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (var onlyWrite in writeOnlies)
             {
                 context.AddDiagnostic("0007",
@@ -39,11 +42,17 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
+            Dictionary<string, string> scopeVariableNameMappings = new();
+
             foreach (var prop in OrderProps(props))
             {
+                prop.ScopeVariableNameMappings = scopeVariableNameMappings;
+                scopeVariableNameMappings[prop.Name] = Helper.GetMemberAccessString(prop);
                 var propCode = GenerateStatementsForMember(prop, context, MethodType.Serialize);
                 if (propCode is null)
                     continue;
+
+
                 statements.Statements.AddRange(propCode.ToMergedBlock());
             }
 
@@ -103,13 +112,18 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
+            Dictionary<string, string> scopeVariableNameMappings = new();
             foreach (var prop in OrderProps(props))
             {
+                prop.ScopeVariableNameMappings = scopeVariableNameMappings;
                 var propCode = GenerateStatementsForMember(prop, context, MethodType.Deserialize);
-                
+
                 if (propCode is null)
                     continue;
-                    
+                foreach (var item in propCode.VariableDeclarations)
+                {
+                    scopeVariableNameMappings[item.OriginalMember.Name] = item.UniqueName;
+                }
                 statements.Statements.AddRange(propCode.ToMergedBlock());
             }
 

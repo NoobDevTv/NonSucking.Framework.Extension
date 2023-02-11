@@ -3,9 +3,6 @@
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net6.0</TargetFramework>
-		<IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
-		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-		<CompilerGeneratedFilesOutputPath>GeneratedFiles</CompilerGeneratedFilesOutputPath>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
@@ -14,21 +11,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Condition="'$(DesignTimeBuild)'!='true'" Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+		<ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 		<ProjectReference Include="..\NonSucking.Framework.Extension\NonSucking.Framework.Extension.csproj" />
 
 	</ItemGroup>
 
-
-	<ItemGroup>
-	  <Folder Include="GeneratedFiles" />
-	  <Folder Include="GeneratedFiles\**" />
-	</ItemGroup>
-
-	<Target Name="RemoveSourceGeneratedFiles" BeforeTargets="BeforeBuild">
-		<ItemGroup>
-			<Compile Remove="GeneratedFiles\**" />
-		</ItemGroup>
-	</Target>
 	
 </Project>
