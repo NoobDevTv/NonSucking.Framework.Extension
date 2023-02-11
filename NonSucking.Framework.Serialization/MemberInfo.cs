@@ -6,7 +6,7 @@ using static NonSucking.Framework.Serialization.GeneratedSerializerCode;
 
 namespace NonSucking.Framework.Serialization
 {
-    public record struct MemberInfo(ITypeSymbol TypeSymbol, ISymbol Symbol, string Name, string Parent = "")
+    public record MemberInfo(ITypeSymbol TypeSymbol, ISymbol Symbol, string Name, string Parent = "")
     {
         public Dictionary<string, string>? ScopeVariableNameMappings { get; set; }
 
