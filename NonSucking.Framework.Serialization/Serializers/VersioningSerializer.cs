@@ -49,15 +49,6 @@ namespace NonSucking.Framework.Serialization
 
             return true;
         }
-        /// <summary>
-        /// </summary>
-        /// <param name="property"></param>
-        /// <param name="context"></param>
-        /// <param name="readerName"></param>
-        /// <param name="statements"></param>
-        /// <param name="includedSerializers"></param>
-        /// <param name="baseTypesLevelProperties"></param>
-        /// <returns></returns>
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
@@ -72,20 +63,7 @@ namespace NonSucking.Framework.Serialization
             var innerDeserialize = CreateStatementForDeserializing(m, context, readerName, includedSerializers,
                 SerializerMask.VersioningSerializer);
             
-
-            LocalDeclarationStatementSyntax Transform(GeneratedSerializerCode.SerializerVariable variable)
-            {
-                var d = variable.Declaration;
-                // if (variable.OriginalMember == m)
-                // {
-                //     var newDecl = SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(d.Declaration.Type.ToFullString() + "?"), d.Declaration.Variables);
-                //     return SyntaxFactory.LocalDeclarationStatement(d.AttributeLists, d.AwaitKeyword, d.UsingKeyword,
-                //         d.Modifiers, newDecl, d.SemicolonToken);
-                // }
-                return d;
-            }
-
-            IEnumerable<StatementSyntax> innerStatements = innerDeserialize.MergeBlocksSeperated(statements, Transform);
+            IEnumerable<StatementSyntax> innerStatements = innerDeserialize.MergeBlocksSeperated(statements, v => v.Declaration);
             
 
 

@@ -11,7 +11,6 @@ using VaVare.Statements;
 using NonSucking.Framework.Serialization.Serializers;
 
 using static NonSucking.Framework.Serialization.NoosonGenerator;
-using static NonSucking.Framework.Serialization.GeneratedSerializerCode;
 
 namespace NonSucking.Framework.Serialization
 {
