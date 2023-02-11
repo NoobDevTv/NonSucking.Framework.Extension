@@ -88,6 +88,7 @@ namespace NonSucking.Framework.Serialization
         internal static readonly NoosonOrderAttributeTemplate Order = new();
         internal static readonly NoosonIncludeAttributeTemplate Include = new();
         internal static readonly NoosonDynamicTypeAttributeTemplate DynamicType = new();
+        internal static readonly NoosonVersioningAttributeTemplate Versioning = new();
 
 
 
