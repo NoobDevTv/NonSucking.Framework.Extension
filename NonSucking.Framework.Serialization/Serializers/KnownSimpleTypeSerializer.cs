@@ -4,10 +4,13 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using NonSucking.Framework.Serialization.Serializers;
+
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Statements;
 
@@ -41,7 +44,7 @@ internal static class KnownSimpleTypeSerializer
                     SyntaxFactory.Trivia(SyntaxFactory.IfDirectiveTrivia(SyntaxFactory.IdentifierName("!(NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER)"), true, true, true))))
             .WithTrailingTrivia(SyntaxFactory.TriviaList(
                 SyntaxFactory.Trivia(SyntaxFactory.ElseDirectiveTrivia(true, true)))));
-        
+
         statements.Statements.Add(Statement
             .Declaration
             .DeclareAndAssign(bufferName,
@@ -130,7 +133,7 @@ internal static class KnownSimpleTypeSerializer
     {
         return SyntaxFactory.InvocationExpression(
             SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName(propName),SyntaxFactory.IdentifierName(byteMethodName)));
+                SyntaxFactory.IdentifierName(propName), SyntaxFactory.IdentifierName(byteMethodName)));
     }
 
     private static ExpressionSyntax CreateDeserializeFallback(string readerName, ExpressionSyntax size)
@@ -142,7 +145,7 @@ internal static class KnownSimpleTypeSerializer
                 SyntaxFactory.IdentifierName("ReadBytes")),
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[] { SyntaxFactory.Argument(size) })));
     }
-    
+
     internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
         GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
@@ -227,7 +230,7 @@ internal static class KnownSimpleTypeSerializer
                             SyntaxFactory.ArgumentList(
                                 SyntaxFactory.SeparatedList<ArgumentSyntax>(
                                     tryWriteParams))))).WithTrailingTrivia(SyntaxFactory.Trivia(SyntaxFactory.EndIfDirectiveTrivia(true))));
-            
+
             statements.Statements.Add(Statement
                 .Expression
                 .Invoke(writerName, "Write", arguments: new[] { new VariableArgument(bufferName) })
