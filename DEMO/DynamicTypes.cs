@@ -6,8 +6,7 @@ namespace DEMO;
 public partial class DynamicTypes
 {
     [NoosonDynamicType(typeof(D), typeof(C), typeof(B), typeof(A))]
-    [Nooson]
-    public partial class A
+    public interface A
     {
         
     }
@@ -30,7 +29,7 @@ public partial class DynamicTypes
         
     }
     
-    public B SomeProp { get; set; }
+    public A SomeProp { get; set; }
     
     [NoosonDynamicType(typeof(int), typeof(string))]
     public object SomeOther { get; set; }
