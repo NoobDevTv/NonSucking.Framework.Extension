@@ -25,6 +25,15 @@ using VaVare.Statements;
 
 namespace NonSucking.Framework.Serialization
 {
+
+    /*
+     TODOs:
+    0. PRIO 1: Fix loop detection for less visual studio crashes
+    1. Generate ovverride conditionaly when base type has virtual, abstract
+    2. Call base.serialize when base virtual, ignore the props of the base => How to ctor?
+    3. Keep Class/Struct/Record access modifier for other partial
+    4. Detect existing serialize and deserializing correctly
+     */
     public record NoosonGeneratorContext(SourceProductionContext GeneratorContext, string ReaderWriterName, ISymbol MainSymbol, bool UseAdvancedTypes, string? WriterTypeName = null, string? ReaderTypeName = null)
     {
         public HashSet<string> Usings { get; } = new();
@@ -89,8 +98,7 @@ namespace NonSucking.Framework.Serialization
         internal static readonly NoosonIncludeAttributeTemplate Include = new();
         internal static readonly NoosonDynamicTypeAttributeTemplate DynamicType = new();
         internal static readonly NoosonVersioningAttributeTemplate Versioning = new();
-
-
+        
 
         public static AttributeData? GetAttribute(this ISymbol symbol, Template attributeTemplate)
         {
@@ -609,6 +617,18 @@ namespace NonSucking.Framework.Serialization
             if (!IsPropertySupported(property, context)
                 || property.Symbol.TryGetAttribute(AttributeTemplates.Ignore, out _))
             {
+                return null;
+            }
+
+            var st = new StackTrace();
+            if (st.FrameCount > 512)
+            {
+                context.AddDiagnostic("0020",
+                    "",
+                    $"The call stack has reached it's limit, check for recursion on type {property.TypeSymbol.ToDisplayString()}.",
+                    property.TypeSymbol,
+                    DiagnosticSeverity.Error
+                );
                 return null;
             }
             
