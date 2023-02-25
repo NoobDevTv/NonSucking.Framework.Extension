@@ -22,7 +22,7 @@ namespace NonSucking.Framework.Serialization
         /// </summary>
         /// <param name="methodName">The method to call for checking the version.</param>
         /// <param name="defaultExpression">The c# expression to assign as a default. When empty <see langword="default"/> will be used.</param>
-        /// <param name="parameterNames">The parameter names to pass to the <paramref name="methodName"/> method. Properties and fields marked with this attribute need to be ordered after these parameters.</param>
+        /// <param name="parameterNames">The parameter names to pass to the <paramref name="methodName"/> method. Properties and fields marked with this attribute need to be ordered after these parameters. If the Parameter starts with a '+' it will not be resolved as a variable, but instead as raw c# code. The '+' will be trimmed.</param>
         public NoosonVersioningAttribute(string methodName, string defaultExpression, params string[] parameterNames)
         {
             MethodName = methodName;

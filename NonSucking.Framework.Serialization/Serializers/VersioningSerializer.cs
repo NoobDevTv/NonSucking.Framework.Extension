@@ -26,8 +26,10 @@ namespace NonSucking.Framework.Serialization
 
             var methodName = versioningAttribute!.ConstructorArguments[0].Value!.ToString();
 
-            var parameters = versioningAttribute.ConstructorArguments[2].Values
-                .Select(x => property.ScopeVariableNameMappings![x.Value!.ToString()]);
+            var parameters = versioningAttribute
+                .ConstructorArguments[2].Values
+                .Select(x => x.Value!.ToString())
+                .Select(x => x.StartsWith("+") ? x.Substring(1) : property.ScopeVariableNameMappings![x]);
 
             var isNotNullCheck = Statement.Expression.Invoke(
                     methodName,
@@ -65,14 +67,14 @@ namespace NonSucking.Framework.Serialization
             
             IEnumerable<StatementSyntax> innerStatements = innerDeserialize.MergeBlocksSeperated(statements, v => v.Declaration);
             
-
-
             var b = BodyGenerator.Create(innerStatements.ToArray());
 
             var methodName = versioningAttribute!.ConstructorArguments[0].Value!.ToString();
 
-            var parameters = versioningAttribute.ConstructorArguments[2].Values
-                .Select(x => property.ScopeVariableNameMappings![x.Value!.ToString()]);
+            var parameters = versioningAttribute
+                .ConstructorArguments[2].Values
+                .Select(x => x.Value!.ToString())
+                .Select(x=> x.StartsWith("+") ? x.Substring(1) : property.ScopeVariableNameMappings![x]);
 
             var isNotNullCheck = Statement.Expression.Invoke(
                     methodName,
