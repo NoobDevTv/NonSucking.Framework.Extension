@@ -11,6 +11,7 @@ using VaVare.Statements;
 using NonSucking.Framework.Serialization.Serializers;
 
 using static NonSucking.Framework.Serialization.NoosonGenerator;
+using VaVare.Generators.Common.Arguments.ArgumentTypes;
 
 namespace NonSucking.Framework.Serialization
 {
@@ -20,8 +21,14 @@ namespace NonSucking.Framework.Serialization
 
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
+            var hasBaseSerialize = Helper.GetFirstMemberWithBase(property.TypeSymbol.BaseType,
+                (s) => s is IMethodSymbol im
+                    && im.Name == "Serialize"
+                    && Helper.CheckSignature(context, im, "IBinaryWriter"))
+                as IMethodSymbol;
+
             var props
-                = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
+                = Helper.GetMembersWithBase(property.TypeSymbol, hasBaseSerialize is null ? baseTypesLevelProperties : 0)
                 .Where(property =>
                     property.Name != "this[]")
               .Select(x => x with { Parent = property.FullName });
@@ -39,7 +46,32 @@ namespace NonSucking.Framework.Serialization
                        );
             }
 
-            props = FilterPropsForNotWriteOnly(props);
+            props = FilterPropsForNotWriteOnly(props).ToList();
+
+            if (hasBaseSerialize is not null)
+            {
+                if (!hasBaseSerialize.IsAbstract && !hasBaseSerialize.IsVirtual)
+                {
+                    context.AddDiagnostic("0014",
+                            "",
+                        "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apotheker.",
+                                NoosonGeneratorContext.GetExistingFrom(hasBaseSerialize, property.TypeSymbol),
+                                DiagnosticSeverity.Warning
+                           );
+                    context.Modifiers.Add(VaVare.Modifiers.New);
+                }
+                else
+                {
+                    context.Modifiers.Add(VaVare.Modifiers.Override);
+                }
+
+                if (!hasBaseSerialize.IsAbstract)
+                {
+                    statements.Statements.Add(Statement.Expression
+                        .Invoke("base", "Serialize", arguments: new[] { ValueArgument.Parse(readerName) })
+                        .AsStatement());
+                }
+            }
 
             Dictionary<string, string> scopeVariableNameMappings = new();
 

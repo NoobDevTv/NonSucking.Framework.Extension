@@ -199,7 +199,7 @@ namespace DEMO
             return hash.ToHashCode();
         }
 
-        [NoosonCustom(SerializeMethodName = "SerializeMe", DeserializeMethodName = "DeserializeMe")]
+        [NoosonCustom(SerializeMethodName = "SerializeMe")]
 
         public class User : IUser, IEquatable<User>
         {

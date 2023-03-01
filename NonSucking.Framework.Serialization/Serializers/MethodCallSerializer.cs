@@ -28,7 +28,7 @@ namespace NonSucking.Framework.Serialization
                 .OfType<IMethodSymbol>();
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
-            
+
             bool shouldBeGenerated = hasAttribute;
             if (hasAttribute)
             {
@@ -46,7 +46,7 @@ namespace NonSucking.Framework.Serialization
             }
             bool isUsable
                 = shouldBeGenerated
-                    || member.Any(m => m.IsStatic && CheckSignature(context, m, "IBinaryReader"));
+                    || member.Any(m => m.IsStatic && Helper.CheckSignature(context, m, "IBinaryReader"));
 
             if (isUsable)
             {
@@ -100,7 +100,7 @@ namespace NonSucking.Framework.Serialization
                                            });
             }
 
-            var m = member.FirstOrDefault(m => CheckSignature(context, m, "IBinaryWriter"));
+            var m = member.FirstOrDefault(m => Helper.CheckSignature(context, m, "IBinaryWriter"));
             bool isUsable
                 = shouldBeGenerated || m is not null;
 
@@ -140,19 +140,5 @@ namespace NonSucking.Framework.Serialization
                 context.AddDiagnostic("0013", "", addendum, Location.Create(syntaxReference.SyntaxTree, syntaxReference.Span), DiagnosticSeverity.Error);
         }
 
-        private static bool CheckSignature(NoosonGeneratorContext context, IMethodSymbol m, string? typeName)
-        {
-            if (!(m.IsStatic && m.Parameters.Length == 2 || !m.IsStatic && m.Parameters.Length == 1))
-                return false;
-            if (!(context.ReaderTypeName is null && context.WriterTypeName is null))
-                return m.Parameters.Last().Type.ToDisplayString() == context.WriterTypeName;
-            if (m.Parameters.Last().Type.TypeKind != TypeKind.TypeParameter || !m.IsGenericMethod)
-                return false;
-
-            var typeParameter = m.TypeParameters.FirstOrDefault(x => x.Name == m.Parameters.Last().Type.Name);
-
-            return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.Name == typeName);
-
-        }
     }
 }
