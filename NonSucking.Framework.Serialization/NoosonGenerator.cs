@@ -211,24 +211,6 @@ namespace NonSucking.Framework.Serialization
             {
                 try
                 {
-                    if (typeSymbol.IsAbstract)
-                    {
-                        var location = typeSymbol.DeclaringSyntaxReferences.Length > 0
-                            ? Location.Create(
-                                typeSymbol.DeclaringSyntaxReferences[0].SyntaxTree,
-                                typeSymbol.DeclaringSyntaxReferences[0].Span)
-                            : Location.None;
-                        sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                            new DiagnosticDescriptor(
-                                $"{NoosonGeneratorContext.IdPrefix}0012",
-                                "",
-                                $"Abstract types are not supported for serializing/deserializing('{typeSymbol.ToDisplayString()}').",
-                                nameof(NoosonGenerator),
-                                DiagnosticSeverity.Error,
-                                true),
-                            location));
-                        continue;
-                    }
 
                     var generatedType = GetGeneratedTypeFor(gc, typeSymbol);
 
@@ -549,7 +531,7 @@ namespace NonSucking.Framework.Serialization
             var body = new GeneratedSerializerCode();
             body.Statements.Add(Statement
                 .Expression
-                .Invoke("that", "Serialize", arguments: new[] {new ValueArgument((object) writerName)})
+                .Invoke("that", Consts.Serialize, arguments: new[] {new ValueArgument((object) writerName)})
                 .AsStatement());
 
             var additionalParameter =
@@ -576,7 +558,7 @@ namespace NonSucking.Framework.Serialization
 
             generatedType.Methods.Add(new GeneratedMethod(
                 null,
-                "Serialize",
+                Consts.Serialize,
                 parameters,
                 modifiers,
                 generateGeneric
@@ -601,6 +583,7 @@ namespace NonSucking.Framework.Serialization
         internal static void GenerateDeserializeMethod(GeneratedType generatedType, ITypeSymbol typeSymbol,
             NoosonGeneratorContext context)
         {
+
 
             var generateGeneric = context.ReaderTypeName is null;
             var typeName = context.ReaderTypeName ?? Consts.GenericParameterReaderName;
@@ -634,8 +617,10 @@ namespace NonSucking.Framework.Serialization
                 }
                 : Array.Empty<TypeParameterConstraintClause>();
 
+            if (typeSymbol.IsAbstract)
+                return;
             generatedType.Methods.Add(new GeneratedMethod(new(typeSymbol.ToDisplayString(), "", new(), "The deserialized instance."),
-                "Deserialize", parameter, modifiers, typeParams, typeConstraints, body,
+                Consts.Deserialize, parameter, modifiers, typeParams, typeConstraints, body,
                 $"Deserializes a <see cref=\"{typeSymbol.ToSummaryName()}\"/> instance."));
         }
 

@@ -143,6 +143,7 @@ namespace DEMO
         public static IUser DeserializeIUser(BinaryReader br)
         {
             return new User() { Name = br.ReadString() };
+
         }
 
         public override bool Equals(object obj) => Equals(obj as SUTMessage);

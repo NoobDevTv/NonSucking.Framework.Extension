@@ -7,4 +7,6 @@ internal static class Consts
 {
     internal const string GenericParameterReaderName = "TNonSuckingReader";
     internal const string GenericParameterWriterName = "TNonSuckingWriter";
+    internal const string Serialize = nameof(Serialize);
+    internal const string Deserialize = nameof(Deserialize);
 }

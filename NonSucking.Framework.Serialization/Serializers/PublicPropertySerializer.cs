@@ -7,6 +7,7 @@ using NonSucking.Framework.Serialization.Serializers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 using VaVare;
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
@@ -24,21 +25,35 @@ namespace NonSucking.Framework.Serialization
             GeneratedSerializerCode statements, SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
-            IMethodSymbol? hasBaseSerialize = Helper.GetFirstMemberWithBase(property.TypeSymbol.BaseType,
+            IMethodSymbol? hasBaseSerializeSymbol = Helper.GetFirstMemberWithBase(property.TypeSymbol.BaseType,
                     (s) => s is IMethodSymbol im
-                           && im.Name == "Serialize"
+                           && im.Name == Consts.Serialize
                            && Helper.CheckSignature(context, im, "IBinaryWriter"))
                 as IMethodSymbol;
+            (bool IsVirtual, bool IsAbstract, IMethodSymbol? Symbol)? hasBaseSerialize = null;
+            if (hasBaseSerializeSymbol is null)
+            {
+                (GeneratedMethod? generatedMethod, GeneratedType? _) = Helper.GetFirstMemberWithBase(context.GlobalContext, property.TypeSymbol.BaseType,
+                    (m) => m.Name == Consts.Serialize
+                           && !m.IsStatic
+                           && m.Parameters.Count == 1);
+                if (generatedMethod is not null)
+                    hasBaseSerialize = (generatedMethod.IsVirtual, generatedMethod.IsAbstract, null);
+            }
+            else
+            {
+                hasBaseSerialize = (hasBaseSerializeSymbol.IsVirtual, hasBaseSerializeSymbol.IsAbstract, hasBaseSerializeSymbol);
+            }
 
-            IEnumerable<MemberInfo> props
+            var props
                 = Helper.GetMembersWithBase(property.TypeSymbol,
                         hasBaseSerialize is null ? baseTypesLevelProperties : 0)
                     .Where(property =>
-                        property.Name != "this[]")
-                    .Select(x => x with { Parent = property.FullName });
+                        property.memberInfo.Name != "this[]")
+                    .Select(x => (memberInfo: x.memberInfo with { Parent = property.FullName } , x.depth));
 
             IEnumerable<IPropertySymbol> writeOnlies = props
-                .Select(x => x.Symbol).OfType<IPropertySymbol>()
+                .Select(x => x.memberInfo.Symbol).OfType<IPropertySymbol>()
                 .Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (IPropertySymbol? onlyWrite in writeOnlies)
             {
@@ -54,12 +69,12 @@ namespace NonSucking.Framework.Serialization
 
             if (hasBaseSerialize is not null)
             {
-                if (!hasBaseSerialize.IsAbstract && !hasBaseSerialize.IsVirtual)
+                if (!hasBaseSerialize.Value.IsAbstract && !hasBaseSerialize.Value.IsVirtual)
                 {
                     context.AddDiagnostic("0014",
                         "",
                         "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apotheker.",
-                        NoosonGeneratorContext.GetExistingFrom(hasBaseSerialize, property.TypeSymbol),
+                        NoosonGeneratorContext.GetExistingFrom(hasBaseSerialize.Value.Symbol, property.TypeSymbol),
                         DiagnosticSeverity.Warning
                     );
                     context.Modifiers.Add(Modifiers.New);
@@ -69,10 +84,10 @@ namespace NonSucking.Framework.Serialization
                     context.Modifiers.Add(Modifiers.Override);
                 }
 
-                if (!hasBaseSerialize.IsAbstract)
+                if (!hasBaseSerialize.Value.IsAbstract)
                 {
                     statements.Statements.Add(Statement.Expression
-                        .Invoke("base", "Serialize", arguments: new[] { ValueArgument.Parse(readerName) })
+                        .Invoke("base", Consts.Serialize, arguments: new[] { ValueArgument.Parse(readerName) })
                         .AsStatement());
                 }
             }
@@ -93,7 +108,7 @@ namespace NonSucking.Framework.Serialization
 
             Dictionary<string, string> scopeVariableNameMappings = new();
 
-            foreach (MemberInfo prop in OrderProps(props))
+            foreach ((MemberInfo prop, int _) in OrderProps(props))
             {
                 prop.ScopeVariableNameMappings = scopeVariableNameMappings;
                 scopeVariableNameMappings[prop.Name] = Helper.GetMemberAccessString(prop);
@@ -118,17 +133,17 @@ namespace NonSucking.Framework.Serialization
             return true;
         }
 
-        private static IEnumerable<MemberInfo> FilterPropsForNotWriteOnly(IEnumerable<MemberInfo> props)
+        private static IEnumerable<(MemberInfo memberInfo, int depth)> FilterPropsForNotWriteOnly(IEnumerable<(MemberInfo memberInfo, int)> props)
         {
             props = props.Where(x =>
             {
-                if (x.Symbol is IPropertySymbol ps
+                if (x.memberInfo.Symbol is IPropertySymbol ps
                     && !ps.IsWriteOnly
                     && ps.GetMethod is not null)
                 {
                     return true;
                 }
-                else if (x.Symbol is IFieldSymbol fs)
+                else if (x.memberInfo.Symbol is IFieldSymbol fs)
                 {
                     return true;
                 }
@@ -138,26 +153,50 @@ namespace NonSucking.Framework.Serialization
             return props;
         }
 
-        private static IEnumerable<MemberInfo> OrderProps(IEnumerable<MemberInfo> props)
+        private static IEnumerable<(MemberInfo memberInfo, int depth)> OrderProps(IEnumerable<(MemberInfo memberInfo, int depth)> props)
         {
             return props.OrderBy(x =>
             {
-                AttributeData? attr = x.Symbol.GetAttribute(AttributeTemplates.Order);
+                AttributeData? attr = x.memberInfo.Symbol.GetAttribute(AttributeTemplates.Order);
                 return attr == null ? int.MaxValue : (int)attr.ConstructorArguments[0].Value!;
-            });
+            }).ThenByDescending(x=>x.depth);
         }
 
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
-            IEnumerable<MemberInfo> props
+            IMethodSymbol? hasBaseDeserializeSymbol = Helper.GetFirstMemberWithBase(property.TypeSymbol.BaseType,
+                   (s) => s is IMethodSymbol im
+                          && im.Name == Consts.Deserialize
+                          && im.Parameters.Skip(1).All(x => x.RefKind == RefKind.Out))
+               as IMethodSymbol;
+
+            (List<(string typeName, string parameterName)> Parameters, string typeName, IMethodSymbol? Symbol)? hasBaseDeserialize = null;
+            if (hasBaseDeserializeSymbol is null)
+            {
+                (GeneratedMethod? generatedMethod, GeneratedType? generatedType) = Helper.GetFirstMemberWithBase(context.GlobalContext, property.TypeSymbol.BaseType,
+                    (m) => m.Name == Consts.Deserialize
+                           && m.IsStatic
+                           && m.Parameters.Count > 1
+                           && m.Parameters.Skip(1).All(x => x.IsOut));
+                if (generatedMethod is not null && generatedType is not null)
+                {
+                    hasBaseDeserialize = (generatedMethod.Parameters.Skip(1).Select(x => (x.Type, x.SerializerVariable!.Value.OriginalMember.Name)).ToList(), generatedType.DisplayName, null);
+                }
+            }
+            else
+            {
+                hasBaseDeserialize = (hasBaseDeserializeSymbol.Parameters.Skip(1).Select(x => (x.Type.ToDisplayString(), x.Name)).ToList(), hasBaseDeserializeSymbol.ContainingType.ToDisplayString(), hasBaseDeserializeSymbol);
+            }
+
+            IEnumerable<(MemberInfo memberInfo, int depth)> props
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                     .Where(property =>
-                        property.Name != "this[]")
-                    .Select(x => x with { Parent = property.Name });
+                        property.memberInfo.Name != "this[]")
+                    .Select(x => (memberInfo: x.memberInfo with { Parent = property.Name }, x.depth));
 
-            IEnumerable<IPropertySymbol> writeOnlies = props.Select(x => x.Symbol).OfType<IPropertySymbol>()
+            IEnumerable<IPropertySymbol> writeOnlies = props.Select(x => x.memberInfo.Symbol).OfType<IPropertySymbol>()
                 .Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (IPropertySymbol? onlyWrite in writeOnlies)
             {
@@ -171,28 +210,9 @@ namespace NonSucking.Framework.Serialization
 
             props = FilterPropsForNotWriteOnly(props);
 
-            Dictionary<string, string> scopeVariableNameMappings = new();
-            List<GeneratedSerializerCode> propCodes = new();
-            List<string> declerationNames = new();
-            foreach (MemberInfo prop in OrderProps(props))
-            {
-                prop.ScopeVariableNameMappings = scopeVariableNameMappings;
-                GeneratedSerializerCode? propCode = GenerateStatementsForMember(prop, context, MethodType.Deserialize);
-
-                if (propCode is null)
-                {
-                    continue;
-                }
-
-                foreach (GeneratedSerializerCode.SerializerVariable item in propCode.VariableDeclarations)
-                {
-                    scopeVariableNameMappings[item.OriginalMember.Name] = item.UniqueName;
-                }
-
-                propCodes.Add(propCode);
-            }
-
-            GenerateStatements(property, context, readerName, statements, propCodes, declerationNames);
+            if (property.TypeSymbol.Name.Contains("KeyValue"))
+                ;
+            var declerationNames = GenerateStatements(property, context, readerName, statements, props, hasBaseDeserialize);
 
             try
             {
@@ -214,9 +234,47 @@ namespace NonSucking.Framework.Serialization
             return true;
         }
 
-        private static void GenerateStatements(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, List<GeneratedSerializerCode> propCodes, List<string> declerationNames)
+        private static List<string> GenerateStatements(
+            MemberInfo property,
+            NoosonGeneratorContext context,
+            string readerName,
+            GeneratedSerializerCode statements,
+            IEnumerable<(MemberInfo memberInfo, int depth)> props,
+            (List<(string typeName, string parameterName)> Parameters, string typeName, IMethodSymbol? Symbol)? hasBaseDeserialize)
         {
+            List<(bool assign, GeneratedSerializerCode propCode)> propCodes = new();
+            Dictionary<string, string> scopeVariableNameMappings = new();
+            List<string> declerationNames = new();
+            List<MemberInfo> filteredProps = new();
+
+            foreach ((MemberInfo prop, int depth) in OrderProps(props))
+            {
+                if (hasBaseDeserialize is not null
+                    && !SymbolEqualityComparer.Default.Equals(prop.Symbol.ContainingType, property.TypeSymbol))
+                {
+                    filteredProps.Add(prop);
+                    continue;
+                }
+
+                prop.ScopeVariableNameMappings = scopeVariableNameMappings;
+                GeneratedSerializerCode? propCode = GenerateStatementsForMember(prop, context, MethodType.Deserialize);
+
+                if (propCode is null)
+                {
+                    continue;
+                }
+
+                foreach (GeneratedSerializerCode.SerializerVariable item in propCode.VariableDeclarations)
+                {
+                    scopeVariableNameMappings[item.OriginalMember.Name] = item.UniqueName;
+                }
+
+                propCodes.Add((true, propCode));
+            }
+
+
+
+
             ITypeSymbol typeSymbol = property.TypeSymbol;
             if (typeSymbol.DeclaringSyntaxReferences.Length > 0 && propCodes.Count > 0)
             {
@@ -243,7 +301,7 @@ namespace NonSucking.Framework.Serialization
                     }
 
                     GeneratedMethod? genMethod =
-                        genType.Methods.FirstOrDefault(x => x.Name == "Deserialize" /*&& x.Typestuff*/);
+                        genType.Methods.FirstOrDefault(x => x.Name == Consts.Deserialize /*&& x.Typestuff*/);
                     bool genMethodExisted = genMethod is not null;
                     if (genMethod is null)
                     {
@@ -265,7 +323,7 @@ namespace NonSucking.Framework.Serialization
 
                         genMethod = new(
                             null,
-                            "Deserialize",
+                            Consts.Deserialize,
                             new(),
                             new() { Modifiers.Public, Modifiers.Static },
                             typeParams,
@@ -274,34 +332,79 @@ namespace NonSucking.Framework.Serialization
                             $"Deserializes the properties of a <see cref=\"{typeSymbol.ToSummaryName()}\"/> type.");
                         genType.Methods.Add(genMethod);
 
+
+                        if (hasBaseDeserialize is not null)
+                        {
+                            var redirects = new string?[hasBaseDeserialize.Value.Parameters.Count];
+                            int insertedIndex = 0;
+                            for (var index = 0; index < hasBaseDeserialize.Value.Parameters.Count; index++)
+                            {
+                                var (localTypeName, parameterName) = hasBaseDeserialize.Value.Parameters[index];
+                                foreach (var mi in filteredProps)
+                                {
+                                    if (mi.TypeSymbol.ToDisplayString() == localTypeName &&
+                                        Helper.MatchIdentifierWithPropName(mi.Name, parameterName))
+                                    {
+                                        var uniqueName = redirects[index] = scopeVariableNameMappings[mi.Symbol.Name] = mi.CreateUniqueName();
+
+                                        var code = new GeneratedSerializerCode();
+                                        code.VariableDeclarations.Add(new GeneratedSerializerCode.SerializerVariable(SyntaxFactory.ParseTypeName(localTypeName), mi, uniqueName, null));
+                                        propCodes.Insert(insertedIndex++, (false, code));
+                                        break;
+                                    }
+                                }
+                            }
+                            List<ArgumentSyntax> localArguments = new()
+                        {SyntaxFactory.Argument(SyntaxFactory.IdentifierName(readerName))};
+
+                            localArguments.AddRange(
+                                redirects
+                                .Select(x =>
+                                    SyntaxFactory
+                                        .Argument(SyntaxFactory.IdentifierName(x ?? "_"))
+                                        .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.OutKeyword))));
+
+                            var invocation = SyntaxFactory.InvocationExpression(
+                                SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.IdentifierName(hasBaseDeserialize.Value.typeName),
+                                SyntaxFactory.IdentifierName(Consts.Deserialize)), SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(localArguments)));
+
+                            genMethod.Body.Statements.Add(SyntaxFactory.ExpressionStatement(invocation));
+                        }
+
+
                         string typeName = context.ReaderTypeName ?? Consts.GenericParameterReaderName;
                         genMethod.Parameters.Add(new GeneratedMethodParameter(typeName, readerName, new(), null));
-                        foreach (GeneratedSerializerCode item in propCodes)
+                        foreach ((bool assign, GeneratedSerializerCode propCode) in propCodes)
                         {
-                            GeneratedSerializerCode.SerializerVariable variable = item.VariableDeclarations[0];
+                            GeneratedSerializerCode.SerializerVariable variable = propCode.VariableDeclarations[0];
                             string outVarName = variable.UniqueName; // + "_out";
                             genMethod.Parameters.Add(new GeneratedMethodParameter(
                                 variable.TypeSyntax.ToFullString(),
                                 outVarName,
                                 new() { ParameterModifiers.Out },
-                                $"The deserialized instance of the property <see cref=\"{variable.OriginalMember.Name}\"/>."));
+                                $"The deserialized instance of the property <see cref=\"{variable.OriginalMember.Symbol.ToDisplayString()}\"/>.",
+                                variable));
 
                             ExpressionSyntax valueToAssign = variable.InitialValue?.Value
                                                              ?? variable.Declaration.Declaration.Variables
                                                                  .FirstOrDefault()
                                                                  ?.Initializer?.Value
                                                              ?? variable.CreateDefaultValue().Value;
+                            if (assign)
+                            {
+                                genMethod.Body.Statements.Add(Statement.Declaration.Assign(outVarName, valueToAssign));
 
-                            genMethod.Body.Statements.Add(Statement.Declaration.Assign(outVarName, valueToAssign));
-                            genMethod.Body.Statements.AddRange(item.Statements);
+                            }
+                            genMethod.Body.Statements.AddRange(propCode.Statements);
                         }
                     }
 
                     List<ArgumentSyntax> arguments = new()
                         {SyntaxFactory.Argument(SyntaxFactory.IdentifierName(readerName))};
-                    foreach (GeneratedSerializerCode item in propCodes)
+                    foreach ((bool assign, GeneratedSerializerCode propCode) in propCodes)
                     {
-                        string variableName = item.VariableDeclarations[0].UniqueName;
+                        string variableName = propCode.VariableDeclarations[0].UniqueName;
                         declerationNames.Add(variableName);
                         arguments.Add(SyntaxFactory
                             .Argument(null,
@@ -341,6 +444,10 @@ namespace NonSucking.Framework.Serialization
 
             void GenerateNonPartial()
             {
+                foreach ((bool _, GeneratedSerializerCode propCode) in propCodes)
+                {
+                    statements.Statements.AddRange(propCode.ToMergedBlock());
+                }
                 declerationNames.AddRange(statements.Statements
                     .OfType<LocalDeclarationStatementSyntax>()
                     .Concat(
@@ -350,11 +457,8 @@ namespace NonSucking.Framework.Serialization
                     )
                     .SelectMany(declaration => declaration.Declaration.Variables)
                     .Select(variable => variable.Identifier.Text));
-                foreach (GeneratedSerializerCode item in propCodes)
-                {
-                    statements.Statements.AddRange(item.ToMergedBlock());
-                }
             }
+            return declerationNames;
         }
     }
 }

@@ -23,6 +23,18 @@ namespace NonSucking.Framework.Serialization
             //endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-zA-Z]{{1,6}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
+        internal static (GeneratedMethod?, GeneratedType?) GetFirstMemberWithBase(GlobalContext gc, ITypeSymbol? baseType, Func<GeneratedMethod, bool> predicate)
+        {
+            if (baseType is null)
+                return (null, null);
+            if (gc.TryResolve(baseType, out var generatedType))
+            {
+                foreach (var m in generatedType.Methods)
+                    if (predicate(m))
+                        return (m, generatedType);
+            }
+            return GetFirstMemberWithBase(gc, baseType.BaseType, predicate);
+        }
         internal static ISymbol? GetFirstMemberWithBase(ITypeSymbol? symbol, Func<ISymbol, bool> predicate, int maxRecursion = int.MaxValue, int currentIteration = 0)
         {
             if (symbol is null)
@@ -38,7 +50,7 @@ namespace NonSucking.Framework.Serialization
 
             return GetFirstMemberWithBase(symbol.BaseType, predicate, maxRecursion, currentIteration);
         }
-        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol? symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
+        internal static IEnumerable<(MemberInfo memberInfo, int depth)> GetMembersWithBase(ITypeSymbol? symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
         {
             if (currentIteration++ > maxRecursion)
                 yield break;
@@ -58,11 +70,11 @@ namespace NonSucking.Framework.Serialization
                     {
                         continue;
                     }
-                    yield return new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
+                    yield return (new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName),currentIteration);
                 }
                 else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
                 {
-                    yield return new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
+                    yield return (new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName),currentIteration);
                 }
             }
             foreach (var item in GetMembersWithBase(symbol.BaseType, maxRecursion, currentIteration))

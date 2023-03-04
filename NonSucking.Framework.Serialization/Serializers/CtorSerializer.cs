@@ -71,7 +71,6 @@ namespace NonSucking.Framework.Serialization.Serializers
                 r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.ParseExpression("default")); //TODO: Possible null ref instance.TypeSymbol.Name
                 return r;
             }
-
             var ctorArguments
                 = GetStatementForCtorCall(constructors, localDeclarations, instanceName, out var ctorArgumentNames);
 
@@ -99,7 +98,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
             List<(ITypeSymbol type, ISymbol symbol)> properties = new();
 
-            foreach (var item in Helper.GetMembersWithBase(typeSymbol))
+            foreach ((MemberInfo item, int _) in Helper.GetMembersWithBase(typeSymbol))
             {
                 if (item.Symbol.IsStatic)
                     continue;

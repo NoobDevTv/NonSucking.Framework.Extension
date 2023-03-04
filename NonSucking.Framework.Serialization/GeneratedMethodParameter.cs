@@ -13,8 +13,12 @@ namespace NonSucking.Framework.Serialization
     NullableTest
     HansPeter
      */
-    public record GeneratedMethodParameter(string Type, string Name, HashSet<ParameterModifiers> Modifier, string? Summary)
+    public record GeneratedMethodParameter(string Type, string Name, HashSet<ParameterModifiers> Modifier, string? Summary, GeneratedSerializerCode.SerializerVariable? SerializerVariable = null)
     {
+        public bool IsOut => Modifier.Any(x => x == ParameterModifiers.Out);
+        public bool IsRef => Modifier.Any(x => x == ParameterModifiers.Ref);
+        public bool IsThis => Modifier.Any(x => x == ParameterModifiers.This);
+
         public virtual bool Equals(GeneratedMethodParameter? other)
         {
             if (other is null)

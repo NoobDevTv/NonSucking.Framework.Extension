@@ -14,6 +14,11 @@ public  class SomethingDifferent
     {
         // ...
     }
+
+    public static void Deserialize(BinaryReader writer, out IReadOnlyCollection<int> readOnlyBase, out IReadOnlyList<int> readOnlyListBase)
+    {
+        readOnlyBase = readOnlyListBase = new List<int>();
+    }
 }
 
 public class SomethingVastlyDifferent : SomethingDifferent

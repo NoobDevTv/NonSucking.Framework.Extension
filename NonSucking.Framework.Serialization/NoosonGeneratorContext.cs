@@ -8,7 +8,6 @@ namespace NonSucking.Framework.Serialization
 {
     /*
      TODOs:
-    2. Call base.serialize when base virtual, ignore the props of the base => How to ctor?
     5. Maybe future factory class for instance creation in deserialize
     6. Resolver Table for dynamic types, for runtime type serialization
      */
@@ -70,11 +69,11 @@ namespace NonSucking.Framework.Serialization
                     symbol.DeclaringSyntaxReferences[0].Span);
         }
 
-        internal static Location GetExistingFrom(params ISymbol[] symbols)
+        internal static Location GetExistingFrom(params ISymbol?[] symbols)
         {
             foreach (var symbol in symbols)
             {
-                if (LocationFromSymbol(symbol) is { } loc)
+                if (symbol is not null && LocationFromSymbol(symbol) is { } loc)
                     return loc;
             }
             return Location.None;

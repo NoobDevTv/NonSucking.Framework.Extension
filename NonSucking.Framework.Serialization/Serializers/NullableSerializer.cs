@@ -51,8 +51,8 @@ namespace NonSucking.Framework.Serialization
             var p
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                     .First(p 
-                               => p.Name == "Value");
-            return p with { Parent = property.FullName };
+                               => p.memberInfo.Name == "Value");
+            return p.memberInfo with { Parent = property.FullName };
         }
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {

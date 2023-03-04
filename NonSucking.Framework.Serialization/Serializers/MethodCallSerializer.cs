@@ -17,14 +17,14 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(40)]
     internal static class MethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static bool TryDeserialize( MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var generateGeneric = context.ReaderTypeName is null;
             var type = property.TypeSymbol;
 
             IEnumerable<IMethodSymbol> member
                 = type
-                .GetMembers("Deserialize")
+                .GetMembers(Consts.Deserialize)
                 .OfType<IMethodSymbol>();
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
@@ -53,7 +53,7 @@ namespace NonSucking.Framework.Serialization
                 var invocationExpression
                         = Statement
                         .Expression
-                        .Invoke(type.ToString(), "Deserialize", arguments: new[] { new ValueArgument((object)readerName) })
+                        .Invoke(type.ToString(), Consts.Deserialize, arguments: new[] { new ValueArgument((object)readerName) })
                         .AsExpression();
 
                 statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocationExpression);
@@ -70,13 +70,11 @@ namespace NonSucking.Framework.Serialization
         {
             var generateGeneric = context.WriterTypeName is null;
             var type = property.TypeSymbol;
-            var methodName = "Serialize";
-
-
+            var methodName = Consts.Serialize;
 
             IEnumerable<IMethodSymbol> member
                 = type
-                    .GetMembers("Serialize")
+                    .GetMembers(Consts.Serialize)
                     .OfType<IMethodSymbol>();
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
@@ -107,14 +105,14 @@ namespace NonSucking.Framework.Serialization
                 {
                     statements.Statements.Add(Statement
                         .Expression
-                        .Invoke(type.ToDisplayString(), "Serialize", arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
+                        .Invoke(type.ToDisplayString(), Consts.Serialize, arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
                 else if (!m!.IsStatic)
                 {
                     statements.Statements.Add(Statement
                         .Expression
-                        .Invoke(Helper.GetMemberAccessString(property), "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
+                        .Invoke(Helper.GetMemberAccessString(property), Consts.Serialize, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
             }
