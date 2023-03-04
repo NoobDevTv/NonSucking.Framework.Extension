@@ -66,9 +66,6 @@ namespace NonSucking.Framework.Serialization
             return isUsable;
         }
 
-
-
-
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var generateGeneric = context.WriterTypeName is null;

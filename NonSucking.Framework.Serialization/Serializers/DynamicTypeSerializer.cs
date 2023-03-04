@@ -43,7 +43,6 @@ namespace NonSucking.Framework.Serialization
                 }
             }
 
-            // TODO: sort
             possibleTypes = attr!.ConstructorArguments[0].Values.Select(x => x.Value).OfType<ITypeSymbol>();
             return true;
         }

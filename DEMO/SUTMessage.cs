@@ -102,6 +102,7 @@ namespace DEMO
         //public IEnumerable ThisIsNotSupportedIEnumerable { get; }
         public AccessRight Right { get; set; }
         public ComplainBase Complain { get; set; }
+        public Complain ComplainComplain { get; set; }
         public User AssignedUser { get; set; }
         public Point Position { get; set; }
         public IUser ContactUser { get; }
@@ -242,7 +243,13 @@ namespace DEMO
 
 
     }
-    //[Nooson]
+
+    public class Complain : ComplainBase
+    {
+
+    }
+
+    [Nooson]
     public partial class ComplainBase : IEquatable<ComplainBase>
     {
         public string Complain { get; set; }

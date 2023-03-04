@@ -203,5 +203,12 @@ namespace NonSucking.Framework.Serialization
             return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.Name == typeName);
 
         }
+
+        internal static string ToSummaryName(this ITypeSymbol symbol)
+        {
+            return symbol.ToDisplayString()
+                .Replace('<', '{')
+                .Replace('>', '}');
+        }
     }
 }

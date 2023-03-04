@@ -19,7 +19,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extens
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serialization.SerializerCollector", "NonSucking.Framework.Serialization.SerializerCollector\NonSucking.Framework.Serialization.SerializerCollector.csproj", "{5748C3A7-CB3B-434B-B4EB-9F3C6701916D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Serialization.Advanced", "NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj", "{79D243FD-197B-4358-B3E9-E2EB79C13ACF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serialization.Advanced", "NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj", "{79D243FD-197B-4358-B3E9-E2EB79C13ACF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoNuget", "DemoNuget\DemoNuget.csproj", "{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,6 +65,10 @@ Global
 		{79D243FD-197B-4358-B3E9-E2EB79C13ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79D243FD-197B-4358-B3E9-E2EB79C13ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79D243FD-197B-4358-B3E9-E2EB79C13ACF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

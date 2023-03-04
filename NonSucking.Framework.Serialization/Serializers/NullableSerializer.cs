@@ -94,16 +94,11 @@ namespace NonSucking.Framework.Serialization
 
             var innerDeserialize = CreateStatementForDeserializing(m, context, readerName, includedSerializers, SerializerMask.NullableSerializer);
 
-            LocalDeclarationStatementSyntax Transform(GeneratedSerializerCode.SerializerVariable variable)
+            TypeSyntax Transform(GeneratedSerializerCode.SerializerVariable variable)
             {
-                var d = variable.Declaration;
-                if (variable.OriginalMember == m)
-                {
-                    var newDecl = SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(d.Declaration.Type.ToFullString() + "?"), d.Declaration.Variables);
-                    return SyntaxFactory.LocalDeclarationStatement(d.AttributeLists, d.AwaitKeyword, d.UsingKeyword,
-                        d.Modifiers, newDecl, d.SemicolonToken);
-                }
-                return d;
+                return variable.OriginalMember != m 
+                    ? variable.TypeSyntax 
+                    : SyntaxFactory.ParseTypeName(variable.TypeSyntax.ToFullString() + "?");
             }
 
             IEnumerable<StatementSyntax> innerStatements;

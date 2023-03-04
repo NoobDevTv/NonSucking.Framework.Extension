@@ -16,13 +16,13 @@ namespace DEMO
         {
             var dic = new Dictionary<int, int>();
 
-
             var dicCast = (ICollection<KeyValuePair<int, int>>)dic;
             dicCast.Add(new KeyValuePair<int, int>(11, 10));
 
             //var dic2 = (Dictionary<int, int>)dicCast;
             //var arrCast = (IList<int>)arr;
             //arrCast[0]= 12;
+
 
             var bll = new ByteLengthList() { new byte[] { 12, 13, 14 }, new byte[] { 45, 46, 47 } };
             bll.NameOfList = "ABC";
