@@ -6,13 +6,6 @@ using VaVare;
 
 namespace NonSucking.Framework.Serialization
 {
-    /*
-    SUTMessage
-        static Deserialize(Reader)
-        static Deserialize(Reader, out, out, out)
-    NullableTest
-    HansPeter
-     */
     public record GeneratedMethodParameter(string Type, string Name, HashSet<ParameterModifiers> Modifier, string? Summary, GeneratedSerializerCode.SerializerVariable? SerializerVariable = null)
     {
         public bool IsOut => Modifier.Any(x => x == ParameterModifiers.Out);

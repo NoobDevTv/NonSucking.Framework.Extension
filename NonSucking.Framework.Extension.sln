@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serial
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serialization.Advanced", "NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj", "{79D243FD-197B-4358-B3E9-E2EB79C13ACF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DemoNuget", "DemoNuget\DemoNuget.csproj", "{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoNuget", "DemoNuget\DemoNuget.csproj", "{90A7AB94-546C-4D42-8F2B-846DE9E16A0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

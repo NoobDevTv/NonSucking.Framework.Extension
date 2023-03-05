@@ -8,10 +8,10 @@ namespace NonSucking.Framework.Serialization
 {
     /*
      TODOs:
-    5. Maybe future factory class for instance creation in deserialize
+    5. Maybe future factory class for instance creation in deserialize (For now you can pass an instance into the method)
     6. Resolver Table for dynamic types, for runtime type serialization
      */
-    public record NoosonGeneratorContext(GlobalContext GlobalContext, SourceProductionContext GeneratorContext, GeneratedType GeneratedType, string ReaderWriterName, ISymbol MainSymbol, bool UseAdvancedTypes, string? WriterTypeName = null, string? ReaderTypeName = null)
+    public record NoosonGeneratorContext(GlobalContext GlobalContext, SourceProductionContext GeneratorContext, GeneratedType GeneratedType, string ReaderWriterName, ISymbol MainSymbol, bool UseAdvancedTypes, MethodType MethodType, string? WriterTypeName = null, string? ReaderTypeName = null)
     {
         internal const string Category = "SerializationGenerator";
         internal const string IdPrefix = "NSG";

@@ -15,7 +15,7 @@
 		<Nullable>enable</Nullable>
 		<WarningsAsErrors>nullable</WarningsAsErrors>
 	</PropertyGroup>
-
+	
 	<ItemGroup>
 		<Compile Remove="Templates\Attribute\**\*.cs" />
 		<Compile Remove="Templates\AdditionalSource\**\*.cs" />

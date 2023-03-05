@@ -263,7 +263,7 @@ internal static class KnownSimpleTypeSerializer
                             propName);
 
                     var addressFamilySer = NoosonGenerator.GenerateStatementsForMember(addressFamilyProp, context,
-                        MethodType.Deserialize);
+                        MethodType.DeserializeWithCtor);
                     if (addressFamilySer is null)
                         throw new InvalidCastException("Could not serialize AddressFamily enum value!");
                     statements.Statements.AddRange(addressFamilySer.ToMergedBlock());

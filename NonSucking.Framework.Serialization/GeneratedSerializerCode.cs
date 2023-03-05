@@ -17,7 +17,8 @@ public class GeneratedSerializerCode
     {
         foreach (var declaration in VariableDeclarations)
         {
-            yield return declaration.ToDeclarationAndAssignment();
+            if (declaration.UniqueName != Consts.InstanceParameterName)
+                yield return declaration.ToDeclarationAndAssignment();
         }
 
         foreach (var statement in Statements)
@@ -34,7 +35,7 @@ public class GeneratedSerializerCode
             var newDeclaration = variableTransformer is null
                                     ? declaration.TypeSyntax
                                     : variableTransformer(declaration);
-            
+
             other.VariableDeclarations.Add(new SerializerVariable(newDeclaration, declaration.OriginalMember, declaration.UniqueName, null));
         }
         return VariableDeclarations.Where(x => x.InitialValue is not null).Select(x => x.GetAssignment()).Concat(Statements);
@@ -65,8 +66,8 @@ public class GeneratedSerializerCode
         foreach (var s in other.Statements)
             Statements.Add(s);
     }
-    
-    
+
+
     public void DeclareAndAssign(MemberInfo member, string memberName, ITypeSymbol type, ExpressionSyntax? valueExpression)
     {
         var typeSyntax = SyntaxFactory.ParseTypeName(type.ToDisplayString()); // TODO better type handling?
