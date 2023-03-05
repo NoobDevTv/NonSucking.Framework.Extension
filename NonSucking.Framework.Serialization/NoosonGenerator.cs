@@ -309,100 +309,130 @@ namespace NonSucking.Framework.Serialization
 
             foreach (var genTypeKV in gc.GeneratedTypes)
             {
-                var genType = genTypeKV.Value;
-                var usings = new HashSet<string>(genType.Usings);
-
-                var usingsArray = usings.ToArray();
-
-                var methods = new List<BaseMethodDeclarationSyntax>();
-
-                static SyntaxKind ConvertParameterModifier(ParameterModifiers modifiers)
+                try
                 {
-                    return modifiers switch
+                    var genType = genTypeKV.Value;
+                    var usings = new HashSet<string>(genType.Usings);
+
+                    var usingsArray = usings.ToArray();
+
+                    var methods = new List<BaseMethodDeclarationSyntax>();
+
+                    static SyntaxKind ConvertParameterModifier(ParameterModifiers modifiers)
                     {
-                        ParameterModifiers.Out => SyntaxKind.OutKeyword,
-                        ParameterModifiers.Ref => SyntaxKind.RefKeyword,
-                        ParameterModifiers.This => SyntaxKind.ThisKeyword,
-                        _ => SyntaxKind.None
-                    };
-                }
-
-                foreach (var generatedMethod in genType.Methods)
-                {
-                    var mb = new MethodBuilder(generatedMethod.Name)
-                        .WithModifiers(generatedMethod.Modifier.ToArray())
-                        .WithParameters(generatedMethod.Parameters.Select(p =>
+                        return modifiers switch
                         {
-                            var parameterSyntax = SyntaxFactory.Parameter(SyntaxFactory.List<AttributeListSyntax>(),
-                                SyntaxFactory.TokenList(
-                                    p.Modifier.Select(modifier =>
-                                        SyntaxFactory.Token(ConvertParameterModifier(modifier))).ToArray()),
-                                SyntaxFactory.ParseTypeName(p.Type), SyntaxFactory.Identifier(p.Name), null);
-                            return (parameterSyntax, p.Summary);
-                        }).ToArray())
-                        .WithTypeParameters(generatedMethod.TypeParameters)
-                        .WithTypeConstraintClauses(generatedMethod.TypeParameterConstraints)
-                        .WithBody(BodyGenerator.Create(generatedMethod.Body.ToMergedBlock().ToArray()));
+                            ParameterModifiers.Out => SyntaxKind.OutKeyword,
+                            ParameterModifiers.Ref => SyntaxKind.RefKeyword,
+                            ParameterModifiers.This => SyntaxKind.ThisKeyword,
+                            _ => SyntaxKind.None
+                        };
+                    }
 
-                    if (generatedMethod.ReturnType is not null)
-                        mb = mb.WithReturnType(SyntaxFactory.ParseTypeName(generatedMethod.ReturnType.Type),
-                            generatedMethod.ReturnType.Summary);
+                    foreach (var generatedMethod in genType.Methods)
+                    {
+                        var mb = new MethodBuilder(generatedMethod.Name)
+                            .WithModifiers(generatedMethod.Modifier.ToArray())
+                            .WithParameters(generatedMethod.Parameters.Select(p =>
+                            {
+                                var parameterSyntax = SyntaxFactory.Parameter(SyntaxFactory.List<AttributeListSyntax>(),
+                                    SyntaxFactory.TokenList(
+                                        p.Modifier.Select(modifier =>
+                                            SyntaxFactory.Token(ConvertParameterModifier(modifier))).ToArray()),
+                                    SyntaxFactory.ParseTypeName(p.Type), SyntaxFactory.Identifier(p.Name), null);
+                                return (parameterSyntax, p.Summary);
+                            }).ToArray())
+                            .WithTypeParameters(generatedMethod.TypeParameters)
+                            .WithTypeConstraintClauses(generatedMethod.TypeParameterConstraints)
+                            .WithBody(BodyGenerator.Create(generatedMethod.Body.ToMergedBlock().ToArray()));
 
-                    if (generatedMethod.Summary is not null)
-                        mb = mb.WithSummary(generatedMethod.Summary);
+                        if (generatedMethod.ReturnType is not null)
+                            mb = mb.WithReturnType(SyntaxFactory.ParseTypeName(generatedMethod.ReturnType.Type),
+                                generatedMethod.ReturnType.Summary);
 
-                    methods.Add(mb.Build());
+                        if (generatedMethod.Summary is not null)
+                            mb = mb.WithSummary(generatedMethod.Summary);
+
+                        methods.Add(mb.Build());
+                    }
+
+                    var methodsArray = methods.ToArray();
+
+                    CompilationUnitSyntax? sourceCode = null;
+                    TypeDeclarationSyntax? nestedType = null;
+
+                    bool isNestedType = genType.ContainingType is not null;
+                    var containingNamespace = isNestedType
+                        ? null
+                        : genType.Namespace;
+
+                    if (genType.IsRecord)
+                    {
+                        var builder = new RecordBuilder(genType.Name,
+                            containingNamespace,
+                            genType.IsValueType);
+
+                        BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
+                            isNestedType);
+                    }
+                    else if (genType.IsValueType)
+                    {
+                        var builder = new StructBuilder(genType.Name, containingNamespace);
+
+                        BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
+                            isNestedType);
+                    }
+                    else
+                    {
+                        var builder = new ClassBuilder(genType.Name, containingNamespace);
+
+                        BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
+                            isNestedType);
+                    }
+
+                    if (isNestedType)
+                    {
+                        sourceCode = CreateNesting(genType.ContainingType!, nestedType, usings);
+                    }
+
+                    string hintName = TypeNameToSummaryName($"{genTypeKV.Key}.Nooson.g.cs");
+
+                    string autoGeneratedComment =
+                        "//---------------------- // <auto-generated> // Nooson // </auto-generated> // ----------------------" +
+                        Environment.NewLine;
+                    string nullableEnablement = "#nullable enable" + Environment.NewLine;
+
+                    sourceProductionContext.AddSource(hintName,
+                        $"{autoGeneratedComment}{nullableEnablement}{sourceCode!.NormalizeWhitespace().ToFullString()}");
                 }
-
-                var methodsArray = methods.ToArray();
-
-                CompilationUnitSyntax? sourceCode = null;
-                TypeDeclarationSyntax? nestedType = null;
-
-                bool isNestedType = genType.ContainingType is not null;
-                var containingNamespace = isNestedType
-                    ? null
-                    : genType.Namespace;
-
-
-                if (genType.IsRecord)
+                catch (ReflectionTypeLoadException loaderException)
                 {
-                    var builder = new RecordBuilder(genType.Name,
-                        containingNamespace,
-                        genType.IsValueType);
+                    var exceptions = string.Join(" | ", loaderException.LoaderExceptions.Select(x => x.ToString()));
 
-                    BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
-                        isNestedType);
+                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            $"{NoosonGeneratorContext.IdPrefix}0012",
+                            "",
+                            $"Missing dependencies for generation of serializer code for '{genTypeKV.Key}'. Amount: {loaderException.LoaderExceptions.Length}, {loaderException.Message}, {exceptions}",
+                            nameof(NoosonGenerator),
+                            DiagnosticSeverity.Error,
+                            true),
+                        Location.None));
                 }
-                else if (genType.IsValueType)
+                catch (Exception e) when (!Debugger.IsAttached)
                 {
-                    var builder = new StructBuilder(genType.Name, containingNamespace);
 
-                    BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
-                        isNestedType);
+
+                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
+                        new DiagnosticDescriptor(
+                            $"{NoosonGeneratorContext.IdPrefix}0011",
+                            "",
+                            $"Error occured while trying to generate serializer code for '{genTypeKV.Key}' type: {e.Message}\n{e.StackTrace}",
+                            nameof(NoosonGenerator),
+                            DiagnosticSeverity.Error,
+                            true),
+                        Location.None));
                 }
-                else
-                {
-                    var builder = new ClassBuilder(genType.Name, containingNamespace);
-
-                    BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
-                        isNestedType);
-                }
-
-                if (isNestedType)
-                {
-                    sourceCode = CreateNesting(genType.ContainingType!, nestedType, usings);
-                }
-
-                string hintName = TypeNameToSummaryName($"{genTypeKV.Key}.Nooson.g.cs");
-
-                string autoGeneratedComment =
-                    "//---------------------- // <auto-generated> // Nooson // </auto-generated> // ----------------------" +
-                    Environment.NewLine;
-                string nullableEnablement = "#nullable enable" + Environment.NewLine;
-
-                sourceProductionContext.AddSource(hintName,
-                    $"{autoGeneratedComment}{nullableEnablement}{sourceCode!.NormalizeWhitespace().ToFullString()}");
             }
         }
 

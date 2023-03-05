@@ -261,9 +261,6 @@ namespace NonSucking.Framework.Serialization
             IEnumerable<(MemberInfo memberInfo, int depth)> props,
             (List<(string typeName, string parameterName)> Parameters, string typeName, IMethodSymbol? Symbol)? hasBaseDeserialize)
         {
-            if (property.Symbol.Name == "ListsContainer")
-                ;
-
             Dictionary<string, string> scopeVariableNameMappings = new();
             List<string> declerationNames = new();
             List<MemberInfo> filteredProps = new();
@@ -378,7 +375,7 @@ namespace NonSucking.Framework.Serialization
             GeneratedType genType)
         {
             GeneratedMethod? genMethod =
-                genType.Methods.FirstOrDefault(x => x.Name == Consts.Deserialize /*&& x.Typestuff*/);
+                genType.Methods.FirstOrDefault(x => x.Name == Consts.Deserialize /*&& TODO: x.Typestuff*/);
             bool genMethodExisted = genMethod is not null;
             if (genMethod is null)
             {
@@ -479,8 +476,6 @@ namespace NonSucking.Framework.Serialization
                     genMethod.Body.Statements.AddRange(propCode.Statements);
                 }
             }
-            else
-                ;
 
             return genMethod;
         }

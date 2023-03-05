@@ -49,17 +49,11 @@ jobs:
       - name: Setup powershell
         run: sh ./.github/scripts/install-powershell.sh
 
-      # setup dotnet with dotnet core 3.1
-      - name: Setup .NET Core
+      # setup dotnet with .NET 7.0
+      - name: Setup .NET 7.0
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: '3.1.x' # SDK Version to use.
-
-      # setup dotnet with .NET 6.0
-      - name: Setup .NET 6.0
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.0.x' # SDK Version to use.
+          dotnet-version: '7.0.x' 
 
       # Print current suffix
       - name: Print suffix

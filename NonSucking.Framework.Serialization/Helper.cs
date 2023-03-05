@@ -104,7 +104,6 @@ namespace NonSucking.Framework.Serialization
                 _ => throw new NotSupportedException(),
             };
         }
-        
         internal static bool MatchIdentifierWithPropName(string identifier, string parameterName)
         {
             var index = identifier.IndexOf(localVariableSuffix);

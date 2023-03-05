@@ -325,8 +325,6 @@ namespace NonSucking.Framework.Serialization
                             .AsStatement();
                     itemDeserialization.Statements.Add(addStatement);
                 }
-                else
-                    ; //Diagnostic
 
                 ExpressionSyntax ctorInvocationExpression
                     = Statement

@@ -19,10 +19,15 @@ namespace NonSucking.Framework.Serialization
             if (ReferenceEquals(this, other))
                 return true;
             return Name == other.Name
+                && Summary == other.Summary
                 && (Parameters.Equals(other.Parameters)
                     || Parameters.SequenceEqual(other.Parameters))
                 && (Modifier.Equals(other.Modifier)
-                    || Modifier.SequenceEqual(other.Modifier));
+                    || Modifier.SequenceEqual(other.Modifier))
+                && (TypeParameters.Equals(other.TypeParameters)
+                    || TypeParameters.SequenceEqual(other.TypeParameters))
+                && (TypeParameterConstraints.Equals(other.TypeParameterConstraints)
+                    || TypeParameterConstraints.SequenceEqual(other.TypeParameterConstraints));
         }
 
         public override int GetHashCode()
@@ -30,6 +35,7 @@ namespace NonSucking.Framework.Serialization
             unchecked
             {
                 var hashCode = Name.GetHashCode();
+                hashCode = (hashCode * 397) ^ (Summary?.GetHashCode() ?? 0);
                 return hashCode;
             }
         }

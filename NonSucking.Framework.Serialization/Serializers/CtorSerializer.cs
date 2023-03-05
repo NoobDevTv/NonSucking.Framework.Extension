@@ -18,19 +18,19 @@ namespace NonSucking.Framework.Serialization.Serializers
     internal enum Initializer
     {
         None = 0,
-        Ctor = 1 << 1,
+        Ctor = 1 << 0,
         /// <summary>
         /// Will enable <see cref="Ctor"/> aswell
         /// </summary>
-        InitializerList = (1 << 2) | Ctor,
-        Properties = 1 << 3,
+        InitializerList = (1 << 1) | Ctor,
+        Properties = 1 << 2,
     }
 
     internal static class CtorSerializer
     {
-        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, List<string> statements, MemberInfo instance, string instanceName, Initializer initializer)
+        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, List<string> localVariableNames, MemberInfo instance, string instanceName, Initializer initializer)
         {
-            List<string> localDeclarations = GetLocalDeclarations(statements, instanceName);
+            List<string> localDeclarations = GetLocalDeclarations(localVariableNames, instanceName);
 
 
             if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
@@ -90,15 +90,15 @@ namespace NonSucking.Framework.Serialization.Serializers
             return constructors;
         }
 
-        private static List<string> GetLocalDeclarations(List<string> statements, string instanceName)
+        private static List<string> GetLocalDeclarations(List<string> localVariableNames, string instanceName)
         {
             var indexOf = instanceName.IndexOf(Helper.localVariableSuffix);
             if (indexOf < 0)
-                return statements;
+                return localVariableNames;
             var shouldContain = instanceName.Substring(0, indexOf);
 
             var localDeclarations
-                = statements
+                = localVariableNames
                 .Where(text =>
                 {
                     int firstIndex = text.IndexOf(Helper.localVariableSuffix);
