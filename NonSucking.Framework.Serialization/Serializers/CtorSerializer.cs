@@ -32,8 +32,7 @@ namespace NonSucking.Framework.Serialization.Serializers
         {
             List<string> localDeclarations = GetLocalDeclarations(localVariableNames, instanceName);
 
-
-            if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
+            if (instanceName != Consts.InstanceParameterName && (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract))
             {
                 var r = new GeneratedSerializerCode();
                 r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.ParseExpression("default")); //TODO: Possible null ref instance.TypeSymbol.Name

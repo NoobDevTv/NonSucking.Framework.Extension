@@ -636,9 +636,10 @@ namespace NonSucking.Framework.Serialization
 
             var modifiers = new List<Modifiers> { Modifiers.Public, Modifiers.Static };
 
-            if (!typeSymbol.IsValueType)
+            if (context.MethodType != MethodType.DeserializeIntoInstance && !typeSymbol.IsValueType)
             {
-                if (BaseHasNoosonAttribute(typeSymbol.BaseType))
+
+                if (typeSymbol.BaseType is { } bs && !bs.IsAbstract && BaseHasNoosonAttribute(bs))
                     modifiers.Add(Modifiers.New);
             }
 
