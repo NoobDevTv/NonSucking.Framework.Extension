@@ -19,7 +19,8 @@ public class MyEnumerable<T> : IEnumerable<T>
     IEnumerator IEnumerable.GetEnumerator() => throw new NotImplementedException();
 }
 
-public class ByteLengthList2 : ByteLengthList
+[Nooson]
+public partial class ByteLengthList2 : ByteLengthList
 {
     public string ABC { get; set; }
     public ByteLengthList2() : base()

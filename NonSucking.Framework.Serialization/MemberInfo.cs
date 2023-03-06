@@ -10,10 +10,10 @@ namespace NonSucking.Framework.Serialization
     {
         public Dictionary<string, string>? ScopeVariableNameMappings { get; set; }
 
-        public string FullName =>  (string.IsNullOrWhiteSpace(Parent) || Parent == "this" || Symbol.IsStatic)
+        public string FullName =>  (string.IsNullOrWhiteSpace(Parent) || Parent == Consts.ThisName || Symbol.IsStatic)
                     ? Name
                     : $"{Parent}.{Name}";
 
-        public string CreateUniqueName() => Helper.GetRandomNameFor(Name, Parent == "this" ? "" : Parent);
+        public string CreateUniqueName() => Helper.GetRandomNameFor(Name, Parent == Consts.ThisName ? "" : Parent);
     }
 }

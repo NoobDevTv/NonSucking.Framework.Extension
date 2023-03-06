@@ -35,7 +35,8 @@ namespace NonSucking.Framework.Serialization.Serializers
             if (instanceName != Consts.InstanceParameterName && (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract))
             {
                 var r = new GeneratedSerializerCode();
-                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.ParseExpression("default")); //TODO: Possible null ref instance.TypeSymbol.Name
+
+                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, SyntaxFactory.DefaultExpression(SyntaxFactory.ParseTypeName(typeSymbol.ToDisplayString())))); //TODO: Possible null ref instance.TypeSymbol.Name
                 return r;
 
             }

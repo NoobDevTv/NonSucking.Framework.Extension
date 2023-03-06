@@ -126,7 +126,7 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(Helper.GetMemberAccessString(property), methodName, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement();
             }
-            else if (property.Parent == "this")
+            else if (property.Parent == Consts.ThisName)
             {
                 //Non Static on this
                 statement

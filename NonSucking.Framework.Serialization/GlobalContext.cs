@@ -4,17 +4,18 @@ using System.Collections.Generic;
 
 namespace NonSucking.Framework.Serialization
 {
-    public record GlobalContext(Dictionary<string, GeneratedType> GeneratedTypes)
+
+    public record GlobalContext(Dictionary<string, GeneratedFile> GeneratedTypes)
     {
-        public GeneratedType? Resolve(ITypeSymbol? symbol)
+        public GeneratedFile? Resolve(ITypeSymbol? symbol)
         {
             return symbol is not null && TryResolve(symbol, out var type) ? type : null;
         }
-        public bool TryResolve(ITypeSymbol symbol, out GeneratedType generatedType)
+        public bool TryResolve(ITypeSymbol symbol, out GeneratedFile generatedType)
         {
             return GeneratedTypes.TryGetValue(symbol.ToDisplayString(), out generatedType);
         }
-        public void Add(ITypeSymbol symbol, GeneratedType generatedType)
+        public void Add(ITypeSymbol symbol, GeneratedFile generatedType)
         {
             GeneratedTypes.Add(symbol.ToDisplayString(), generatedType);
         }

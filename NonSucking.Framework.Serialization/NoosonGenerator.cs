@@ -16,6 +16,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 
 using VaVare;
@@ -115,13 +116,13 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        private static CompilationUnitSyntax CreateNesting(GeneratedType generatedType, TypeDeclarationSyntax? nestedType, HashSet<string> usings)
+        private static CompilationUnitSyntax CreateNesting(GeneratedFile genFile, GeneratedType generatedType, TypeDeclarationSyntax? nestedType, HashSet<string> usings)
         {
             while (true)
             {
                 bool isNestedType = generatedType.ContainingType is not null;
-                var containingNamespace = isNestedType ? null : generatedType.Namespace;
-                usings.UnionWith(generatedType.Usings);
+                var containingNamespace = isNestedType ? null : genFile.Namespace;
+                usings.UnionWith(genFile.Usings);
                 var usingsArray = usings.ToArray();
                 var nestedMember = new ClassBuildMember(nestedType);
                 TypeDeclarationSyntax? parentNestedType = null;
@@ -176,7 +177,6 @@ namespace NonSucking.Framework.Serialization
                 }
 
                 return compilationUnitSyntax!;
-                break;
             }
         }
 
@@ -216,18 +216,18 @@ namespace NonSucking.Framework.Serialization
                 try
                 {
 
-                    var generatedType = GetGeneratedTypeFor(gc, typeSymbol);
-
+                    var generatedFile = GetGeneratedTypeFor(gc, typeSymbol);
+                    var generatedType = generatedFile.GeneratedTypes.First();
                     var attributeData = typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute)!;
 
                     Helper.GetGenAttributeData(attributeData, out var generateDefaultReader,
                         out var generateDefaultWriter,
                         out var directReaders, out var directWriters);
 
-                    NoosonGeneratorContext serializeContext = new(gc, sourceProductionContext, generatedType,
+                    NoosonGeneratorContext serializeContext = new(gc, sourceProductionContext, generatedFile, generatedType,
                         writerName, typeSymbol,
                         useAdvancedTypes, MethodType.Serialize);
-                    NoosonGeneratorContext deserializeContext = new(gc, sourceProductionContext, generatedType,
+                    NoosonGeneratorContext deserializeContext = new(gc, sourceProductionContext, generatedFile, generatedType,
                         readerName, typeSymbol,
                         useAdvancedTypes, MethodType.DeserializeWithCtor);
 
@@ -311,88 +311,96 @@ namespace NonSucking.Framework.Serialization
             {
                 try
                 {
-                    var genType = genTypeKV.Value;
-                    var usings = new HashSet<string>(genType.Usings);
-
+                    var genFile = genTypeKV.Value;
+                    var usings = new HashSet<string>(genFile.Usings);
                     var usingsArray = usings.ToArray();
-
-                    var methods = new List<BaseMethodDeclarationSyntax>();
-
-                    static SyntaxKind ConvertParameterModifier(ParameterModifiers modifiers)
+                    bool generateUsings = true;
+                    StringBuilder sb = new();
+                    foreach (var genType in genFile.GeneratedTypes)
                     {
-                        return modifiers switch
+
+
+                        var methods = new List<BaseMethodDeclarationSyntax>();
+
+                        static SyntaxKind ConvertParameterModifier(ParameterModifiers modifiers)
                         {
-                            ParameterModifiers.Out => SyntaxKind.OutKeyword,
-                            ParameterModifiers.Ref => SyntaxKind.RefKeyword,
-                            ParameterModifiers.This => SyntaxKind.ThisKeyword,
-                            _ => SyntaxKind.None
-                        };
-                    }
-
-                    foreach (var generatedMethod in genType.Methods)
-                    {
-                        var mb = new MethodBuilder(generatedMethod.Name)
-                            .WithModifiers(generatedMethod.Modifier.ToArray())
-                            .WithParameters(generatedMethod.Parameters.Select(p =>
+                            return modifiers switch
                             {
-                                var parameterSyntax = SyntaxFactory.Parameter(SyntaxFactory.List<AttributeListSyntax>(),
-                                    SyntaxFactory.TokenList(
-                                        p.Modifier.Select(modifier =>
-                                            SyntaxFactory.Token(ConvertParameterModifier(modifier))).ToArray()),
-                                    SyntaxFactory.ParseTypeName(p.Type), SyntaxFactory.Identifier(p.Name), null);
-                                return (parameterSyntax, p.Summary);
-                            }).ToArray())
-                            .WithTypeParameters(generatedMethod.TypeParameters)
-                            .WithTypeConstraintClauses(generatedMethod.TypeParameterConstraints)
-                            .WithBody(BodyGenerator.Create(generatedMethod.Body.ToMergedBlock().ToArray()));
+                                ParameterModifiers.Out => SyntaxKind.OutKeyword,
+                                ParameterModifiers.Ref => SyntaxKind.RefKeyword,
+                                ParameterModifiers.This => SyntaxKind.ThisKeyword,
+                                _ => SyntaxKind.None
+                            };
+                        }
 
-                        if (generatedMethod.ReturnType is not null)
-                            mb = mb.WithReturnType(SyntaxFactory.ParseTypeName(generatedMethod.ReturnType.Type),
-                                generatedMethod.ReturnType.Summary);
+                        foreach (var generatedMethod in genType.Methods)
+                        {
+                            var mb = new MethodBuilder(generatedMethod.Name)
+                                .WithModifiers(generatedMethod.Modifier.ToArray())
+                                .WithParameters(generatedMethod.Parameters.Select(p =>
+                                {
+                                    var parameterSyntax = SyntaxFactory.Parameter(SyntaxFactory.List<AttributeListSyntax>(),
+                                        SyntaxFactory.TokenList(
+                                            p.Modifier.Select(modifier =>
+                                                SyntaxFactory.Token(ConvertParameterModifier(modifier))).ToArray()),
+                                        SyntaxFactory.ParseTypeName(p.Type), SyntaxFactory.Identifier(p.Name), null);
+                                    return (parameterSyntax, p.Summary);
+                                }).ToArray())
+                                .WithTypeParameters(generatedMethod.TypeParameters)
+                                .WithTypeConstraintClauses(generatedMethod.TypeParameterConstraints)
+                                .WithBody(BodyGenerator.Create(generatedMethod.Body.ToMergedBlock().ToArray()));
 
-                        if (generatedMethod.Summary is not null)
-                            mb = mb.WithSummary(generatedMethod.Summary);
+                            if (generatedMethod.ReturnType is not null)
+                                mb = mb.WithReturnType(SyntaxFactory.ParseTypeName(generatedMethod.ReturnType.Type),
+                                    generatedMethod.ReturnType.Summary);
 
-                        methods.Add(mb.Build());
-                    }
+                            if (generatedMethod.Summary is not null)
+                                mb = mb.WithSummary(generatedMethod.Summary);
 
-                    var methodsArray = methods.ToArray();
+                            methods.Add(mb.Build());
+                        }
 
-                    CompilationUnitSyntax? sourceCode = null;
-                    TypeDeclarationSyntax? nestedType = null;
+                        var methodsArray = methods.ToArray();
 
-                    bool isNestedType = genType.ContainingType is not null;
-                    var containingNamespace = isNestedType
-                        ? null
-                        : genType.Namespace;
+                        TypeDeclarationSyntax? nestedType = null;
 
-                    if (genType.IsRecord)
-                    {
-                        var builder = new RecordBuilder(genType.Name,
-                            containingNamespace,
-                            genType.IsValueType);
+                        CompilationUnitSyntax? sourceCode = null;
+                        bool isNestedType = genType.ContainingType is not null;
+                        var containingNamespace = isNestedType
+                            ? null
+                            : genFile.Namespace;
 
-                        BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
-                            isNestedType);
-                    }
-                    else if (genType.IsValueType)
-                    {
-                        var builder = new StructBuilder(genType.Name, containingNamespace);
+                        if (genType.IsRecord)
+                        {
+                            var builder = new RecordBuilder(genType.Name,
+                                containingNamespace,
+                                genType.IsValueType);
 
-                        BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
-                            isNestedType);
-                    }
-                    else
-                    {
-                        var builder = new ClassBuilder(genType.Name, containingNamespace);
+                            BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
+                                isNestedType, generateUsings);
+                        }
+                        else if (genType.IsValueType)
+                        {
+                            var builder = new StructBuilder(genType.Name, containingNamespace);
 
-                        BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
-                            isNestedType);
-                    }
+                            BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
+                                isNestedType, generateUsings);
+                        }
+                        else
+                        {
+                            var builder = new ClassBuilder(genType.Name, containingNamespace);
 
-                    if (isNestedType)
-                    {
-                        sourceCode = CreateNesting(genType.ContainingType!, nestedType, usings);
+                            BuildSourceCode(builder, genType, usingsArray, methodsArray, ref sourceCode, ref nestedType,
+                                isNestedType, generateUsings);
+                        }
+
+                        if (isNestedType)
+                        {
+                            sourceCode = CreateNesting(genFile, genType.ContainingType!, nestedType, usings);
+                        }
+
+                        generateUsings = false;
+                        sb.AppendLine(sourceCode!.NormalizeWhitespace().ToFullString());
                     }
 
                     string hintName = TypeNameToSummaryName($"{genTypeKV.Key}.Nooson.g.cs");
@@ -402,8 +410,7 @@ namespace NonSucking.Framework.Serialization
                         Environment.NewLine;
                     string nullableEnablement = "#nullable enable" + Environment.NewLine;
 
-                    sourceProductionContext.AddSource(hintName,
-                        $"{autoGeneratedComment}{nullableEnablement}{sourceCode!.NormalizeWhitespace().ToFullString()}");
+                    sourceProductionContext.AddSource(hintName, $"{autoGeneratedComment}{nullableEnablement}{sb}");
                 }
                 catch (ReflectionTypeLoadException loaderException)
                 {
@@ -466,45 +473,50 @@ namespace NonSucking.Framework.Serialization
         {
             if (typeSymbol is null)
                 return null;
-            return new GeneratedType(typeSymbol.ContainingNamespace.ToDisplayString(),
-                typeSymbol.CanBeReferencedByName ? typeSymbol.Name : typeSymbol.ToDisplayString(),
+            return new GeneratedType(typeSymbol.CanBeReferencedByName ? typeSymbol.Name : typeSymbol.ToDisplayString(),
                 typeSymbol.ToDisplayString(),
                 typeSymbol.IsRecord,
-                typeSymbol.IsValueType, CreateTypeParameters(typeSymbol), Array.Empty<TypeParameterConstraintClause>(), new(),
-                new(), null, CreatePseudoNestedTypes(typeSymbol.ContainingType));
+                typeSymbol.IsValueType, CreateTypeParameters(typeSymbol), Array.Empty<TypeParameterConstraintClause>(),
+                new(), new() { Modifiers.Partial }, null, CreatePseudoNestedTypes(typeSymbol.ContainingType));
         }
 
 
-        internal static GeneratedType GetGeneratedTypeFor(GlobalContext gc, ITypeSymbol typeSymbol)
+        internal static GeneratedFile GetGeneratedTypeFor(GlobalContext gc, ITypeSymbol typeSymbol)
         {
-            if (!gc.TryResolve(typeSymbol, out var generatedType))
+            if (!gc.TryResolve(typeSymbol, out var generatedFile))
             {
-                generatedType = new GeneratedType(typeSymbol.ContainingNamespace?.ToDisplayString(),
-                    typeSymbol.CanBeReferencedByName ? typeSymbol.Name : typeSymbol.ToDisplayString(),
+                var genTypes = new List<GeneratedType>();
+                generatedFile = new(
+                    typeSymbol.ContainingNamespace?.ToDisplayString(),
+                    typeSymbol.ToDisplayString(),
+                    genTypes,
+                    new());
+
+                genTypes.Add(new GeneratedType(typeSymbol.CanBeReferencedByName ? typeSymbol.Name : typeSymbol.ToDisplayString(),
                     typeSymbol.ToDisplayString(),
                     typeSymbol.IsRecord, typeSymbol.IsValueType,
                     CreateTypeParameters(typeSymbol),
-                    Array.Empty<TypeParameterConstraintClause>(),
-                    new(), new(), null,
-                    CreatePseudoNestedTypes(typeSymbol.ContainingType));
-                gc.Add(typeSymbol, generatedType);
+                    Array.Empty<TypeParameterConstraintClause>(), new(), new() { Modifiers.Partial }, null,
+                    CreatePseudoNestedTypes(typeSymbol.ContainingType)));
+                gc.Add(typeSymbol, generatedFile);
             }
 
-            return generatedType;
+            return generatedFile;
         }
 
         private static void BuildSourceCode<T>(T builder, GeneratedType genType, string[] usingsArray,
             BaseMethodDeclarationSyntax[] methodsArray, ref CompilationUnitSyntax? sourceCode,
-            ref TypeDeclarationSyntax? nestedType, bool isNestedType)
+            ref TypeDeclarationSyntax? nestedType, bool isNestedType, bool generateUsings)
             where T : TypeBuilderBase<T>
         {
             builder
-                .WithUsings(usingsArray)
-                .WithModifiers(Modifiers.Partial)
+                .WithModifiers(genType.ClassModifiers.ToArray())
                 .WithMethods(methodsArray)
                 .WithTypeParameters(genType.TypeParameters)
                 .WithTypeConstraintClauses(genType.TypeParameterConstraint);
 
+            if (generateUsings)
+                builder = builder.WithUsings(usingsArray);
 
             if (isNestedType)
                 nestedType = builder.BuildWithoutNamespace();
@@ -512,18 +524,62 @@ namespace NonSucking.Framework.Serialization
                 sourceCode = builder.Build();
         }
 
-        internal static void AddSerializeMethods(GeneratedType generatedType, ITypeSymbol typeSymbol,
+        internal static void AddSerializeMethods(GeneratedType defaultGeneratedType, ITypeSymbol typeSymbol,
             NoosonGeneratorContext context)
         {
-            GenerateSerializeMethod(generatedType, typeSymbol, context);
-            GenerateSerializeMethodNonStatic(generatedType, typeSymbol, context);
+            GenerateSerializeMethod(defaultGeneratedType, typeSymbol, context);
+            GenerateSerializeMethodNonStatic(defaultGeneratedType, typeSymbol, context);
         }
 
-        internal static void AddDeserializeMethods(GeneratedType generatedType, ITypeSymbol typeSymbol,
+        internal static void AddDeserializeMethods(GeneratedType defaultGeneratedType, ITypeSymbol typeSymbol,
             NoosonGeneratorContext context)
         {
-            GenerateDeserializeMethod(generatedType, typeSymbol, context);
-            GenerateDeserializeMethod(generatedType, typeSymbol, context with { MethodType = MethodType.DeserializeIntoInstance});
+            GenerateDeserializeMethod(defaultGeneratedType, typeSymbol, context);
+            GenerateDeserializeMethod(defaultGeneratedType, typeSymbol, context with { MethodType = MethodType.DeserializeIntoInstance });
+
+            GeneratedType extensionType = CreateExtensionType(defaultGeneratedType, typeSymbol, context);
+
+            GenerateDeserializeMethod(extensionType, typeSymbol, context with { MethodType = MethodType.DeserializeOnInstance });
+        }
+
+        private static GeneratedType CreateExtensionType(GeneratedType defaultGeneratedType, ITypeSymbol typeSymbol, NoosonGeneratorContext context)
+        {
+            List<Modifiers> modifiers = new List<Modifiers>() { Modifiers.Static };
+            switch (typeSymbol.DeclaredAccessibility)
+            {
+                case Accessibility.Private:
+                    modifiers.Insert(0, Modifiers.Private);
+                    break;
+                case Accessibility.ProtectedAndInternal:
+                    modifiers.Insert(0, Modifiers.Protected);
+                    modifiers.Insert(0, Modifiers.Internal);
+                    break;
+                case Accessibility.Protected:
+                    modifiers.Insert(0, Modifiers.Protected);
+                    break;
+                case Accessibility.Internal:
+                case Accessibility.ProtectedOrInternal:
+                    modifiers.Insert(0, Modifiers.Internal);
+                    break;
+                case Accessibility.Public:
+                    modifiers.Insert(0, Modifiers.Public);
+                    break;
+            }
+
+            var extensionType = defaultGeneratedType with
+            {
+                ContainingType = null,
+                Name = defaultGeneratedType.Name + "Extension",
+                Methods = new(),
+                ClassModifiers = modifiers,
+                IsRecord = false,
+                IsValueType = false,
+                TypeParameterConstraint = Array.Empty<TypeParameterConstraintClause>(),
+                TypeParameters = Array.Empty<TypeParameter>(),
+                Summary = $"Adds extensions methods for <see cref=\"{defaultGeneratedType.Name}\"/>",
+            };
+            context.GeneratedFile.GeneratedTypes.Add(extensionType);
+            return extensionType;
         }
 
         internal static bool BaseHasNoosonAttribute(INamedTypeSymbol? typeSymbol)
@@ -534,7 +590,7 @@ namespace NonSucking.Framework.Serialization
         internal static void GenerateSerializeMethodNonStatic(GeneratedType generatedType, ITypeSymbol typeSymbol,
             NoosonGeneratorContext context)
         {
-            var member = new MemberInfo(typeSymbol, typeSymbol, "this");
+            var member = new MemberInfo(typeSymbol, typeSymbol, Consts.ThisName);
 
             var generateGeneric = context.WriterTypeName is null;
             var generateConstraint = generateGeneric;
@@ -617,12 +673,17 @@ namespace NonSucking.Framework.Serialization
         internal static void GenerateDeserializeMethod(GeneratedType generatedType, ITypeSymbol typeSymbol,
             NoosonGeneratorContext context)
         {
+            var methodType = context.MethodType;
             var generateGeneric = context.ReaderTypeName is null;
             var typeName = context.ReaderTypeName ?? Consts.GenericParameterReaderName;
             var member = new MemberInfo(typeSymbol, typeSymbol, ReturnValueBaseName);
+            if (methodType == MethodType.DeserializeOnInstance)
+                member = member with { Parent = Consts.ThisName };
+
             var parameter = new List<GeneratedMethodParameter>()
-                {new GeneratedMethodParameter(typeName, context.ReaderWriterName, new(), $"The <see cref=\"{context.ReaderTypeName}\"/> to deserialize from.")};
-            var methodType = context.MethodType;
+            {
+                new GeneratedMethodParameter(typeName, context.ReaderWriterName, new(), $"The <see cref=\"{context.ReaderTypeName}\"/> to deserialize from.")
+            };
             if (methodType == MethodType.DeserializeIntoInstance)
             {
                 var parameterInstance = new GeneratedMethodParameter(typeSymbol.ToDisplayString(), Consts.InstanceParameterName, new(), "The instance to deserialize into.");
@@ -631,44 +692,163 @@ namespace NonSucking.Framework.Serialization
                 parameter.Insert(0, parameterInstance);
             }
 
-            var body
-                = CreateBlock(member, context, methodType);
-
-            var modifiers = new List<Modifiers> { Modifiers.Public, Modifiers.Static };
-
-            if (context.MethodType != MethodType.DeserializeIntoInstance && !typeSymbol.IsValueType)
+            if (methodType == MethodType.DeserializeOnInstance)
             {
+                var parameterInstance = new GeneratedMethodParameter(typeSymbol.ToDisplayString(), Consts.InstanceParameterName, new() { ParameterModifiers.This }, "The instance to deserialize into.");
+                if (typeSymbol.IsValueType)
+                    parameterInstance.Modifier.Add(ParameterModifiers.Ref);
+                parameter.Insert(0, parameterInstance);
+            }
 
+            GeneratedSerializerCode body;
+            if (methodType == MethodType.DeserializeOnInstance)
+                body = GenerateCallToStaticDeserialize(generatedType, typeSymbol, context);
+            else
+                body = CreateBlock(member, context, methodType);
+
+
+            var modifiers = context.Modifiers.Append(Modifiers.Static).ToList();
+
+            if (context.MethodType == MethodType.DeserializeWithCtor && !typeSymbol.IsValueType)
+            {
                 if (typeSymbol.BaseType is { } bs && !bs.IsAbstract && BaseHasNoosonAttribute(bs))
                     modifiers.Add(Modifiers.New);
             }
 
-            var typeParams = generateGeneric
-                ? new[]
+
+            List<TypeParameter> typeParams = generateGeneric
+                ? new()
                 {
                     new TypeParameter(Consts.GenericParameterReaderName,
                         xmlDocumentation: "The type of the instance to deserialize.")
                 }
-                : Array.Empty<TypeParameter>();
-            var typeConstraints = generateGeneric
-                ? new[]
+                : new();
+            List<TypeParameterConstraintClause> typeConstraints = generateGeneric
+                ? new()
                 {
                     new TypeParameterConstraintClause(Consts.GenericParameterReaderName,
                         new TypeParameterConstraint("NonSucking.Framework.Serialization.IBinaryReader"))
                 }
-                : Array.Empty<TypeParameterConstraintClause>();
+                : new();
 
             if (typeSymbol.IsAbstract && methodType == MethodType.DeserializeWithCtor)
                 return;
 
             GeneratedMethodParameter? retType = null;
 
+            if (methodType == MethodType.DeserializeOnInstance)
+            {
+                var typeParamsWithConstraints
+                    = GetTypeParametersWithConstraints(generatedType, typeSymbol).ToList();
+                foreach (var item in typeParamsWithConstraints)
+                {
+                    typeParams.Add(item.Item1);
+                    if (item.Item2.Constraints.Count > 0)
+                        typeConstraints.Add(item.Item2);
+                }
+
+            }
+
             if (methodType == MethodType.DeserializeWithCtor)
                 retType = new(typeSymbol.ToDisplayString(), "", new(), "The deserialized instance.");
 
             generatedType.Methods.Add(new GeneratedMethod(retType,
-                Consts.Deserialize, parameter, modifiers, typeParams, typeConstraints, body,
-                $"Deserializes a <see cref=\"{typeSymbol.ToSummaryName()}\"/> instance."));
+                Consts.Deserialize, parameter, modifiers, typeParams.ToArray(), typeConstraints.ToArray(), body,
+                $"Deserializes {(methodType == MethodType.DeserializeWithCtor ? "a" : "into")} <see cref=\"{typeSymbol.ToSummaryName()}\"/> instance."));
+        }
+
+        private static IEnumerable<(TypeParameter, TypeParameterConstraintClause)> GetTypeParametersWithConstraints(GeneratedType? generatedType, ITypeSymbol typeSymbol)
+        {
+            //Stack<(GeneratedType, ITypeSymbol)>
+            Stack<(TypeParameter, TypeParameterConstraintClause)> stack = new();
+
+            while (typeSymbol is INamedTypeSymbol nt && nt.IsGenericType)
+            {
+                var currentType = generatedType;
+                typeSymbol = nt.ContainingType;
+                generatedType = currentType?.ContainingType;
+
+
+                var tp = nt.TypeParameters;
+                if (tp.Length == 0)
+                    continue;
+
+                var constraints = tp.Select((x) =>
+                {
+                    var ourConstraints = generatedType?.TypeParameterConstraint.FirstOrDefault(y => y.Identifier == x.Name);
+
+                    (bool hasClass, bool hasStruct, bool hasUnmanaged, bool hasNotNull, bool hasConstructor, List<TypeParameterConstraint> typeConstraints)
+                    = ((ourConstraints?.Constraints) ?? Enumerable.Empty<TypeParameterConstraint>()).Aggregate((hasClass: false, hasStruct: false, hasUnmanaged: false, hasNotNull: false, hasConstructor: false, typeConstraints: new List<TypeParameterConstraint>()), (a, b) =>
+                    {
+                        a.hasClass |= b.Type == TypeParameterConstraint.ConstraintType.Class;
+                        a.hasStruct |= b.Type == TypeParameterConstraint.ConstraintType.Struct;
+                        a.hasConstructor |= b.Type == TypeParameterConstraint.ConstraintType.Constructor;
+                        if (b.Type == TypeParameterConstraint.ConstraintType.Type)
+                        {
+                            if (b.ConstraintIdentifier == "unmanaged")
+                                a.hasUnmanaged |= true;
+                            else if (b.ConstraintIdentifier == "notnull")
+                                a.hasNotNull |= true;
+                            else
+                                a.typeConstraints.Add(b);
+                        }
+                        return a;
+                    });
+                    //var clause = SyntaxFactory
+                    //.TypeParameterConstraintClause(x.Name);
+                    //List<TypeParameterConstraintSyntax> constraints = new();
+                    //if (x.HasReferenceTypeConstraint)
+                    //    constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.ClassConstraint));
+                    //else if (x.HasValueTypeConstraint)
+                    //    constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.StructConstraint));
+                    //else if (x.HasUnmanagedTypeConstraint)
+                    //    constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(SyntaxFactory.TriviaList(), SyntaxKind.UnmanagedKeyword, "unmanaged", "unmanaged", SyntaxFactory.TriviaList()))));
+
+                    ////if(x.Constraint)
+                    //if (x.HasNotNullConstraint)
+                    //    constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("notnull")));
+
+                    //foreach (var item in x.ConstraintTypes)
+                    //{
+                    //    constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(item.ToDisplayString()))));
+                    //}
+
+                    //if (x.HasConstructorConstraint)
+                    //    constraints.Add(SyntaxFactory.ConstructorConstraint());
+
+                    //clause = clause.WithConstraints(SyntaxFactory.SeparatedList(constraints));
+
+                    var clause = new TypeParameterConstraintClause(x.Name);
+                    if (hasClass || x.HasReferenceTypeConstraint)
+                        clause.Constraints.Add(new(TypeParameterConstraint.ConstraintType.Class));
+                    else if (hasStruct || x.HasValueTypeConstraint)
+                        clause.Constraints.Add(new(TypeParameterConstraint.ConstraintType.Struct));
+                    else if (hasUnmanaged || x.HasUnmanagedTypeConstraint)
+                        clause.Constraints.Add(new("unmanaged"));
+
+                    if (hasNotNull || x.HasNotNullConstraint)
+                        clause.Constraints.Add(new("notnull"));
+
+                    clause.Constraints.AddRange(x.ConstraintTypes
+                        .Select(x => new TypeParameterConstraint(x.ToDisplayString()))
+                        .Concat(typeConstraints)
+                        .GroupBy(x => x.ConstraintIdentifier)
+                        .Select(x => x.First()));
+
+                    if (hasConstructor || x.HasConstructorConstraint)
+                        clause.Constraints.Add(new(TypeParameterConstraint.ConstraintType.Constructor));
+                    return (new TypeParameter(x.Name), clause);
+                });
+
+                foreach (var item in constraints)
+                {
+                    stack.Push(item);
+                }
+            }
+
+            while (stack.Count > 0)
+                yield return stack.Pop();
+
         }
 
         internal static GeneratedSerializerCode CreateBlock(MemberInfo member, NoosonGeneratorContext context,
@@ -714,6 +894,26 @@ namespace NonSucking.Framework.Serialization
             return body;
         }
 
+
+        internal static GeneratedSerializerCode GenerateCallToStaticDeserialize(GeneratedType generatedType, ITypeSymbol typeSymbol, NoosonGeneratorContext context)
+        {
+            var body = new GeneratedSerializerCode();
+            body.Statements.Add(Statement
+                .Expression
+                .Invoke(
+                    generatedType.DisplayName,
+                    Consts.Deserialize,
+                    arguments: new[]
+                        {
+                            new ValueArgument((object)$"{(typeSymbol.IsValueType ? "ref " :"")}{Consts.InstanceParameterName}"),
+                            new ValueArgument((object)readerName)
+                        })
+                .AsStatement());
+
+            return body;
+        }
+
+
         internal static GeneratedSerializerCode? GenerateStatementsForMember(MemberInfo property,
             NoosonGeneratorContext context, MethodType methodType,
             SerializerMask excludedSerializers = SerializerMask.None)
@@ -740,7 +940,9 @@ namespace NonSucking.Framework.Serialization
             {
                 MethodType.Serialize => CreateStatementForSerializing(property, context, writerName,
                     excludedSerializers: excludedSerializers),
-                MethodType.DeserializeWithCtor or MethodType.DeserializeIntoInstance => CreateStatementForDeserializing(property, context, readerName,
+                MethodType.DeserializeWithCtor
+                    or MethodType.DeserializeIntoInstance
+                    or MethodType.DeserializeOnInstance => CreateStatementForDeserializing(property, context, readerName,
                     excludedSerializers: excludedSerializers),
                 _ => throw new NotSupportedException($"{methodType} is not supported by Property generation")
             };
@@ -770,6 +972,7 @@ namespace NonSucking.Framework.Serialization
     {
         Serialize,
         DeserializeWithCtor,
-        DeserializeIntoInstance
+        DeserializeIntoInstance,
+        DeserializeOnInstance
     }
 }

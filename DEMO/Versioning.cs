@@ -3,7 +3,7 @@
 namespace DEMO;
 
 [Nooson]
-public partial class Versioning
+internal partial class Versioning
 {
     [NoosonOrder(int.MinValue)] public int Version { get; set; }
 
@@ -35,5 +35,14 @@ public partial class Versioning
     private void Test(out int i)
     {
         i = 0;
+    }
+}
+
+
+public static class VersioningExtensions123
+{
+    internal static void Test(this Versioning vers)
+    {
+
     }
 }

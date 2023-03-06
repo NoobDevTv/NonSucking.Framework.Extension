@@ -5,10 +5,13 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using NonSucking.Framework.Serialization.Serializers;
+
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Statements;
 
@@ -33,7 +36,7 @@ internal static class UnmanagedTypeSerializer
             SyntaxFactory.IdentifierName(variable), method);
         return SyntaxFactory.InvocationExpression(access);
     }
-    
+
     internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
         GeneratedSerializerCode statements, SerializerMask includedSerializers)
     {
@@ -42,9 +45,9 @@ internal static class UnmanagedTypeSerializer
         {
             return false;
         }
-        
-        
-        context.GeneratedType.Usings.Add("NonSucking.Framework.Serialization");
+
+
+        context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
 
         var argument = Helper.GetMemberAccessString(property);
         var writeMethod = GetGenericMethodSyntax(writerName, "WriteUnmanaged", typeSymbol);
@@ -54,7 +57,7 @@ internal static class UnmanagedTypeSerializer
                     SyntaxFactory.SingletonSeparatedList(
                         SyntaxFactory.Argument(
                             SyntaxFactory.IdentifierName(argument)))));
-        
+
         statements.Statements.Add(SyntaxFactory.ExpressionStatement(invocation));
         return true;
     }
@@ -67,9 +70,9 @@ internal static class UnmanagedTypeSerializer
         {
             return false;
         }
-        
-        
-        context.GeneratedType.Usings.Add("NonSucking.Framework.Serialization");
+
+
+        context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
 
         var readMethod = GetGenericMethodSyntax(readerName, "ReadUnmanaged", typeSymbol);
 

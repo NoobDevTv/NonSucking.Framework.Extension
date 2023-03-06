@@ -27,11 +27,12 @@ namespace NonSucking.Framework.Serialization
         {
             if (baseType is null)
                 return (null, null);
-            if (gc.TryResolve(baseType, out var generatedType))
+            if (gc.TryResolve(baseType, out var generatedFile))
             {
-                foreach (var m in generatedType.Methods)
-                    if (predicate(m))
-                        return (m, generatedType);
+                foreach (var generatedType in generatedFile.GeneratedTypes)
+                    foreach (var m in generatedType.Methods)
+                        if (predicate(m))
+                            return (m, generatedType);
             }
             return GetFirstMemberWithBase(gc, baseType.BaseType, predicate);
         }
@@ -70,11 +71,11 @@ namespace NonSucking.Framework.Serialization
                     {
                         continue;
                     }
-                    yield return (new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName),currentIteration);
+                    yield return (new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName), currentIteration);
                 }
                 else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
                 {
-                    yield return (new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName),currentIteration);
+                    yield return (new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName), currentIteration);
                 }
             }
             foreach (var item in GetMembersWithBase(symbol.BaseType, maxRecursion, currentIteration))
@@ -109,8 +110,8 @@ namespace NonSucking.Framework.Serialization
             var index = identifier.IndexOf(localVariableSuffix);
             if (index > -1)
                 identifier = identifier.Remove(index);
-            
-            return char.ToLowerInvariant(identifier[0]) == char.ToLowerInvariant(parameterName[0]) 
+
+            return char.ToLowerInvariant(identifier[0]) == char.ToLowerInvariant(parameterName[0])
                 && string.Equals(identifier.Substring(1), parameterName.Substring(1));
         }
 
@@ -215,7 +216,7 @@ namespace NonSucking.Framework.Serialization
 
         }
 
-        internal static string ToSummaryName(this ITypeSymbol symbol)
+        internal static string ToSummaryName(this ISymbol symbol)
         {
             return symbol.ToDisplayString()
                 .Replace('<', '{')
