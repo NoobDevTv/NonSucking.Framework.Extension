@@ -24,7 +24,7 @@ jobs:
       isDeploy:  ${{ github.ref == 'refs/heads/deploy' }}
       isStable:  ${{ github.ref == 'refs/heads/stable' }}
       isPush: ${{ github.event_name == 'push' }}
-      debug: false
+      debug: true
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -45,13 +45,9 @@ jobs:
           fetch-depth: 0 #to ensure to retrieve everything for version lookup
           lfs: true
 
-      # Setup powershell
-      - name: Setup powershell
-        run: sh ./.github/scripts/install-powershell.sh
-
       # setup dotnet with .NET 7.0
       - name: Setup .NET 7.0
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '7.0.x' 
 
@@ -82,8 +78,9 @@ jobs:
       # Create nupkg
       - name: Pack extension
         if: env.isPush == 'true' || env.debug == 'true'
-        run: pwsh -File ./.github/scripts/pack-files.ps1 -path './*'
-
+        run: ./.github/scripts/pack-files.ps1 -path './*'
+        shell: pwsh
+        
       # Artifact for testing purpose
       - name: upload artifacts      
         uses: actions/upload-artifact@v2
