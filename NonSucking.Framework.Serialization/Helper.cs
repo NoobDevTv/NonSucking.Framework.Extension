@@ -23,10 +23,36 @@ namespace NonSucking.Framework.Serialization
             //endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-f0-9]{{32}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
             endsWithOurSuffixAndGuid = new Regex($"{localVariableSuffix}[a-zA-Z]{{1,6}}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
         }
-
-        internal static IEnumerable<MemberInfo> GetMembersWithBase(ITypeSymbol? symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
+        internal static (GeneratedMethod?, GeneratedType?) GetFirstMemberWithBase(GlobalContext gc, ITypeSymbol? baseType, Func<GeneratedMethod, bool> predicate)
         {
-            if(currentIteration++ > maxRecursion)
+            if (baseType is null)
+                return (null, null);
+            if (gc.TryResolve(baseType, out var generatedType))
+            {
+                foreach (var m in generatedType.Methods)
+                    if (predicate(m))
+                        return (m, generatedType);
+            }
+            return GetFirstMemberWithBase(gc, baseType.BaseType, predicate);
+        }
+        internal static ISymbol? GetFirstMemberWithBase(ITypeSymbol? symbol, Func<ISymbol, bool> predicate, int maxRecursion = int.MaxValue, int currentIteration = 0)
+        {
+            if (symbol is null)
+                return null;
+            if (currentIteration++ > maxRecursion)
+                return null;
+
+            foreach (var member in symbol.GetMembers())
+            {
+                if (predicate(member))
+                    return member;
+            }
+
+            return GetFirstMemberWithBase(symbol.BaseType, predicate, maxRecursion, currentIteration);
+        }
+        internal static IEnumerable<(MemberInfo memberInfo, int depth)> GetMembersWithBase(ITypeSymbol? symbol, int maxRecursion = int.MaxValue, int currentIteration = 0)
+        {
+            if (currentIteration++ > maxRecursion)
                 yield break;
 
             if (symbol is null)
@@ -44,11 +70,11 @@ namespace NonSucking.Framework.Serialization
                     {
                         continue;
                     }
-                    yield return new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
+                    yield return (new MemberInfo(propSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName),currentIteration);
                 }
                 else if (member is IFieldSymbol fieldSymbol && fieldSymbol.TryGetAttribute(AttributeTemplates.Include, out _))
                 {
-                    yield return new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName);
+                    yield return (new MemberInfo(fieldSymbol.Type, member, member.Name, NoosonGenerator.ReturnValueBaseName),currentIteration);
                 }
             }
             foreach (var item in GetMembersWithBase(symbol.BaseType, maxRecursion, currentIteration))
@@ -78,14 +104,14 @@ namespace NonSucking.Framework.Serialization
                 _ => throw new NotSupportedException(),
             };
         }
-
         internal static bool MatchIdentifierWithPropName(string identifier, string parameterName)
         {
             var index = identifier.IndexOf(localVariableSuffix);
             if (index > -1)
                 identifier = identifier.Remove(index);
-
-            return string.Equals(identifier, parameterName, StringComparison.OrdinalIgnoreCase);
+            
+            return char.ToLowerInvariant(identifier[0]) == char.ToLowerInvariant(parameterName[0]) 
+                && string.Equals(identifier.Substring(1), parameterName.Substring(1));
         }
 
 
@@ -153,13 +179,47 @@ namespace NonSucking.Framework.Serialization
             generateDefaultReader = GetGenerateDefault(0, true);
             generateDefaultWriter = GetGenerateDefault(1, true);
             directReaders =
-                attributeData.ConstructorArguments.Length > 2 &&  !attributeData.ConstructorArguments[2].Values.IsDefaultOrEmpty
+                attributeData.ConstructorArguments.Length > 2 && !attributeData.ConstructorArguments[2].Values.IsDefaultOrEmpty
                 ? attributeData.ConstructorArguments[2].Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
                 : Array.Empty<INamedTypeSymbol>();
             directWriters =
                 attributeData.ConstructorArguments.Length > 3 && !attributeData.ConstructorArguments[3].Values.IsDefaultOrEmpty
                 ? attributeData.ConstructorArguments[3].Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
                 : Array.Empty<INamedTypeSymbol>();
+        }
+
+
+        internal static bool CheckSignature(NoosonGeneratorContext context, IMethodSymbol m, string? typeName)
+        {
+
+            if (context.WriterTypeName is not null
+                && (!m.IsStatic || m.Parameters.Length != 2)
+                && (m.IsStatic || m.Parameters.Length != 1))
+                return false;
+
+            if (context.ReaderTypeName is not null
+                && (!m.IsStatic || m.Parameters.Length != 1))
+                return false;
+
+            if (!(context.ReaderTypeName is null && context.WriterTypeName is null))
+            {
+                var binaryTypeName = m.Parameters.Last().Type.ToDisplayString();
+                return binaryTypeName == context.WriterTypeName || binaryTypeName == context.ReaderTypeName;
+            }
+            if (m.Parameters.Last().Type.TypeKind != TypeKind.TypeParameter || !m.IsGenericMethod)
+                return false;
+
+            var typeParameter = m.TypeParameters.FirstOrDefault(x => x.Name == m.Parameters.Last().Type.Name);
+
+            return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.Name == typeName);
+
+        }
+
+        internal static string ToSummaryName(this ITypeSymbol symbol)
+        {
+            return symbol.ToDisplayString()
+                .Replace('<', '{')
+                .Replace('>', '}');
         }
     }
 }

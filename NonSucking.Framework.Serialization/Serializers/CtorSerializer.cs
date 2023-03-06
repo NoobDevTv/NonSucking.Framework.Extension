@@ -13,9 +13,71 @@ using VaVare.Statements;
 
 namespace NonSucking.Framework.Serialization.Serializers
 {
+
+    [Flags]
+    internal enum Initializer
+    {
+        None = 0,
+        Ctor = 1 << 0,
+        /// <summary>
+        /// Will enable <see cref="Ctor"/> aswell
+        /// </summary>
+        InitializerList = (1 << 1) | Ctor,
+        Properties = 1 << 2,
+    }
+
     internal static class CtorSerializer
     {
-        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, ICollection<StatementSyntax> statements, MemberInfo instance, string instanceName)
+        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, List<string> localVariableNames, MemberInfo instance, string instanceName, Initializer initializer)
+        {
+            List<string> localDeclarations = GetLocalDeclarations(localVariableNames, instanceName);
+
+            if (instanceName != Consts.InstanceParameterName && (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract))
+            {
+                var r = new GeneratedSerializerCode();
+                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.ParseExpression("default")); //TODO: Possible null ref instance.TypeSymbol.Name
+                return r;
+
+            }
+
+            var ret = new GeneratedSerializerCode();
+            List<string> ctorArgumentNames = new();
+            ArgumentListSyntax? ctorArguments = null;
+            if ((initializer & Initializer.Ctor) > 0)
+            {
+                List<IMethodSymbol> constructors = GetCtors(typeSymbol);
+                ctorArguments
+                    = GetStatementForCtorCall(constructors, localDeclarations, instanceName, out ctorArgumentNames);
+            }
+
+
+            InitializerExpressionSyntax? propertyAssignments = null;
+            if ((initializer & Initializer.InitializerList) > 0)
+            {
+                propertyAssignments = AssignMissingInitializerProperties(typeSymbol, localDeclarations, ctorArgumentNames);
+            }
+
+            if ((initializer & Initializer.Properties) > 0)
+            {
+                var assignemntExpressions
+                = AssignMissingSetterProperties(instanceName, typeSymbol, localDeclarations, ctorArgumentNames);
+                ret.Statements.AddRange(assignemntExpressions);
+
+            }
+
+            if ((initializer & Initializer.Ctor) > 0)
+            {
+
+                var currentType
+                = SyntaxFactory.ParseTypeName(typeSymbol.ToDisplayString());
+                var ctorCallStatement = DeclareAssignCtor(currentType, instance, instanceName, ctorArguments!, propertyAssignments);
+                ret.VariableDeclarations.Add(ctorCallStatement);
+            }
+
+            return ret;
+        }
+
+        private static List<IMethodSymbol> GetCtors(INamedTypeSymbol typeSymbol)
         {
             var constructors
                 = typeSymbol
@@ -24,19 +86,18 @@ namespace NonSucking.Framework.Serialization.Serializers
                     (constructor.TryGetAttribute(AttributeTemplates.PreferredCtor, out _) ? 0xFFFF1 : 0) //0xFFFF is the maximum amount of Parameters, so we add an additional one
                     + constructor.Parameters.Length)
                 .ToList();
+            return constructors;
+        }
 
-            var shouldContain = instanceName.Substring(0, instanceName.IndexOf(Helper.localVariableSuffix));
+        private static List<string> GetLocalDeclarations(List<string> localVariableNames, string instanceName)
+        {
+            var indexOf = instanceName.IndexOf(Helper.localVariableSuffix);
+            if (indexOf < 0)
+                return localVariableNames;
+            var shouldContain = instanceName.Substring(0, indexOf);
 
             var localDeclarations
-                = statements
-                .OfType<LocalDeclarationStatementSyntax>()
-                .Concat(
-                    statements
-                    .OfType<BlockSyntax>()
-                    .SelectMany(x => x.Statements.OfType<LocalDeclarationStatementSyntax>())
-                 )
-                .SelectMany(declaration => declaration.Declaration.Variables)
-                .Select(variable => variable.Identifier.Text)
+                = localVariableNames
                 .Where(text =>
                 {
                     int firstIndex = text.IndexOf(Helper.localVariableSuffix);
@@ -51,68 +112,42 @@ namespace NonSucking.Framework.Serialization.Serializers
                     return true;
                 })
                 .ToList();
+            return localDeclarations;
+        }
 
-            var currentType
-                = SyntaxFactory
-                .ParseTypeName(typeSymbol.ToDisplayString());
+        internal static List<ExpressionStatementSyntax> AssignMissingSetterProperties(string instanceName, ITypeSymbol typeSymbol, List<string> localDeclarations,
+            List<string> ctorArguments)
+        {
+            List<(ITypeSymbol type, ISymbol symbol)> properties = GetPropertiesForDecleration(typeSymbol, ref localDeclarations, ctorArguments, false);
 
+            var assignments = new List<ExpressionStatementSyntax>();
 
-            if (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract)
+            foreach (var property in properties)
             {
-                var r = new GeneratedSerializerCode();
-                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.ParseExpression("default")); //TODO: Possible null ref instance.TypeSymbol.Name
-                return r;
+                var declaration
+                    = localDeclarations
+                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(declaration, property.symbol.Name));
+
+                if (declaration is null)
+                {
+                    continue;
+                }
+
+
+                VariableReference declarationReference = new VariableReference(declaration);
+                VariableReference memberReference = new VariableReference(instanceName, new MemberReference(property.symbol.Name));
+
+                assignments.Add(Statement.Declaration.Assign(memberReference, declarationReference));
             }
 
-            var ctorArguments
-                = GetStatementForCtorCall(constructors, localDeclarations, instanceName, out var ctorArgumentNames);
-
-            var propertyAssignments
-                = AssignMissingSetterProperties(typeSymbol, localDeclarations, ctorArgumentNames);
-
-            var ctorCallStatement = DeclareAssignCtor(currentType, instance, instanceName, ctorArguments, propertyAssignments);
-
-            var ret = new GeneratedSerializerCode();
-
-            ret.VariableDeclarations.Add(ctorCallStatement);
-            return ret;
+            return assignments;
         }
 
 
-        internal static InitializerExpressionSyntax? AssignMissingSetterProperties(ITypeSymbol typeSymbol, List<string> localDeclarations,
+        internal static InitializerExpressionSyntax? AssignMissingInitializerProperties(ITypeSymbol typeSymbol, List<string> localDeclarations,
             List<string> ctorArguments)
         {
-
-            //TODO Set Public props which have a set method via !IPropertySymbol.IsReadOnly
-            localDeclarations
-                = localDeclarations
-                .Where(declaration =>
-                    !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, declaration))
-                )
-                .ToList();
-
-            List<(ITypeSymbol type, ISymbol symbol)> properties = new();
-
-            foreach (var item in Helper.GetMembersWithBase(typeSymbol))
-            {
-                if (item.Symbol.IsStatic)
-                    continue;
-
-                if (item.Symbol is IPropertySymbol property
-                    && !property.IsReadOnly
-                    && property.SetMethod is not null
-                    && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, property.Name)))
-                {
-                    properties.Add((property.Type, property));
-                }
-                else if (item.Symbol is IFieldSymbol field
-                     && !field.IsReadOnly
-                     && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, field.Name)))
-                {
-                    properties.Add((field.Type, field));
-
-                }
-            }
+            List<(ITypeSymbol type, ISymbol symbol)> properties = GetPropertiesForDecleration(typeSymbol, ref localDeclarations, ctorArguments);
 
             var initializers = new List<ExpressionSyntax>();
 
@@ -127,17 +162,7 @@ namespace NonSucking.Framework.Serialization.Serializers
                     continue;
                 }
 
-                VariableReference declarationReference;
-
-                //if (property.type.TypeKind == TypeKind.Array)
-                //{
-                //    var method = new MethodReference("ToArray");
-                //    declarationReference = new MemberReference(declaration, method);
-                //}
-                //else
-                //{
-                declarationReference = new VariableReference(declaration);
-                //}
+                VariableReference declarationReference = new VariableReference(declaration);
 
                 var assignmentExpression = SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.IdentifierName(property.symbol.Name),
@@ -153,6 +178,42 @@ namespace NonSucking.Framework.Serialization.Serializers
                 SyntaxFactory.SeparatedList(initializers));
 
             return objectInitializer;
+        }
+
+        private static List<(ITypeSymbol type, ISymbol symbol)> GetPropertiesForDecleration(ITypeSymbol typeSymbol, ref List<string> localDeclarations, List<string> ctorArguments, bool includeInitOnly = true)
+        {
+            localDeclarations
+                = localDeclarations
+                .Where(declaration =>
+                    !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, declaration))
+                )
+                .ToList();
+
+            List<(ITypeSymbol type, ISymbol symbol)> properties = new();
+
+            foreach ((MemberInfo item, int _) in Helper.GetMembersWithBase(typeSymbol))
+            {
+                if (item.Symbol.IsStatic)
+                    continue;
+
+                if (item.Symbol is IPropertySymbol property
+                    && !property.IsReadOnly
+                    && property.SetMethod is IMethodSymbol sm
+                    && (includeInitOnly || !sm.IsInitOnly)
+                    && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, property.Name)))
+                {
+                    properties.Add((property.Type, property));
+                }
+                else if (item.Symbol is IFieldSymbol field
+                     && !field.IsReadOnly
+                     && !ctorArguments.Any(argument => Helper.MatchIdentifierWithPropName(argument, field.Name)))
+                {
+                    properties.Add((field.Type, field));
+
+                }
+            }
+
+            return properties;
         }
 
         internal static ArgumentListSyntax GetStatementForCtorCall(List<IMethodSymbol> constructors, List<string> localDeclarations, string instanceName, out List<string> ctorArguments)
@@ -214,11 +275,12 @@ namespace NonSucking.Framework.Serialization.Serializers
         internal static GeneratedSerializerCode.SerializerVariable DeclareAssignCtor(TypeSyntax currentType, MemberInfo instance, string instanceName, ArgumentListSyntax arguments, InitializerExpressionSyntax? initializer)
         {
             return new GeneratedSerializerCode.SerializerVariable(
-                Statement.Declaration.Declare(instanceName, currentType),
+                 currentType,
                 instance, instanceName,
                 SyntaxFactory.EqualsValueClause(SyntaxFactory.ObjectCreationExpression(currentType)
                     .WithArgumentList(arguments).WithInitializer(initializer).WithNewKeyword(SyntaxFactory.Token(SyntaxKind.NewKeyword)))
                 );
         }
+
     }
 }

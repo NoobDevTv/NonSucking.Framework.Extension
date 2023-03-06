@@ -125,12 +125,6 @@ namespace NonSucking.Framework.Serialization
                 arrType = arrType2;
             }
 
-            // Is ICollection<T> => Add
-            // No => Has Add ? => Add
-            // NO => Has Enqueue => Enqueue
-            // NO => Has Push => Push
-
-
             ITypeSymbol genericArgument = arrType?.ElementType ?? GetGenericTypeOf(collectionInterface, out _);
 
 
@@ -301,7 +295,12 @@ namespace NonSucking.Framework.Serialization
                 else
                 {
                     statements.Clear();
-                    //TODO Warning / Error
+                    context.AddDiagnostic("0015",
+                        "",
+                        $"The type {type.ToDisplayString()} is currently not supported, no deserialization code will be generated!.",
+                        property.Symbol,
+                        DiagnosticSeverity.Warning
+                    );
                     return false;
                 }
 
@@ -326,8 +325,6 @@ namespace NonSucking.Framework.Serialization
                             .AsStatement();
                     itemDeserialization.Statements.Add(addStatement);
                 }
-                else
-                    ; //Diagnostic
 
                 ExpressionSyntax ctorInvocationExpression
                     = Statement

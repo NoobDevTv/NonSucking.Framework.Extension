@@ -21,7 +21,7 @@ namespace NonSucking.Framework.Serialization
     {
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
-            var methodName = "Deserialize";
+            var methodName = Consts.Deserialize;
             bool isClassAttribute = false;
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
             {
@@ -85,7 +85,7 @@ namespace NonSucking.Framework.Serialization
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             
-            var methodName = "Serialize";
+            var methodName = Consts.Serialize;
             bool isClassAttribute = false;
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Custom, out var propAttrData))
             {

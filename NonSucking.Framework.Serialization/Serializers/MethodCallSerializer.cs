@@ -24,11 +24,11 @@ namespace NonSucking.Framework.Serialization
 
             IEnumerable<IMethodSymbol> member
                 = type
-                .GetMembers("Deserialize")
+                .GetMembers(Consts.Deserialize)
                 .OfType<IMethodSymbol>();
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
-            
+
             bool shouldBeGenerated = hasAttribute;
             if (hasAttribute)
             {
@@ -46,14 +46,14 @@ namespace NonSucking.Framework.Serialization
             }
             bool isUsable
                 = shouldBeGenerated
-                    || member.Any(m => m.IsStatic && CheckSignature(context, m, "IBinaryReader"));
+                    || member.Any(m => m.IsStatic && Helper.CheckSignature(context, m, "IBinaryReader"));
 
             if (isUsable)
             {
                 var invocationExpression
                         = Statement
                         .Expression
-                        .Invoke(type.ToString(), "Deserialize", arguments: new[] { new ValueArgument((object)readerName) })
+                        .Invoke(type.ToString(), Consts.Deserialize, arguments: new[] { new ValueArgument((object)readerName) })
                         .AsExpression();
 
                 statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocationExpression);
@@ -66,20 +66,15 @@ namespace NonSucking.Framework.Serialization
             return isUsable;
         }
 
-
-
-
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var generateGeneric = context.WriterTypeName is null;
             var type = property.TypeSymbol;
-            var methodName = "Serialize";
-
-
+            var methodName = Consts.Serialize;
 
             IEnumerable<IMethodSymbol> member
                 = type
-                    .GetMembers("Serialize")
+                    .GetMembers(Consts.Serialize)
                     .OfType<IMethodSymbol>();
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
@@ -100,7 +95,7 @@ namespace NonSucking.Framework.Serialization
                                            });
             }
 
-            var m = member.FirstOrDefault(m => CheckSignature(context, m, "IBinaryWriter"));
+            var m = member.FirstOrDefault(m => Helper.CheckSignature(context, m, "IBinaryWriter"));
             bool isUsable
                 = shouldBeGenerated || m is not null;
 
@@ -110,14 +105,14 @@ namespace NonSucking.Framework.Serialization
                 {
                     statements.Statements.Add(Statement
                         .Expression
-                        .Invoke(type.ToDisplayString(), "Serialize", arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
+                        .Invoke(type.ToDisplayString(), Consts.Serialize, arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
                 else if (!m!.IsStatic)
                 {
                     statements.Statements.Add(Statement
                         .Expression
-                        .Invoke(Helper.GetMemberAccessString(property), "Serialize", arguments: new[] { new ValueArgument((object)writerName) })
+                        .Invoke(Helper.GetMemberAccessString(property), Consts.Serialize, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
             }
@@ -140,19 +135,5 @@ namespace NonSucking.Framework.Serialization
                 context.AddDiagnostic("0013", "", addendum, Location.Create(syntaxReference.SyntaxTree, syntaxReference.Span), DiagnosticSeverity.Error);
         }
 
-        private static bool CheckSignature(NoosonGeneratorContext context, IMethodSymbol m, string? typeName)
-        {
-            if (!(m.IsStatic && m.Parameters.Length == 2 || !m.IsStatic && m.Parameters.Length == 1))
-                return false;
-            if (!(context.ReaderTypeName is null && context.WriterTypeName is null))
-                return m.Parameters.Last().Type.ToDisplayString() == context.WriterTypeName;
-            if (m.Parameters.Last().Type.TypeKind != TypeKind.TypeParameter || !m.IsGenericMethod)
-                return false;
-
-            var typeParameter = m.TypeParameters.FirstOrDefault(x => x.Name == m.Parameters.Last().Type.Name);
-
-            return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.Name == typeName);
-
-        }
     }
 }

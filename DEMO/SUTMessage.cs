@@ -102,6 +102,7 @@ namespace DEMO
         //public IEnumerable ThisIsNotSupportedIEnumerable { get; }
         public AccessRight Right { get; set; }
         public ComplainBase Complain { get; set; }
+        public Complain ComplainComplain { get; set; }
         public User AssignedUser { get; set; }
         public Point Position { get; set; }
         public IUser ContactUser { get; }
@@ -142,6 +143,7 @@ namespace DEMO
         public static IUser DeserializeIUser(BinaryReader br)
         {
             return new User() { Name = br.ReadString() };
+
         }
 
         public override bool Equals(object obj) => Equals(obj as SUTMessage);
@@ -199,7 +201,7 @@ namespace DEMO
             return hash.ToHashCode();
         }
 
-        [NoosonCustom(SerializeMethodName = "SerializeMe", DeserializeMethodName = "DeserializeMe")]
+        [NoosonCustom(SerializeMethodName = "SerializeMe")]
 
         public class User : IUser, IEquatable<User>
         {
@@ -242,7 +244,13 @@ namespace DEMO
 
 
     }
-    //[Nooson]
+
+    public class Complain : ComplainBase
+    {
+
+    }
+
+    [Nooson]
     public partial class ComplainBase : IEquatable<ComplainBase>
     {
         public string Complain { get; set; }

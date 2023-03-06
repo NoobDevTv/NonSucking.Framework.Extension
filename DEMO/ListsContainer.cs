@@ -2,13 +2,33 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DEMO;
 
+public  class SomethingDifferent
+{
+    public IReadOnlyCollection<int> ReadOnlyBase { get; set; }
+    public IReadOnlyList<int> ReadOnlyListBase { get; set; }
+    public virtual void Serialize(BinaryWriter writer)
+    {
+        // ...
+    }
 
+    public static void Deserialize(BinaryReader writer, out IReadOnlyCollection<int> readOnlyBase, out IReadOnlyList<int> readOnlyListBase)
+    {
+        readOnlyBase = readOnlyListBase = new List<int>();
+    }
+}
+
+public class SomethingVastlyDifferent : SomethingDifferent
+{
+    public int Abc { get; set; }
+
+}
 
 [Nooson]
-public partial class ListsContainer
+public partial class ListsContainer : SomethingVastlyDifferent
 {
     public IReadOnlyCollection<int> ReadOnly { get; set; }
     public IReadOnlyList<int> ReadOnlyList { get; set; }
@@ -38,5 +58,7 @@ public partial class ListsContainer
     public ConcurrentDictionary<bool, int> ConcDic { get; set; }
     public ConcurrentQueue<bool> ConcQueue { get; set; }
     public ConcurrentStack<bool> ConcStack { get; set; }
+
+
 }
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using NonSucking.Framework.Serialization;
+﻿using NonSucking.Framework.Serialization;
 
 namespace DEMO;
 
@@ -26,5 +25,15 @@ public partial class Versioning
     {
         // defaultValue = default;
         return false;
+    }
+
+    private void Test2 ()
+    {
+        Test(out var i);
+    }
+
+    private void Test(out int i)
+    {
+        i = 0;
     }
 }

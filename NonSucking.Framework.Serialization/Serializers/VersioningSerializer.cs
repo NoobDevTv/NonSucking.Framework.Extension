@@ -63,10 +63,8 @@ namespace NonSucking.Framework.Serialization
             var innerDeserialize = CreateStatementForDeserializing(m, context, readerName, includedSerializers,
                 SerializerMask.VersioningSerializer);
             
-            IEnumerable<StatementSyntax> innerStatements = innerDeserialize.MergeBlocksSeperated(statements, v => v.Declaration);
+            IEnumerable<StatementSyntax> innerStatements = innerDeserialize.MergeBlocksSeperated(statements);
             
-
-
             var b = BodyGenerator.Create(innerStatements.ToArray());
 
             var methodName = versioningAttribute!.ConstructorArguments[0].Value!.ToString();

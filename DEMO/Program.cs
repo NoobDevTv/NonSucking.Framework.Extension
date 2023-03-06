@@ -1,4 +1,6 @@
 ﻿
+using Newtonsoft.Json;
+
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,7 +16,6 @@ namespace DEMO
         {
             var dic = new Dictionary<int, int>();
 
-
             var dicCast = (ICollection<KeyValuePair<int, int>>)dic;
             dicCast.Add(new KeyValuePair<int, int>(11, 10));
 
@@ -22,10 +23,11 @@ namespace DEMO
             //var arrCast = (IList<int>)arr;
             //arrCast[0]= 12;
 
+
             var bll = new ByteLengthList() { new byte[] { 12, 13, 14 }, new byte[] { 45, 46, 47 } };
             bll.NameOfList = "ABC";
 
-            var conv = Newtonsoft.Json.JsonConvert.SerializeObject(bll);
+            var conv = Newtonsoft.Json.JsonConvert.SerializeObject(bll, new JsonSerializerSettings { });
             var sutMessage = new SUTMessage()
             {
                 AlternativUser = new User { Name = "Okay" },

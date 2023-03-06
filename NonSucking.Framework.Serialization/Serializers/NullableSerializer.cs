@@ -51,8 +51,8 @@ namespace NonSucking.Framework.Serialization
             var p
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                     .First(p 
-                               => p.Name == "Value");
-            return p with { Parent = property.FullName };
+                               => p.memberInfo.Name == "Value");
+            return p.memberInfo with { Parent = property.FullName };
         }
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
@@ -94,16 +94,11 @@ namespace NonSucking.Framework.Serialization
 
             var innerDeserialize = CreateStatementForDeserializing(m, context, readerName, includedSerializers, SerializerMask.NullableSerializer);
 
-            LocalDeclarationStatementSyntax Transform(GeneratedSerializerCode.SerializerVariable variable)
+            TypeSyntax Transform(GeneratedSerializerCode.SerializerVariable variable)
             {
-                var d = variable.Declaration;
-                if (variable.OriginalMember == m)
-                {
-                    var newDecl = SyntaxFactory.VariableDeclaration(SyntaxFactory.ParseTypeName(d.Declaration.Type.ToFullString() + "?"), d.Declaration.Variables);
-                    return SyntaxFactory.LocalDeclarationStatement(d.AttributeLists, d.AwaitKeyword, d.UsingKeyword,
-                        d.Modifiers, newDecl, d.SemicolonToken);
-                }
-                return d;
+                return variable.OriginalMember != m 
+                    ? variable.TypeSyntax 
+                    : SyntaxFactory.ParseTypeName(variable.TypeSyntax.ToFullString() + "?");
             }
 
             IEnumerable<StatementSyntax> innerStatements;

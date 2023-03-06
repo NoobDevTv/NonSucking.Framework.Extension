@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	</ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\DEMO\DynamicTypes.cs" Link="DynamicTypes.cs" />
+    <Compile Include="..\DEMO\GenericTypeTest.cs" Link="GenericTypeTest.cs" />
+    <Compile Include="..\DEMO\InheritanceTest.cs" Link="InheritanceTest.cs" />
+    <Compile Include="..\DEMO\InitOnlyPropertyTest.cs" Link="InitOnlyPropertyTest.cs" />
+    <Compile Include="..\DEMO\IUser.cs" Link="IUser.cs" />
+    <Compile Include="..\DEMO\KnownSimpleTypesTest.cs" Link="KnownSimpleTypesTest.cs" />
+    <Compile Include="..\DEMO\ListsContainer.cs" Link="ListsContainer.cs" />
+    <Compile Include="..\DEMO\Message.cs" Link="Message.cs" />
+    <Compile Include="..\DEMO\NestedTypes.cs" Link="NestedTypes.cs" />
+    <Compile Include="..\DEMO\NullableTest.cs" Link="NullableTest.cs" />
+    <Compile Include="..\DEMO\RecordTestFile.cs" Link="RecordTestFile.cs" />
+    <Compile Include="..\DEMO\RecursionTest.cs" Link="RecursionTest.cs" />
+    <Compile Include="..\DEMO\SecondTestFile.cs" Link="SecondTestFile.cs" />
+    <Compile Include="..\DEMO\SerializeCallTest.cs" Link="SerializeCallTest.cs" />
+    <Compile Include="..\DEMO\SinglePropTest.cs" Link="SinglePropTest.cs" />
+    <Compile Include="..\DEMO\StaticPropertyTest.cs" Link="StaticPropertyTest.cs" />
+    <Compile Include="..\DEMO\StructTestFile.cs" Link="StructTestFile.cs" />
+    <Compile Include="..\DEMO\SUTMessage.cs" Link="SUTMessage.cs" />
+    <Compile Include="..\DEMO\UnmanagedTypes.cs" Link="UnmanagedTypes.cs" />
+    <Compile Include="..\DEMO\Versioning.cs" Link="Versioning.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NonSucking.Framework.Serialization" Version="0.1.0.84-alpha" />
+  </ItemGroup>
+
+</Project>

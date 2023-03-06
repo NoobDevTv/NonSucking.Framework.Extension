@@ -12,7 +12,7 @@ public partial class DynamicTypes
     }
 
     [Nooson]
-    public partial class B : A
+    public partial class B: A
     {
         
     }

@@ -263,7 +263,7 @@ internal static class KnownSimpleTypeSerializer
                             propName);
 
                     var addressFamilySer = NoosonGenerator.GenerateStatementsForMember(addressFamilyProp, context,
-                        MethodType.Deserialize);
+                        MethodType.DeserializeWithCtor);
                     if (addressFamilySer is null)
                         throw new InvalidCastException("Could not serialize AddressFamily enum value!");
                     statements.Statements.AddRange(addressFamilySer.ToMergedBlock());
@@ -294,7 +294,7 @@ internal static class KnownSimpleTypeSerializer
                     return false;
             }
 
-            context.Usings.Add("NonSucking.Framework.Serialization");
+            context.GeneratedType.Usings.Add("NonSucking.Framework.Serialization");
             statements.Statements.Add(Statement
                 .Expression
                 .Invoke(readerName, "ReadBytes", arguments: new[] { new VariableArgument(bufferName) })
