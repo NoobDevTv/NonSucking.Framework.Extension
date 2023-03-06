@@ -551,8 +551,8 @@ namespace NonSucking.Framework.Serialization
                     modifiers.Insert(0, Modifiers.Private);
                     break;
                 case Accessibility.ProtectedAndInternal:
-                    modifiers.Insert(0, Modifiers.Protected);
                     modifiers.Insert(0, Modifiers.Internal);
+                    modifiers.Insert(0, Modifiers.Protected);
                     break;
                 case Accessibility.Protected:
                     modifiers.Insert(0, Modifiers.Protected);
@@ -794,30 +794,7 @@ namespace NonSucking.Framework.Serialization
                         }
                         return a;
                     });
-                    //var clause = SyntaxFactory
-                    //.TypeParameterConstraintClause(x.Name);
-                    //List<TypeParameterConstraintSyntax> constraints = new();
-                    //if (x.HasReferenceTypeConstraint)
-                    //    constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.ClassConstraint));
-                    //else if (x.HasValueTypeConstraint)
-                    //    constraints.Add(SyntaxFactory.ClassOrStructConstraint(SyntaxKind.StructConstraint));
-                    //else if (x.HasUnmanagedTypeConstraint)
-                    //    constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(SyntaxFactory.TriviaList(), SyntaxKind.UnmanagedKeyword, "unmanaged", "unmanaged", SyntaxFactory.TriviaList()))));
-
-                    ////if(x.Constraint)
-                    //if (x.HasNotNullConstraint)
-                    //    constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName("notnull")));
-
-                    //foreach (var item in x.ConstraintTypes)
-                    //{
-                    //    constraints.Add(SyntaxFactory.TypeConstraint(SyntaxFactory.IdentifierName(SyntaxFactory.Identifier(item.ToDisplayString()))));
-                    //}
-
-                    //if (x.HasConstructorConstraint)
-                    //    constraints.Add(SyntaxFactory.ConstructorConstraint());
-
-                    //clause = clause.WithConstraints(SyntaxFactory.SeparatedList(constraints));
-
+                   
                     var clause = new TypeParameterConstraintClause(x.Name);
                     if (hasClass || x.HasReferenceTypeConstraint)
                         clause.Constraints.Add(new(TypeParameterConstraint.ConstraintType.Class));
