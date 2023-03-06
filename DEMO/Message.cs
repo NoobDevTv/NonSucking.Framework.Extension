@@ -112,6 +112,7 @@ namespace DEMO
             writer.Write(Position.IsEmpty);
             writer.Write(Position.X);
             writer.Write(Position.Y);
+
         }
 
 

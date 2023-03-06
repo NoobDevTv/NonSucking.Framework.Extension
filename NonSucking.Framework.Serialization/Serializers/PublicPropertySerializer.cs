@@ -18,7 +18,7 @@ using static NonSucking.Framework.Serialization.NoosonGenerator;
 
 namespace NonSucking.Framework.Serialization
 {
-    [StaticSerializer(70)]
+    [StaticSerializer(100)]
     internal static class PublicPropertySerializer
     {
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
@@ -114,7 +114,8 @@ namespace NonSucking.Framework.Serialization
                 scopeVariableNameMappings[prop.Name] = Helper.GetMemberAccessString(prop);
                 NoosonGeneratorContext newContext = new(context.GlobalContext,
                     context.GeneratorContext,
-                    context.GeneratedType,
+                    context.GeneratedFile,
+                    context.DefaultGeneratedType,
                     context.ReaderWriterName,
                     prop.Symbol,
                     context.UseAdvancedTypes,
@@ -273,7 +274,8 @@ namespace NonSucking.Framework.Serialization
                 if (firstSyntax.SyntaxTree.GetRoot().FindNode(firstSyntax.Span) is TypeDeclarationSyntax tds
                     && tds.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
                 {
-                    GeneratedType genType = GetGeneratedType(context, typeSymbol);
+                    var genFile = GetGeneratedType(context, typeSymbol);
+                    GeneratedType genType = genFile.GeneratedTypes.First();
                     GeneratedMethod? genMethod = GetOrCreateGenMethod(
                         context,
                         readerName,
@@ -460,7 +462,7 @@ namespace NonSucking.Framework.Serialization
                         variable.TypeSyntax.ToFullString(),
                         outVarName,
                         new() { ParameterModifiers.Out },
-                        $"The deserialized instance of the property <see cref=\"{variable.OriginalMember.Symbol.ToDisplayString()}\"/>.",
+                        $"The deserialized instance of the property <see cref=\"{variable.OriginalMember.Symbol.ToSummaryName()}\"/>.",
                         variable));
 
                     ExpressionSyntax valueToAssign = variable.InitialValue?.Value
@@ -480,27 +482,28 @@ namespace NonSucking.Framework.Serialization
             return genMethod;
         }
 
-        private static GeneratedType GetGeneratedType(NoosonGeneratorContext context, ITypeSymbol typeSymbol)
+        private static GeneratedFile GetGeneratedType(NoosonGeneratorContext context, ITypeSymbol typeSymbol)
         {
-            bool typeExisted = context.GlobalContext.TryResolve(typeSymbol, out GeneratedType? genType);
+            bool typeExisted = context.GlobalContext.TryResolve(typeSymbol, out var genFile);
             if (!typeExisted)
             {
-                genType = new GeneratedType(typeSymbol.ContainingNamespace.Name,
-                    typeSymbol.CanBeReferencedByName ? typeSymbol.Name : typeSymbol.ToDisplayString(),
+                var genTypes = new List<GeneratedType>();
+                genFile = new(typeSymbol.ContainingNamespace.Name, typeSymbol.CanBeReferencedByName ? typeSymbol.Name : typeSymbol.ToDisplayString(), genTypes, new());
+                genTypes.Add(new GeneratedType(genFile.Name,
                     typeSymbol.ToDisplayString(),
                     typeSymbol.IsRecord,
                     typeSymbol.IsValueType,
                     CreateTypeParameters(typeSymbol),
                     Array.Empty<TypeParameterConstraintClause>(),
                     new(),
-                    new(),
+                    new() { Modifiers.Partial },
                     null,
-                    context.GlobalContext.Resolve(typeSymbol.ContainingType));
+                    context.GlobalContext.Resolve(typeSymbol.ContainingType)?.GeneratedTypes.FirstOrDefault()));
 
-                context.GlobalContext.Add(typeSymbol, genType);
+                context.GlobalContext.Add(typeSymbol, genFile);
             }
 
-            return genType;
+            return genFile;
         }
 
         private static List<(bool assign, GeneratedSerializerCode propCode)> GetPropCodes(

@@ -23,5 +23,10 @@ public partial class NestedTypes
         {
             public int Prop { get; set; }
         }
+        [Nooson]
+        public partial class NestedGenericClass2<T2> where T2 : NestedRecord
+        {
+            public int Prop { get; set; }
+        }
     }
 }
