@@ -759,7 +759,6 @@ namespace NonSucking.Framework.Serialization
 
         private static IEnumerable<(TypeParameter, TypeParameterConstraintClause)> GetTypeParametersWithConstraints(GeneratedType? generatedType, ITypeSymbol typeSymbol)
         {
-            //Stack<(GeneratedType, ITypeSymbol)>
             Stack<(TypeParameter, TypeParameterConstraintClause)> stack = new();
 
             while (typeSymbol is INamedTypeSymbol nt && nt.IsGenericType)
