@@ -46,7 +46,6 @@ internal static class UnmanagedTypeSerializer
             return false;
         }
 
-
         context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
 
         var argument = Helper.GetMemberAccessString(property);
@@ -70,7 +69,6 @@ internal static class UnmanagedTypeSerializer
         {
             return false;
         }
-
 
         context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
 

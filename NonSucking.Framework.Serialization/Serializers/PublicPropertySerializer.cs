@@ -278,7 +278,6 @@ namespace NonSucking.Framework.Serialization
                     && tds.Modifiers.Any(x => x.IsKind(SyntaxKind.PartialKeyword)))
                 {
                     var genFile = GetGeneratedType(context, typeSymbol);
-                    ;
                     GeneratedType genType = genFile.GeneratedTypes.First();
                     GeneratedMethod? genMethod = GetOrCreateGenMethod(
                         context,

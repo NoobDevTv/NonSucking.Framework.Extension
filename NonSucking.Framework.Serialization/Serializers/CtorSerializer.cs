@@ -36,9 +36,9 @@ namespace NonSucking.Framework.Serialization.Serializers
             {
                 var r = new GeneratedSerializerCode();
 
-                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, SyntaxFactory.DefaultExpression(SyntaxFactory.ParseTypeName(typeSymbol.ToDisplayString())))); //TODO: Possible null ref instance.TypeSymbol.Name
-                return r;
+                r.DeclareAndAssign(instance, instanceName, instance.TypeSymbol, SyntaxFactory.PostfixUnaryExpression(SyntaxKind.SuppressNullableWarningExpression, SyntaxFactory.DefaultExpression(SyntaxFactory.ParseTypeName(typeSymbol.ToDisplayString()))));
 
+                return r;
             }
 
             var ret = new GeneratedSerializerCode();
