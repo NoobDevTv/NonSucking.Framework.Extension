@@ -201,9 +201,6 @@ namespace NonSucking.Framework.Serialization
                 props,
                 hasBaseDeserialize);
 
-            if (context.MethodType == MethodType.DeserializeOnInstance)
-                return true;
-
             try
             {
                 Initializer initializer = context.MethodType == MethodType.DeserializeWithCtor ? Initializer.InitializerList : Initializer.Properties;
