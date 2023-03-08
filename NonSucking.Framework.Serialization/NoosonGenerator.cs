@@ -515,6 +515,9 @@ namespace NonSucking.Framework.Serialization
                 .WithTypeParameters(genType.TypeParameters)
                 .WithTypeConstraintClauses(genType.TypeParameterConstraint);
 
+            if (!string.IsNullOrWhiteSpace(genType.Summary))
+                builder = builder.WithSummary(genType.Summary);
+
             if (generateUsings)
                 builder = builder.WithUsings(usingsArray);
 
