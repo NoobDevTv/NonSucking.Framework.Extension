@@ -73,7 +73,7 @@ namespace NonSucking.Framework.Serialization
                 {
                     context.AddDiagnostic("0014",
                         "",
-                        "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apotheker.",
+                        "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apothecary.",
                         NoosonGeneratorContext.GetExistingFrom(hasBaseSerialize.Value.Symbol, property.TypeSymbol),
                         DiagnosticSeverity.Warning
                     );
@@ -145,7 +145,8 @@ namespace NonSucking.Framework.Serialization
         {
             IMethodSymbol? hasBaseDeserializeSymbol = Helper.GetFirstMemberWithBase(property.TypeSymbol.BaseType,
                    (s) => s is IMethodSymbol im
-                          && im.Name == Consts.Deserialize
+                          && im.Name == Consts.Deserialize 
+                          && context.MethodType != MethodType.DeserializeSelf
                           && im.Parameters.Skip(1).All(x => x.RefKind == RefKind.Out))
                as IMethodSymbol;
 

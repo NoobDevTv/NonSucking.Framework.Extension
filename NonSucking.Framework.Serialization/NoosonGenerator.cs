@@ -211,7 +211,14 @@ namespace NonSucking.Framework.Serialization
 
             //TODO: When caching somewhere somehow than this bad
             gc.Clean();
-            foreach (var typeSymbol in source.VisitInfos.OfType<ITypeSymbol>())
+
+            static int CountBaseTypes(ITypeSymbol symbol, int counter = 0)
+            {
+                if (symbol.BaseType is ITypeSymbol ts)
+                    return CountBaseTypes(ts, ++counter);
+                return counter;
+            }
+            foreach (var typeSymbol in source.VisitInfos.OfType<ITypeSymbol>().OrderBy(x => CountBaseTypes(x)))
             {
                 try
                 {
@@ -539,6 +546,7 @@ namespace NonSucking.Framework.Serialization
         {
             GenerateDeserializeMethod(defaultGeneratedType, typeSymbol, context);
             GenerateDeserializeMethod(defaultGeneratedType, typeSymbol, context with { MethodType = MethodType.DeserializeIntoInstance });
+            GenerateDeserializeMethod(defaultGeneratedType, typeSymbol, context with { MethodType = MethodType.DeserializeSelf });
 
             GeneratedType extensionType = CreateExtensionType(defaultGeneratedType, typeSymbol, context);
 
@@ -705,12 +713,20 @@ namespace NonSucking.Framework.Serialization
 
             GeneratedSerializerCode body;
             if (methodType == MethodType.DeserializeOnInstance)
-                body = GenerateCallToStaticDeserialize(generatedType, typeSymbol, context);
+                body = GenerateCallToStaticDeserialize(generatedType, typeSymbol, Consts.InstanceParameterName);
+            else if (methodType == MethodType.DeserializeSelf)
+                body = GenerateCallToStaticDeserialize(generatedType, typeSymbol, Consts.ThisName);
             else
                 body = CreateBlock(member, context, methodType);
 
 
-            var modifiers = context.Modifiers.Append(Modifiers.Static).ToList();
+            List<Modifiers> modifiers;
+            if (methodType == MethodType.DeserializeSelf)
+            {
+                modifiers = GetModifiersForSelfDeserialization(typeSymbol, context);
+            }
+            else
+                modifiers = context.Modifiers.Append(Modifiers.Static).ToList();
 
             if (context.MethodType == MethodType.DeserializeWithCtor && !typeSymbol.IsValueType)
             {
@@ -755,9 +771,72 @@ namespace NonSucking.Framework.Serialization
             if (methodType == MethodType.DeserializeWithCtor)
                 retType = new(typeSymbol.ToDisplayString(), "", new(), "The deserialized instance.");
 
+            string desName = Consts.Deserialize;
+            if (methodType == MethodType.DeserializeSelf)
+                desName = Consts.DeserializeSelf;
+
             generatedType.Methods.Add(new GeneratedMethod(retType,
-                Consts.Deserialize, parameter, modifiers, typeParams.ToArray(), typeConstraints.ToArray(), body,
-                $"Deserializes {(methodType == MethodType.DeserializeWithCtor ? "a" : "into")} <see cref=\"{typeSymbol.ToSummaryName()}\"/> instance."));
+            desName, parameter, modifiers, typeParams.ToArray(), typeConstraints.ToArray(), body,
+            $"Deserializes {(methodType == MethodType.DeserializeWithCtor ? "a" : "into")} <see cref=\"{typeSymbol.ToSummaryName()}\"/> instance."));
+        }
+
+        private static List<Modifiers> GetModifiersForSelfDeserialization(ITypeSymbol typeSymbol, NoosonGeneratorContext context)
+        {
+            List<Modifiers> modifiers = context.Modifiers.ToList();
+            if (typeSymbol.IsValueType)
+                return modifiers;
+
+            IMethodSymbol? baseSelfDeserialize = Helper.GetFirstMemberWithBase(typeSymbol.BaseType,
+                   (s) => s is IMethodSymbol im
+                          && im.Name == Consts.DeserializeSelf)
+                    as IMethodSymbol;
+            if (baseSelfDeserialize is not null)
+            {
+                if (!baseSelfDeserialize.IsAbstract && !baseSelfDeserialize.IsVirtual)
+                {
+
+                    context.AddDiagnostic("0014",
+                        "",
+                        "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apothecary.",
+                        NoosonGeneratorContext.GetExistingFrom(baseSelfDeserialize, typeSymbol),
+                        DiagnosticSeverity.Warning
+                    );
+                    modifiers.Add(Modifiers.New);
+                }
+                else
+                {
+                    modifiers.Add(Modifiers.Override);
+                }
+            }
+            else
+            {
+                (GeneratedMethod? generatedMethod, _) = Helper.GetFirstMemberWithBase(context.GlobalContext, typeSymbol.BaseType,
+                    (m) => m.Name == Consts.DeserializeSelf
+                           && !m.IsStatic
+                           && m.Parameters.Count == 1);
+                if (generatedMethod is not null)
+                {
+                    if (!generatedMethod.IsAbstract && !generatedMethod.IsVirtual)
+                    {
+
+                        context.AddDiagnostic("0014",
+                            "",
+                            "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apothecary.",
+                            NoosonGeneratorContext.GetExistingFrom(typeSymbol),
+                            DiagnosticSeverity.Warning
+                        );
+                        modifiers.Add(Modifiers.New);
+                    }
+                    else
+                    {
+                        modifiers.Add(Modifiers.Override);
+                    }
+                }
+                else
+                    modifiers.Add(Modifiers.Virtual);
+            }
+
+            return modifiers;
         }
 
         private static IEnumerable<(TypeParameter, TypeParameterConstraintClause)> GetTypeParametersWithConstraints(GeneratedType? generatedType, ITypeSymbol typeSymbol)
@@ -796,7 +875,7 @@ namespace NonSucking.Framework.Serialization
                         }
                         return a;
                     });
-                   
+
                     var clause = new TypeParameterConstraintClause(x.Name);
                     if (hasClass || x.HasReferenceTypeConstraint)
                         clause.Constraints.Add(new(TypeParameterConstraint.ConstraintType.Class));
@@ -874,7 +953,7 @@ namespace NonSucking.Framework.Serialization
         }
 
 
-        internal static GeneratedSerializerCode GenerateCallToStaticDeserialize(GeneratedType generatedType, ITypeSymbol typeSymbol, NoosonGeneratorContext context)
+        internal static GeneratedSerializerCode GenerateCallToStaticDeserialize(GeneratedType generatedType, ITypeSymbol typeSymbol, string name)
         {
             var body = new GeneratedSerializerCode();
             body.Statements.Add(Statement
@@ -884,7 +963,7 @@ namespace NonSucking.Framework.Serialization
                     Consts.Deserialize,
                     arguments: new[]
                         {
-                            new ValueArgument((object)$"{(typeSymbol.IsValueType ? "ref " :"")}{Consts.InstanceParameterName}"),
+                            new ValueArgument((object)$"{(typeSymbol.IsValueType ? "ref " :"")}{name}"),
                             new ValueArgument((object)readerName)
                         })
                 .AsStatement());
@@ -952,6 +1031,7 @@ namespace NonSucking.Framework.Serialization
         Serialize,
         DeserializeWithCtor,
         DeserializeIntoInstance,
+        DeserializeSelf,
         DeserializeOnInstance
     }
 }
