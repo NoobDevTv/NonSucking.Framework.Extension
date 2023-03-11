@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+
+	<ItemGroup>
+		<ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+
+	</ItemGroup>
+</Project>

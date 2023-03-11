@@ -10,6 +10,8 @@ namespace NonSucking.Framework.Serialization
 {
     public static class AttributeTemplates
     {
+        internal static readonly NoosonConfigurationAttributeTemplate NoosonConfiguration = new();
+
         internal static readonly NoosonIgnoreAttributeTemplate Ignore = new();
         internal static readonly NoosonPreferredCtorAttributeTemplate PreferredCtor = new();
         internal static readonly NoosonParameterAttributeTemplate Parameter = new();
