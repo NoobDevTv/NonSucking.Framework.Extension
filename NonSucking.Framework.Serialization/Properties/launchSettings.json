@@ -2,7 +2,7 @@
   "profiles": {
     "NonSucking.Framework.Serialization": {
       "commandName": "DebugRoslynComponent",
-      "targetProject": "..\\..\\OctoAwesome\\octoawesome\\OctoAwesome\\OctoAwesome.Basics\\OctoAwesome.Basics.csproj"
+      "targetProject": "..\\DEMO\\DEMO.csproj"
     }
   }
 }

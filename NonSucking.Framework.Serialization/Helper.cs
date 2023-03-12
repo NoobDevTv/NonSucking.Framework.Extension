@@ -391,7 +391,7 @@ namespace NonSucking.Framework.Serialization
                 index++;
             }
 
-            return true;
+            return second.Count == index;
         }
     }
 }
