@@ -3,7 +3,7 @@
 	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Serialization.props" Condition="'$(Configuration)'=='Release'" />
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
-		<LangVersion>10.0</LangVersion>
+		<LangVersion>11.0</LangVersion>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<!-- Special properties for analyzer packages. -->
 		<IncludeBuildOutput>false</IncludeBuildOutput>

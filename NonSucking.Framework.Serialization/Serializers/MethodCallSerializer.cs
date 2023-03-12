@@ -22,10 +22,14 @@ namespace NonSucking.Framework.Serialization
             var generateGeneric = context.ReaderTypeName is null;
             var type = property.TypeSymbol;
 
-            IEnumerable<IMethodSymbol> member
-                = type
-                .GetMembers(Consts.Deserialize)
-                .OfType<IMethodSymbol>();
+            var member
+                = type.GetMembersWithBase<IMethodSymbol>((m) => (m.Name == context.GlobalContext.GetConfigForSymbol(m).NameOfStaticDeserializeWithCtor))
+                        .FirstOrDefault();
+
+            var generated = Helper.GetFirstMemberWithBase(context, type,
+                (m) => m.OverridenName == context.GlobalContext.Config.NameOfStaticDeserializeWithCtor, 0);
+
+            var baseDeserialize = PublicPropertySerializer.GetBaseDeserialize(property, context, false);
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
 
@@ -45,18 +49,58 @@ namespace NonSucking.Framework.Serialization
                                            });
             }
             bool isUsable
-                = shouldBeGenerated
-                    || member.Any(m => m.IsStatic && Helper.CheckSignature(context, m, "IBinaryReader"));
+                = shouldBeGenerated || member is not null || generated.Item1 is not null || baseDeserialize is not null;
 
             if (isUsable)
             {
-                var invocationExpression
-                        = Statement
-                        .Expression
-                        .Invoke(type.ToString(), Consts.Deserialize, arguments: new[] { new ValueArgument((object)readerName) })
-                        .AsExpression();
+                if (member is not null || generated.Item1 is not null)
+                {
+                    string typeName = type.ToDisplayString();
+                    string methodName = context.GlobalContext.Config.NameOfStaticDeserializeWithCtor;
+                    if (member is not null)
+                    {
+                        methodName = member.Name;
+                        typeName = member.ContainingType.ToDisplayString();
+                    }
+                    else if (generated.Item1 is not null)
+                    {
+                        methodName = generated.Item1.OverridenName;
+                        typeName = generated.Item2!.ToDisplayString();
+                    }
+                    var invocation
+                            = Statement
+                            .Expression
+                            .Invoke(typeName, methodName, arguments: new[] { new ValueArgument((object)readerName) }).AsExpression();
 
-                statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocationExpression);
+                    statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocation);
+                }
+                else if(baseDeserialize is not null)
+                {
+
+                    List<string> declerationNames = new();
+                    List<ArgumentSyntax> arguments = Helper.GetArgumentsFromGenMethod(readerName, property, declerationNames, baseDeserialize.Value.Parameters.Select(x=>x.parameterName));
+                    Helper.ConvertToStatement(statements, baseDeserialize.Value.typeName, baseDeserialize.Value.methodName, arguments);
+
+                    try
+                    {
+                        Initializer initializer = Initializer.InitializerList;
+                        string name = property.CreateUniqueName();
+
+                        GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
+                            (INamedTypeSymbol)property.TypeSymbol,
+                            declerationNames, property, name, initializer);
+                        statements.MergeWith(ctorSyntax);
+                    }
+                    catch (NotSupportedException)
+                    {
+                        context.AddDiagnostic("0006",
+                            "",
+                            "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                            property.Symbol,
+                            DiagnosticSeverity.Error
+                        );
+                    }
+                }
             }
             else if (hasAttribute)
             {
@@ -70,12 +114,17 @@ namespace NonSucking.Framework.Serialization
         {
             var generateGeneric = context.WriterTypeName is null;
             var type = property.TypeSymbol;
-            var methodName = Consts.Serialize;
 
-            IEnumerable<IMethodSymbol> member
-                = type
-                    .GetMembers(Consts.Serialize)
-                    .OfType<IMethodSymbol>();
+            var member
+                = type.GetMembersWithBase<IMethodSymbol>((m) => (m.Name == Consts.Serialize
+                            || m.Name == context.MethodName
+                            || m.Name == context.GlobalContext.GetConfigForSymbol(m).NameOfSerialize)
+                        && Helper.CheckSignature(context, m, "IBinaryWriter")
+                        )
+                .FirstOrDefault();
+            var generated = Helper.GetFirstMemberWithBase(context, type.BaseType,
+                (m) => m.Name == Consts.Serialize
+                        || m.Name == context.MethodName);
 
             bool hasAttribute = type.TryGetAttribute(AttributeTemplates.GenSerializationAttribute, out var attrData);
 
@@ -95,24 +144,46 @@ namespace NonSucking.Framework.Serialization
                                            });
             }
 
-            var m = member.FirstOrDefault(m => Helper.CheckSignature(context, m, "IBinaryWriter"));
             bool isUsable
-                = shouldBeGenerated || m is not null;
+                = shouldBeGenerated || member is not null || generated.Item1 is not null;
 
             if (isUsable)
             {
-                if (shouldBeGenerated || m!.IsStatic)
+                if (shouldBeGenerated || (member?.IsStatic ?? false))
                 {
+                    string methodName = Consts.Serialize;
+                    if (hasAttribute)
+                    {
+                        methodName = context.GlobalContext.GetConfigForSymbol(type).NameOfSerialize;
+                    }
+                    else if (member is { } method)
+                    {
+                        methodName = method.Name;
+                    }
                     statements.Statements.Add(Statement
                         .Expression
-                        .Invoke(type.ToDisplayString(), Consts.Serialize, arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
+                        .Invoke(type.ToDisplayString(), methodName, arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
-                else if (!m!.IsStatic)
+                else if (generated.Item1 is GeneratedMethod gm)
+                {
+                    if (gm.IsStatic)
+                        statements.Statements.Add(Statement
+                            .Expression
+                                .Invoke(generated.Item2!.ToDisplayString(), gm.Name, arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
+                            .AsStatement());
+                    else
+                        statements.Statements.Add(Statement
+                            .Expression
+                                .Invoke(Helper.GetMemberAccessString(property), gm.OverridenName, arguments: new[] { ValueArgument.Parse(Helper.GetMemberAccessString(property)), new ValueArgument((object)writerName) })
+                            .AsStatement());
+
+                }
+                else if (!member!.IsStatic)
                 {
                     statements.Statements.Add(Statement
                         .Expression
-                        .Invoke(Helper.GetMemberAccessString(property), Consts.Serialize, arguments: new[] { new ValueArgument((object)writerName) })
+                        .Invoke(Helper.GetMemberAccessString(property), member.Name, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
             }

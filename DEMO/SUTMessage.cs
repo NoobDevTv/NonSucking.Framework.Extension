@@ -161,6 +161,7 @@ namespace DEMO
             && ReadOnlyDicSetable.SequenceEqual(other.ReadOnlyDicSetable)
             && Right == other.Right
             && EqualityComparer<ComplainBase>.Default.Equals(Complain, other.Complain)
+            && EqualityComparer<ComplainBase>.Default.Equals(ComplainComplain, other.ComplainComplain)
             && EqualityComparer<User>.Default.Equals(AssignedUser, other.AssignedUser)
             && Position.Equals(other.Position)
             && EqualityComparer<IUser>.Default.Equals(ContactUser, other.ContactUser)

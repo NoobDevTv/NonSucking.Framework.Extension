@@ -1,5 +1,7 @@
 using NonSucking.Framework.Serialization;
 
+using System.Composition;
+
 namespace DEMO;
 
 public partial class NestedTypes

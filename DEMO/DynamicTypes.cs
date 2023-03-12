@@ -26,7 +26,7 @@ public partial class DynamicTypes
     [Nooson]
     public partial class D : B
     {
-
+        public int Aaa { get; set; }
     }
 
     public A SomeProp { get; set; }

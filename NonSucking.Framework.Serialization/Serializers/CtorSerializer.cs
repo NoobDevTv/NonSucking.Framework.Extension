@@ -48,7 +48,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             {
                 List<IMethodSymbol> constructors = GetCtors(typeSymbol);
                 ctorArguments
-                    = GetStatementForCtorCall(constructors, localDeclarations, instanceName, out ctorArgumentNames);
+                    = GetStatementForCtorCall(constructors, localDeclarations, out ctorArgumentNames);
             }
 
 
@@ -92,7 +92,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
         private static List<string> GetLocalDeclarations(List<string> localVariableNames, string instanceName)
         {
-            var indexOf = instanceName.IndexOf(Helper.localVariableSuffix);
+            var indexOf = instanceName.IndexOf(Consts.LocalVariableSuffix);
             if (indexOf < 0)
                 return localVariableNames;
             var shouldContain = instanceName.Substring(0, indexOf);
@@ -101,11 +101,11 @@ namespace NonSucking.Framework.Serialization.Serializers
                 = localVariableNames
                 .Where(text =>
                 {
-                    int firstIndex = text.IndexOf(Helper.localVariableSuffix);
+                    int firstIndex = text.IndexOf(Consts.LocalVariableSuffix);
                     if (firstIndex == -1)
                         return false;
-                    firstIndex += +Helper.localVariableSuffix.Length;
-                    int secondIndex = text.IndexOf(Helper.localVariableSuffix, firstIndex);
+                    firstIndex += Consts.LocalVariableSuffix.Length;
+                    int secondIndex = text.IndexOf(Consts.LocalVariableSuffix, firstIndex);
                     if (secondIndex == -1)
                         return false;
                     if (text.Substring(firstIndex, secondIndex - firstIndex) != shouldContain)
@@ -127,7 +127,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             {
                 var declaration
                     = localDeclarations
-                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(declaration, property.symbol.Name));
+                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(property.symbol.Name, declaration));
 
                 if (declaration is null)
                 {
@@ -156,7 +156,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             {
                 var declaration
                     = localDeclarations
-                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(declaration, property.symbol.Name));
+                    .FirstOrDefault(declaration => Helper.MatchIdentifierWithPropName(property.symbol.Name, declaration));
 
                 if (declaration is null)
                 {
@@ -217,7 +217,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             return properties;
         }
 
-        internal static ArgumentListSyntax GetStatementForCtorCall(List<IMethodSymbol> constructors, List<string> localDeclarations, string instanceName, out List<string> ctorArguments)
+        internal static ArgumentListSyntax GetStatementForCtorCall(List<IMethodSymbol> constructors, List<string> localDeclarations, out List<string> ctorArguments)
         {
             ctorArguments = new List<string>();
             if (constructors.Count == 0)
@@ -240,7 +240,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
                     var matchedDeclaration
                         = localDeclarations
-                        .FirstOrDefault(identifier => Helper.MatchIdentifierWithPropName(identifier, parameterName));
+                        .FirstOrDefault(identifier => Helper.MatchIdentifierWithPropName(parameterName, identifier));
 
                     if (string.IsNullOrWhiteSpace(matchedDeclaration))
                     {

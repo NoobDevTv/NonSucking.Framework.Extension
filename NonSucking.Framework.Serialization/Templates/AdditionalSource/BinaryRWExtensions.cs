@@ -8,7 +8,7 @@ namespace NonSucking.Framework.Serialization
     /// <summary>
     /// Extension methods for <see cref="BinaryReader"/> and <see cref="BinaryWriter"/>.
     /// </summary>
-    public static class BinaryRWExtensions
+    internal static class BinaryRWExtensions
     {
         /// <summary>
         /// Read exact number of bytes from <see cref="BinaryReader"/>.

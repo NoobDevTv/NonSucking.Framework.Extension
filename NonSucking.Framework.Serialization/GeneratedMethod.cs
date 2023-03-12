@@ -7,11 +7,12 @@ using VaVare.Models;
 
 namespace NonSucking.Framework.Serialization
 {
-    public record GeneratedMethod(GeneratedMethodParameter? ReturnType, string Name, List<GeneratedMethodParameter> Parameters, List<Modifiers> Modifier, TypeParameter[] TypeParameters, TypeParameterConstraintClause[] TypeParameterConstraints, GeneratedSerializerCode Body, string? Summary)
+    public record GeneratedMethod(GeneratedMethodParameter? ReturnType, string Name, string OverridenName, List<GeneratedMethodParameter> Parameters, List<Modifiers> Modifier, TypeParameter[] TypeParameters, TypeParameterConstraintClause[] TypeParameterConstraints, GeneratedSerializerCode Body, string? Summary)
     {
         public bool IsVirtual => Modifier.Any(x => x == Modifiers.Virtual);
         public bool IsAbstract => Modifier.Any(x => x == Modifiers.Abstract);
         public bool IsStatic => Modifier.Any(x => x == Modifiers.Static);
+        public bool IsOverride => Modifier.Any(x => x == Modifiers.Override);
         public virtual bool Equals(GeneratedMethod? other)
         {
             if (other is null)
@@ -19,6 +20,7 @@ namespace NonSucking.Framework.Serialization
             if (ReferenceEquals(this, other))
                 return true;
             return Name == other.Name
+                && OverridenName == other.OverridenName
                 && Summary == other.Summary
                 && (Parameters.Equals(other.Parameters)
                     || Parameters.SequenceEqual(other.Parameters))
