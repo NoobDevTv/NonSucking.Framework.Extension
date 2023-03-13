@@ -76,7 +76,7 @@ namespace DEMO
             using (var ms = new FileStream("sut.save", FileMode.Open))
             {
                 using var br = new BinaryReader(ms);
-                var sutMessageDes = SUTMessage.WithCtor(br);
+                var sutMessageDes = SUTMessage.Deserialize(br);
 
                 if (sutMessageDes == sutMessage)
                 {

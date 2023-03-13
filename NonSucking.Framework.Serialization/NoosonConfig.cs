@@ -22,9 +22,13 @@ namespace NonSucking.Framework.Serialization
         string NameOfStaticSerialize = Consts.Serialize,
         string NameOfSerialize = Consts.Serialize,
 
-        bool EnableNullability = false)
+        string GeneratedNamespace  = Consts.NoosonNamespace,
+
+    bool EnableNullability = false)
     {
-        public int ShouldContainMethodsCount { get; private set; }
+        public int ShouldContainMethodsCount { get; private set; } = AddB(GenerateDeserializeExtension, GenerateStaticDeserializeWithCtor)
+                + AddB(GenerateStaticDeserializeIntoInstance, GenerateDeserializeOnInstance)
+                + AddB(GenerateStaticSerialize, true);
 
         public NoosonConfig ReloadFrom(AttributeData? data)
         {
@@ -70,6 +74,9 @@ namespace NonSucking.Framework.Serialization
 
             if (nm.FirstOrDefault(x => x.Key == nameof(NameOfSerialize)).Value.Value is string nameOfSerialize)
                 config = config with { NameOfSerialize = nameOfSerialize };
+
+            if (nm.FirstOrDefault(x => x.Key == nameof(GeneratedNamespace)).Value.Value is string generatedNamespace)
+                config = config with { GeneratedNamespace = generatedNamespace };
 
             config.ShouldContainMethodsCount = 
                 AddB(config.GenerateDeserializeExtension, config.GenerateStaticDeserializeWithCtor) 

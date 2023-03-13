@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serial
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serialization.Advanced", "NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj", "{79D243FD-197B-4358-B3E9-E2EB79C13ACF}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DEMO.Base", "DEMO.Base\DEMO.Base.csproj", "{B1A1B2D7-A54A-4FDE-BED9-48DCB702F418}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{79D243FD-197B-4358-B3E9-E2EB79C13ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79D243FD-197B-4358-B3E9-E2EB79C13ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79D243FD-197B-4358-B3E9-E2EB79C13ACF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B1A1B2D7-A54A-4FDE-BED9-48DCB702F418}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1A1B2D7-A54A-4FDE-BED9-48DCB702F418}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1A1B2D7-A54A-4FDE-BED9-48DCB702F418}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1A1B2D7-A54A-4FDE-BED9-48DCB702F418}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

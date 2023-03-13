@@ -179,10 +179,10 @@ namespace NonSucking.Framework.Serialization
 
         internal static bool MatchIdentifierWithPropName(string identifier, string parameterName)
         {
-            var index = identifier.IndexOf(Consts.LocalVariableSuffix);
+            var index = identifier.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
             if (index > -1)
                 identifier = identifier.Remove(index);
-            index = parameterName.IndexOf(Consts.LocalVariableSuffix);
+            index = parameterName.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
             if (index > -1)
                 parameterName = parameterName.Remove(index);
 

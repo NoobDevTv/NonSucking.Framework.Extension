@@ -7,7 +7,7 @@ using System.Collections.Immutable;
 namespace NonSucking.Framework.Serialization
 {
 
-    public record GlobalContext(Dictionary<string, GeneratedFile> GeneratedTypes, Compilation Compilation, NoosonConfig Config)
+    public record GlobalContext(Dictionary<string, GeneratedFile> GeneratedFiles, Compilation Compilation, NoosonConfig Config)
     {
         Dictionary<AssemblyIdentity, NoosonConfig> ThirdPartyConfigs { get; set; } = new();
         public GeneratedFile? Resolve(ITypeSymbol? symbol)
@@ -16,11 +16,11 @@ namespace NonSucking.Framework.Serialization
         }
         public bool TryResolve(ITypeSymbol symbol, out GeneratedFile generatedType)
         {
-            return GeneratedTypes.TryGetValue(symbol.OriginalDefinition.ToDisplayString(), out generatedType);
+            return GeneratedFiles.TryGetValue(symbol.OriginalDefinition.ToDisplayString(), out generatedType);
         }
         public void Add(ITypeSymbol symbol, GeneratedFile generatedType)
         {
-            GeneratedTypes.Add(symbol.OriginalDefinition.ToDisplayString(), generatedType);
+            GeneratedFiles.Add(symbol.OriginalDefinition.ToDisplayString(), generatedType);
         }
 
         public NoosonConfig GetConfigForSymbol(ISymbol symbol)
@@ -43,7 +43,7 @@ namespace NonSucking.Framework.Serialization
         public void Clean()
         {
             ThirdPartyConfigs.Clear();
-            GeneratedTypes.Clear();
+            GeneratedFiles.Clear();
         }
     }
 

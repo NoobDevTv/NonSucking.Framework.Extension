@@ -426,7 +426,7 @@ namespace NonSucking.Framework.Serialization
                     ? new[]
                     {
                                 new TypeParameterConstraintClause(Consts.GenericParameterReaderName,
-                                    new TypeParameterConstraint("NonSucking.Framework.Serialization.IBinaryReader"))
+                                    new TypeParameterConstraint($"{context.GlobalContext.Config.GeneratedNamespace}.IBinaryReader"))
                     }
                     : Array.Empty<TypeParameterConstraintClause>();
 
@@ -621,6 +621,7 @@ namespace NonSucking.Framework.Serialization
                     typeSymbol.ToDisplayString(),
                     typeSymbol.IsRecord,
                     typeSymbol.IsValueType,
+                    typeSymbol.IsAbstract,
                     CreateTypeParameters(typeSymbol),
                     Array.Empty<TypeParameterConstraintClause>(),
                     new(),
