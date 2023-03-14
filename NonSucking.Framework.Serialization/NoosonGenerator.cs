@@ -237,8 +237,9 @@ namespace NonSucking.Framework.Serialization
                    gc.Config.GeneratedNamespace + ".IBinaryReader") is not null;
             foreach (Template template in templates)
             {
-                if (template.Kind == TemplateKind.AdditionalSource &&
-                    source.Compilation.GetTypeByMetadataName(template.FullName) is null)
+                if (template.Kind == TemplateKind.AdditionalSource)
+                    //&& source.Compilation.GetTypeByMetadataName(template.FullName) is ITypeSymbol ts TODO: Needs work, detecting existing public, same namespace and more
+
                     sourceProductionContext.AddSource(template.Name, template.ToString());
             }
 
