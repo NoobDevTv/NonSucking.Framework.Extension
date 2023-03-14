@@ -7,7 +7,7 @@ namespace NonSucking.Framework.Serialization
     internal class NoosonConfigurationAttribute : System.Attribute
     {
 
-        public bool GenerateDeserializeExtension { get; set; } = true;
+        public bool GenerateDeserializeExtension { get; set; } = false;
         //public bool EnableNullability { get; set; } = true; Not supported yet, as this requires alot of work to undo 
         public bool DisableWarnings { get; set; } = false;
 
@@ -28,6 +28,8 @@ namespace NonSucking.Framework.Serialization
         public bool GenerateStaticSerialize { get; set; } = true;
         public string NameOfStaticSerialize { get; set; } = "Serialize";
         public string NameOfSerialize { get; set; } = "Serialize";
+
+        //public string GeneratedNamespace { get; set; } = "NonSucking.Framework.Serialization"; //For Future implementation, requires partial rework of attribute templates
 
     }
 }

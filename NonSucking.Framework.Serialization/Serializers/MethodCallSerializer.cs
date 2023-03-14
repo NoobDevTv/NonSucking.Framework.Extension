@@ -27,7 +27,7 @@ namespace NonSucking.Framework.Serialization
                         .FirstOrDefault();
 
             var generated = Helper.GetFirstMemberWithBase(context, type,
-                (m) => m.OverridenName == context.GlobalContext.Config.NameOfStaticDeserializeWithCtor, 0);
+                (m) => m.OverridenName == context.GlobalContext.Config.NameOfStaticDeserializeWithCtor && m.Parameters.Count == 1, 0);
 
             var baseDeserialize = PublicPropertySerializer.GetBaseDeserialize(property, context, false);
 
@@ -67,6 +67,8 @@ namespace NonSucking.Framework.Serialization
                         methodName = generated.Item1.OverridenName;
                         typeName = generated.Item2!.ToDisplayString();
                     }
+
+
                     var invocation
                             = Statement
                             .Expression
@@ -76,30 +78,7 @@ namespace NonSucking.Framework.Serialization
                 }
                 else if(baseDeserialize is not null)
                 {
-
-                    List<string> declerationNames = new();
-                    List<ArgumentSyntax> arguments = Helper.GetArgumentsFromGenMethod(readerName, property, declerationNames, baseDeserialize.Value.Parameters.Select(x=>x.parameterName));
-                    Helper.ConvertToStatement(statements, baseDeserialize.Value.typeName, baseDeserialize.Value.methodName, arguments);
-
-                    try
-                    {
-                        Initializer initializer = Initializer.InitializerList;
-                        string name = property.CreateUniqueName();
-
-                        GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
-                            (INamedTypeSymbol)property.TypeSymbol,
-                            declerationNames, property, name, initializer);
-                        statements.MergeWith(ctorSyntax);
-                    }
-                    catch (NotSupportedException)
-                    {
-                        context.AddDiagnostic("0006",
-                            "",
-                            "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
-                            property.Symbol,
-                            DiagnosticSeverity.Error
-                        );
-                    }
+                    CreateInvocationForOutDeserialize(property, context, readerName, statements, baseDeserialize.Value);
                 }
             }
             else if (hasAttribute)
@@ -108,6 +87,33 @@ namespace NonSucking.Framework.Serialization
             }
 
             return isUsable;
+        }
+
+        private static void CreateInvocationForOutDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, BaseDeserializeInformation baseDeserialize)
+        {
+            List<string> declerationNames = new();
+            List<ArgumentSyntax> arguments = Helper.GetArgumentsFromGenMethod(readerName, property, declerationNames, baseDeserialize.Parameters.Select(x => x.parameterName));
+            Helper.ConvertToStatement(statements, baseDeserialize.typeName, baseDeserialize.methodName, arguments);
+
+            try
+            {
+                Initializer initializer = Initializer.InitializerList;
+                string name = property.CreateUniqueName();
+
+                GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
+                    (INamedTypeSymbol)property.TypeSymbol,
+                    declerationNames, property, name, initializer);
+                statements.MergeWith(ctorSyntax);
+            }
+            catch (NotSupportedException)
+            {
+                context.AddDiagnostic("0006",
+                    "",
+                    "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                    property.Symbol,
+                    DiagnosticSeverity.Error
+                );
+            }
         }
 
         internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)

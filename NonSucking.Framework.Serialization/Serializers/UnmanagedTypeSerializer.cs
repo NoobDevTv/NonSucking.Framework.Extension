@@ -46,7 +46,7 @@ internal static class UnmanagedTypeSerializer
             return false;
         }
 
-        context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
+        context.GeneratedFile.Usings.Add(context.GlobalContext.Config.GeneratedNamespace);
 
         var argument = Helper.GetMemberAccessString(property);
         var writeMethod = GetGenericMethodSyntax(writerName, "WriteUnmanaged", typeSymbol);
@@ -70,7 +70,7 @@ internal static class UnmanagedTypeSerializer
             return false;
         }
 
-        context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
+        context.GeneratedFile.Usings.Add(context.GlobalContext.Config.GeneratedNamespace);
 
         var readMethod = GetGenericMethodSyntax(readerName, "ReadUnmanaged", typeSymbol);
 

@@ -294,7 +294,7 @@ internal static class KnownSimpleTypeSerializer
                     return false;
             }
 
-            context.GeneratedFile.Usings.Add("NonSucking.Framework.Serialization");
+            context.GeneratedFile.Usings.Add(context.GlobalContext.Config.GeneratedNamespace);
             statements.Statements.Add(Statement
                 .Expression
                 .Invoke(readerName, "ReadBytes", arguments: new[] { new VariableArgument(bufferName) })

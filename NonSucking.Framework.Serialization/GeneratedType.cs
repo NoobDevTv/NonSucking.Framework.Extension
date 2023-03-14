@@ -7,7 +7,7 @@ using VaVare.Models;
 
 namespace NonSucking.Framework.Serialization
 {
-    public record GeneratedType(string Name, string DisplayName, bool IsRecord, bool IsValueType, TypeParameter[] TypeParameters, TypeParameterConstraintClause[] TypeParameterConstraint, HashSet<GeneratedMethod> Methods, List<Modifiers> ClassModifiers, string? Summary = null, GeneratedType? ContainingType = null)
+    public record GeneratedType(string Name, string DisplayName, bool IsRecord, bool IsValueType, bool IsAbstract, TypeParameter[] TypeParameters, TypeParameterConstraintClause[] TypeParameterConstraint, HashSet<GeneratedMethod> Methods, List<Modifiers> ClassModifiers, string? Summary = null, GeneratedType? ContainingType = null)
     {
         public virtual bool Equals(GeneratedType? other)
         {

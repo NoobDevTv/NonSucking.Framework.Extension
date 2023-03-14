@@ -92,7 +92,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
         private static List<string> GetLocalDeclarations(List<string> localVariableNames, string instanceName)
         {
-            var indexOf = instanceName.IndexOf(Consts.LocalVariableSuffix);
+            var indexOf = instanceName.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
             if (indexOf < 0)
                 return localVariableNames;
             var shouldContain = instanceName.Substring(0, indexOf);
@@ -101,11 +101,11 @@ namespace NonSucking.Framework.Serialization.Serializers
                 = localVariableNames
                 .Where(text =>
                 {
-                    int firstIndex = text.IndexOf(Consts.LocalVariableSuffix);
+                    int firstIndex = text.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
                     if (firstIndex == -1)
                         return false;
                     firstIndex += Consts.LocalVariableSuffix.Length;
-                    int secondIndex = text.IndexOf(Consts.LocalVariableSuffix, firstIndex);
+                    int secondIndex = text.IndexOf(Consts.LocalVariableSuffix, firstIndex, StringComparison.Ordinal);
                     if (secondIndex == -1)
                         return false;
                     if (text.Substring(firstIndex, secondIndex - firstIndex) != shouldContain)
