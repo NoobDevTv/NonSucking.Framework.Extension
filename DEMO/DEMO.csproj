@@ -16,6 +16,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DEMO.Base\DEMO.Base.csproj" />
+<!--		<ProjectReference Include="..\NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj" />-->
 		<ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 		<ProjectReference Include="..\NonSucking.Framework.Extension\NonSucking.Framework.Extension.csproj" />
 

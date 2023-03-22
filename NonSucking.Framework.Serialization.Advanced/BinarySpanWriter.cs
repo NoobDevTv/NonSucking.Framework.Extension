@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using NonSucking.Framework.Serialization;
 
@@ -260,6 +261,12 @@ namespace NonSucking.Framework.Serialization
             }
 
             Write((byte)uValue);
+        }
+        public void WriteUnmanaged<T>(T value) where T : unmanaged
+        {
+            Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
+            MemoryMarshal.Write(buffer, ref value);
+            buffer.CopyTo(this.buffer.Slice(offset)); // TODO: use C# 11 features?
         }
     }
 }

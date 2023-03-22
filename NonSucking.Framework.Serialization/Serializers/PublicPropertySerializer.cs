@@ -27,7 +27,7 @@ namespace NonSucking.Framework.Serialization
             GeneratedSerializerCode statements, SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
-            BaseSerializeInformation? hasBaseSerialize = GetBaseSerialize(property, context, false);
+            BaseSerializeInformation? hasBaseSerialize = Helper.GetBaseSerialize(property, context, false);
 
             var props
                 = Helper.GetMembersWithBase(property.TypeSymbol,
@@ -41,9 +41,7 @@ namespace NonSucking.Framework.Serialization
                 .Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (IPropertySymbol? onlyWrite in writeOnlies)
             {
-                context.AddDiagnostic("0007",
-                    "",
-                    "Properties who are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                context.AddDiagnostic(Diagnostics.WriteOnlyPropertyUnsupported,
                     property.TypeSymbol,
                     DiagnosticSeverity.Error
                 );
@@ -55,13 +53,10 @@ namespace NonSucking.Framework.Serialization
             {
                 if (!hasBaseSerialize.Value.IsAbstract && !hasBaseSerialize.Value.IsVirtual && !hasBaseSerialize.Value.IsOverride)
                 {
-                    context.AddDiagnostic("0014",
-                        "",
-                        "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apothecary.",
-                        NoosonGeneratorContext.GetExistingFrom(hasBaseSerialize.Value.Symbol, property.TypeSymbol),
+                    context.AddDiagnostic(Diagnostics.BaseWillBeShadowed, Helper.GetExistingLocationFrom(hasBaseSerialize.Value.Symbol, property.TypeSymbol),
                         DiagnosticSeverity.Warning
                     );
-                    var shouldOverride = GetBaseSerialize(property, context, true);
+                    var shouldOverride = Helper.GetBaseSerialize(property, context, true);
                     if (shouldOverride is not null && hasBaseSerialize.Value.MethodName == context.MethodName)
                         context.Modifiers.Add(Modifiers.New);
                     else
@@ -69,7 +64,7 @@ namespace NonSucking.Framework.Serialization
                 }
                 else
                 {
-                    var shouldOverride = GetBaseSerialize(property, context, true);
+                    var shouldOverride = Helper.GetBaseSerialize(property, context, true);
                     if (shouldOverride is not null && hasBaseSerialize.Value.MethodName == context.MethodName)
                         context.Modifiers.Add(Modifiers.Override);
                     else
@@ -87,11 +82,12 @@ namespace NonSucking.Framework.Serialization
             {
                 if (!property.TypeSymbol.IsValueType)
                 {
-                    if (BaseHasNoosonAttribute(property.TypeSymbol.BaseType))
-                    {
-                        context.Modifiers.Add(Modifiers.Override);
-                    }
-                    else
+                    //TODO: investigate...should not have any influence on output 
+                    // if (BaseHasNoosonAttribute(property.TypeSymbol.BaseType))
+                    // {
+                    //     context.Modifiers.Add(Modifiers.Override);
+                    // }
+                    // else
                     {
                         context.Modifiers.Add(Modifiers.Virtual);
                     }
@@ -128,26 +124,6 @@ namespace NonSucking.Framework.Serialization
             return true;
         }
 
-        private static BaseSerializeInformation? GetBaseSerialize(MemberInfo property, NoosonGeneratorContext context, bool checkWithOwnSignature)
-        {
-            IMethodSymbol? hasBaseSerializeSymbol = Helper.GetFirstMemberWithBase<IMethodSymbol>(property.TypeSymbol.BaseType,
-                                (im) => ((!checkWithOwnSignature
-                                                && im.Name == context.GlobalContext.GetConfigForSymbol(im).NameOfSerialize)
-                                            || im.Name == context.GlobalContext.Config.NameOfSerialize
-                                            || im.Name == Consts.Serialize)
-                                        && Helper.CheckSignature(context, im, "IBinaryWriter", false),
-                                context)
-                            as IMethodSymbol;
-
-            (GeneratedMethod? generatedMethod, var generatedType) = Helper.GetFirstMemberWithBase(context, property.TypeSymbol.BaseType,
-                (m) => m.Name == context.GlobalContext.Config.NameOfSerialize
-                       && !m.IsStatic
-                       && m.Parameters.Count == 1);
-
-            return GetBaseSerializeInformation(hasBaseSerializeSymbol, generatedMethod, generatedType);
-
-        }
-
         internal static bool TryDeserialize(
             MemberInfo property,
             NoosonGeneratorContext context,
@@ -168,9 +144,7 @@ namespace NonSucking.Framework.Serialization
                 .Where(x => x.IsWriteOnly || x.GetMethod is null);
             foreach (IPropertySymbol? onlyWrite in writeOnlies)
             {
-                context.AddDiagnostic("0007",
-                    "",
-                    "Properties who are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                context.AddDiagnostic(Diagnostics.WriteOnlyPropertyUnsupported,
                     property.TypeSymbol,
                     DiagnosticSeverity.Error
                 );
@@ -188,7 +162,7 @@ namespace NonSucking.Framework.Serialization
                 context,
                 readerName,
                 statements,
-                new[] { new GeneratedMethodParameter(typeName, readerName, new(), $"The <see cref=\"{context.ReaderTypeName}\"/> to deserialize from.") },
+                new[] { new GeneratedMethodParameter(typeName, readerName, new(), $"The <see cref=\"{context.ReaderTypeName ?? Consts.GenericParameterReaderInterfaceFull}\"/> to deserialize from.") },
                 props,
                 hasBaseDeserialize);
 
@@ -204,9 +178,7 @@ namespace NonSucking.Framework.Serialization
             }
             catch (NotSupportedException)
             {
-                context.AddDiagnostic("0006",
-                    "",
-                    "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                context.AddDiagnostic(Diagnostics.InstanceCreationImpossible,
                     property.Symbol,
                     DiagnosticSeverity.Error
                 );
@@ -218,76 +190,49 @@ namespace NonSucking.Framework.Serialization
         internal static BaseDeserializeInformation? GetBaseDeserialize(MemberInfo property, NoosonGeneratorContext context, bool compareWithOwnSignature, List<GeneratedMethodParameter>? requiredParameter = null)
         {
             IMethodSymbol? baseDeserializeSymbol = Helper.GetFirstMemberWithBase<IMethodSymbol>(property.TypeSymbol.BaseType,
-                   (im) => im.Parameters.Length > 1
-                        && (requiredParameter == null || im.Parameters.Length == requiredParameter.Count)
-                        && ((!compareWithOwnSignature
-                        && im.Name == context.GlobalContext.GetConfigForSymbol(im).NameOfStaticDeserializeWithOutParams)
-                            || im.Name == context.GlobalContext.Config.NameOfStaticDeserializeWithOutParams)
-                        && context.MethodType != MethodType.DeserializeSelf
-                        && im.Parameters.Skip(1).All(x => x.RefKind == RefKind.Out)
-                        && (requiredParameter is null || im.Parameters.ForAll(requiredParameter, (a, b) => a.Type.ToDisplayString() == b.Type)),
+                   (im) =>
+                   {
+                       return im.Parameters.Length > 1
+                               && (requiredParameter == null ||
+                                   im.Parameters.Length == requiredParameter.Count)
+                               && ((!compareWithOwnSignature
+                                    && im.Name == context.GlobalContext
+                                        .GetConfigForSymbol(im)
+                                        .NameOfStaticDeserializeWithOutParams)
+                                   || im.Name == context.GlobalContext.Config
+                                       .NameOfStaticDeserializeWithOutParams)
+                               && context.MethodType != MethodType.DeserializeSelf
+                               && Helper.MatchReaderWriterParameter(context, im.Parameters.First())
+                               && im.Parameters.Skip(1)
+                                   .All(x => x.RefKind == RefKind.Out)
+                               && (requiredParameter is null ||
+                                   im.Parameters.ForAll(requiredParameter,
+                                       (a, b) => a.Type.ToDisplayString() ==
+                                                 b.Type));
+                   },
                    context);
 
             BaseDeserializeInformation? hasBaseDeserialize = null;
 
             (GeneratedMethod? generatedMethod, ITypeSymbol? generatedType) = Helper.GetFirstMemberWithBase(context, property.TypeSymbol.BaseType,
-                (m) => (m.OverridenName == context.MethodName || m.Name == Consts.Deserialize)
-                        && m.IsStatic
-                        && m.Parameters.Count > 1
-                            && (requiredParameter is null || m.Parameters.Count == requiredParameter.Count)
-                        && m.Parameters.First().Type == context.ReaderTypeName //TODO Generic Context has to be reconciled with
-                        && m.Parameters.Skip(1).All(x => x.IsOut)
-                        && (requiredParameter is null || m.Parameters.ForAll(requiredParameter, (a, b) => a.Type == b.Type)));
+                (m) =>
+                {
+                    return (m.OverridenName == context.MethodName ||
+                                m.Name == Consts.Deserialize)
+                            && m.IsStatic
+                            && m.Parameters.Count > 1
+                            && (requiredParameter is null ||
+                                m.Parameters.Count == requiredParameter.Count)
+                            && m.Parameters.First() is { } readerParam
+                            && Helper.MatchReaderWriterParameter(context, readerParam, m)
+                            && m.Parameters.Skip(1).All(x => x.IsOut)
+                            && (requiredParameter is null ||
+                                m.Parameters.ForAll(requiredParameter,
+                                    (a, b) => a.Type == b.Type));
+                });
 
-            hasBaseDeserialize = GetBaseDeserializeInformation(baseDeserializeSymbol, generatedMethod, generatedType);
+            hasBaseDeserialize = Helper.GetBaseDeserializeInformation(baseDeserializeSymbol, generatedMethod, generatedType);
             return hasBaseDeserialize;
-        }
-
-        private static BaseSerializeInformation? GetBaseSerializeInformation(
-            IMethodSymbol? baseDeserializeSymbol,
-            GeneratedMethod? generatedMethod,
-            ITypeSymbol? generatedType)
-        {
-            if (generatedMethod is not null && generatedType is not null && baseDeserializeSymbol is not null)
-            {
-                if (!baseDeserializeSymbol.ContainingType.HasBase(generatedType))
-                    return (generatedMethod.IsVirtual, generatedMethod.IsAbstract, generatedMethod.IsOverride, generatedMethod.OverridenName, null);
-                else
-                    return (baseDeserializeSymbol.IsVirtual, baseDeserializeSymbol.IsAbstract, baseDeserializeSymbol.IsOverride, baseDeserializeSymbol.Name, baseDeserializeSymbol);
-            }
-            else if (generatedMethod is not null && generatedType is not null)
-            {
-                return (generatedMethod.IsVirtual, generatedMethod.IsAbstract, generatedMethod.IsOverride, generatedMethod.OverridenName, null);
-            }
-            else if (baseDeserializeSymbol is not null)
-            {
-                return (baseDeserializeSymbol.IsVirtual, baseDeserializeSymbol.IsAbstract, baseDeserializeSymbol.IsOverride, baseDeserializeSymbol.Name, baseDeserializeSymbol);
-            }
-
-            return null;
-        }
-
-        private static BaseDeserializeInformation? GetBaseDeserializeInformation(
-            IMethodSymbol? baseDeserializeSymbol,
-            GeneratedMethod? generatedMethod,
-            ITypeSymbol? generatedType)
-        {
-            if (generatedMethod is not null && generatedType is not null && baseDeserializeSymbol is not null)
-            {
-                if (baseDeserializeSymbol.ContainingType.HasBase(generatedType))
-                    return (baseDeserializeSymbol.Parameters.Skip(1).Select(x => (x.Type.ToDisplayString(), x.Name)).ToList(), baseDeserializeSymbol.ContainingType.ToDisplayString(), baseDeserializeSymbol.Name, baseDeserializeSymbol);
-                else
-                    return (generatedMethod.Parameters.Skip(1).Select(x => (x.Type, x.SerializerVariable!.Value.OriginalMember.Name)).ToList(), generatedType.ToDisplayString(), generatedMethod.OverridenName, null);
-            }
-            else if (generatedMethod is not null && generatedType is not null)
-            {
-                return (generatedMethod.Parameters.Skip(1).Select(x => (x.Type, x.SerializerVariable!.Value.OriginalMember.Name)).ToList(), generatedType.ToDisplayString(), generatedMethod.OverridenName, null);
-            }
-            else if (baseDeserializeSymbol is not null)
-            {
-                return (baseDeserializeSymbol.Parameters.Skip(1).Select(x => (x.Type.ToDisplayString(), x.Name)).ToList(), baseDeserializeSymbol.ContainingType.ToDisplayString(), baseDeserializeSymbol.Name, baseDeserializeSymbol);
-            }
-            return null;
         }
 
         private static IEnumerable<(MemberInfo memberInfo, int depth)> FilterPropsForNotWriteOnly(IEnumerable<(MemberInfo memberInfo, int)> props)
@@ -410,7 +355,8 @@ namespace NonSucking.Framework.Serialization
         {
             var genMethodName = context.GlobalContext.Config.NameOfStaticDeserializeWithOutParams;
             GeneratedMethod? genMethod =
-                genType.Methods.FirstOrDefault(x => x.OverridenName == genMethodName  /*TODO: && x.Typestuff*/);
+                genType.Methods.FirstOrDefault(x => x.OverridenName == genMethodName
+                                                    && x.Parameters.Count > 0 && Helper.MatchReaderWriterParameter(context, x.Parameters.First(), x)  /*TODO: && x.Typestuff*/);
             bool genMethodExisted = genMethod is not null;
             if (genMethod is null)
             {

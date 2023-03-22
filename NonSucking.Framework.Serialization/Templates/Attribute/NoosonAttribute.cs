@@ -12,18 +12,15 @@ namespace NonSucking.Framework.Serialization
             No = 0,
             Yes = 1,
         }
-        public NoosonAttribute(GenerateDefault generateDefaultReader = GenerateDefault.Default, GenerateDefault generateDefaultWriter = GenerateDefault.Default, Type[]? directReaders = null, Type[]? directWriters = null)
-        {
-            GenerateDefaultReader = generateDefaultReader;
-            GenerateDefaultWriter = generateDefaultWriter;
 
-            DirectReaders = directReaders ?? Array.Empty<Type>();
-            DirectWriters = directWriters ?? Array.Empty<Type>();
+        public NoosonAttribute()
+        {
         }
-        public GenerateDefault GenerateDefaultReader { get; }
-        public GenerateDefault GenerateDefaultWriter { get; }
-        public Type[] DirectReaders { get; }
-        public Type[] DirectWriters { get; }
+
+        public GenerateDefault GenerateDefaultReader { get; set; } = GenerateDefault.Default;
+        public GenerateDefault GenerateDefaultWriter { get; set; } = GenerateDefault.Default;
+        public Type[] DirectReaders { get; set; } = Array.Empty<Type>();
+        public Type[] DirectWriters { get; set; } = Array.Empty<Type>();
     }
 }
 

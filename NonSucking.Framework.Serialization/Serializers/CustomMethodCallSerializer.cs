@@ -19,6 +19,33 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(0)]
     internal static class CustomMethodCallSerializer
     {
+        private static IMethodSymbol? GetMethod(NoosonGeneratorContext context, MemberInfo property, ITypeSymbol? customType, string methodName, bool isClassAttribute)
+        {
+            ITypeSymbol typeToCallOn;
+            bool matchAdditionalParam = false;
+            if (customType is not null)
+            {
+                typeToCallOn = customType;
+
+                matchAdditionalParam = context.WriterTypeName is not null;
+            }
+            else if (isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
+            {
+                typeToCallOn = property.TypeSymbol;
+            }
+            else if (property.Parent == Consts.ThisName)
+            {
+                typeToCallOn = property.Symbol.ContainingType;
+            }
+            else
+            {
+                typeToCallOn = property.Symbol.ContainingType;
+            }
+            return typeToCallOn.GetMembersWithBase<IMethodSymbol>(m => m.Name == methodName && m.Parameters.Length > 0 &&
+                                                                            Helper.MatchReaderWriterParameter(context, m.Parameters.First()))
+                .FirstOrDefault(m => (!matchAdditionalParam && m.Parameters.Length == 1) ||
+                                     (matchAdditionalParam && m.Parameters.Length == 2 && SymbolEqualityComparer.Default.Equals(property.TypeSymbol, m.Parameters[1].Type)));
+        }
         internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
         {
             var methodName = Consts.Deserialize;
@@ -33,17 +60,25 @@ namespace NonSucking.Framework.Serialization
 
             if (propAttrData!.NamedArguments.IsEmpty)
             {
-                context.AddDiagnostic("0010", "", $"You must atleast provide one argument for {AttributeTemplates.Custom.Name}. Otherwise this value won't be deserialized!", property.Symbol, DiagnosticSeverity.Error);
+                context.AddDiagnostic(Diagnostics.CustomMethodParameterNeeded, property.Symbol, DiagnosticSeverity.Error);
                 return true;
             }
 
             var customMethodName = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "DeserializeMethodName").Value.Value as string;
             if (!string.IsNullOrWhiteSpace(customMethodName))
             {
-                methodName = customMethodName;
+                methodName = customMethodName!;
             }
 
-            var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "DeserializeImplementationType").Value.Value as ISymbol;
+            var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "DeserializeImplementationType").Value.Value as ITypeSymbol;
+
+            var methodToCall = GetMethod(context, property, customType, methodName, isClassAttribute);
+            if (methodToCall is null)
+            {
+                context.AddDiagnostic(Diagnostics.IncompatibleCustomSerializer.Format(context.ReaderTypeName ?? Consts.GenericParameterReaderInterfaceFull), propAttrData.ApplicationSyntaxReference?.GetLocation() ?? property.Symbol.GetLocation() ?? Location.None, DiagnosticSeverity.Warning);
+                return false;
+            }
+            
             InvocationExpressionSyntax invocationExpression;
 
             if (customType is not null)
@@ -97,17 +132,23 @@ namespace NonSucking.Framework.Serialization
 
             if (propAttrData!.NamedArguments.IsEmpty)
             {
-                context.AddDiagnostic("0009", "", $"You must atleast provide one argument for {AttributeTemplates.Custom.Name}. Otherwise this value won't be serialized!", property.Symbol, DiagnosticSeverity.Error);
+                context.AddDiagnostic(Diagnostics.CustomMethodParameterNeeded, property.Symbol, DiagnosticSeverity.Error);
                 return true;
             }
 
             var customMethodName = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeMethodName").Value.Value as string;
             if (!string.IsNullOrWhiteSpace(customMethodName))
             {
-                methodName = customMethodName;
+                methodName = customMethodName!;
             }
             StatementSyntax statement;
-            var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeImplementationType").Value.Value as ISymbol;
+            var customType = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeImplementationType").Value.Value as ITypeSymbol;
+            var methodToCall = GetMethod(context, property, customType, methodName, isClassAttribute);
+            if (methodToCall is null)
+            {
+                context.AddDiagnostic(Diagnostics.IncompatibleCustomSerializer.Format(context.WriterTypeName ?? Consts.GenericParameterWriterInterfaceFull), propAttrData.ApplicationSyntaxReference?.GetLocation() ?? property.Symbol.GetLocation() ?? Location.None, DiagnosticSeverity.Warning);
+                return false;
+            }
             if (customType is not null)
             {
                 //Static call
