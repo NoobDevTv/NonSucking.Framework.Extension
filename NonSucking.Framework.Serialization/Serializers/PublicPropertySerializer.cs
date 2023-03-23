@@ -193,8 +193,8 @@ namespace NonSucking.Framework.Serialization
                    (im) =>
                    {
                        return im.Parameters.Length > 1
-                               && (requiredParameter == null ||
-                                   im.Parameters.Length == requiredParameter.Count)
+                               && (requiredParameter == null
+                                   || im.Parameters.Length == requiredParameter.Count)
                                && ((!compareWithOwnSignature
                                     && im.Name == context.GlobalContext
                                         .GetConfigForSymbol(im)
@@ -205,8 +205,8 @@ namespace NonSucking.Framework.Serialization
                                && Helper.MatchReaderWriterParameter(context, im.Parameters.First())
                                && im.Parameters.Skip(1)
                                    .All(x => x.RefKind == RefKind.Out)
-                               && (requiredParameter is null ||
-                                   im.Parameters.ForAll(requiredParameter,
+                               && (requiredParameter is null
+                                   || im.Parameters.ForAll(requiredParameter,
                                        (a, b) => a.Type.ToDisplayString() ==
                                                  b.Type));
                    },
@@ -221,13 +221,13 @@ namespace NonSucking.Framework.Serialization
                                 m.Name == Consts.Deserialize)
                             && m.IsStatic
                             && m.Parameters.Count > 1
-                            && (requiredParameter is null ||
-                                m.Parameters.Count == requiredParameter.Count)
+                            && (requiredParameter is null
+                                || m.Parameters.Count == requiredParameter.Count)
                             && m.Parameters.First() is { } readerParam
                             && Helper.MatchReaderWriterParameter(context, readerParam, m)
                             && m.Parameters.Skip(1).All(x => x.IsOut)
-                            && (requiredParameter is null ||
-                                m.Parameters.ForAll(requiredParameter,
+                            && (requiredParameter is null
+                                || m.Parameters.ForAll(requiredParameter,
                                     (a, b) => a.Type == b.Type));
                 });
 
@@ -356,7 +356,8 @@ namespace NonSucking.Framework.Serialization
             var genMethodName = context.GlobalContext.Config.NameOfStaticDeserializeWithOutParams;
             GeneratedMethod? genMethod =
                 genType.Methods.FirstOrDefault(x => x.OverridenName == genMethodName
-                                                    && x.Parameters.Count > 0 && Helper.MatchReaderWriterParameter(context, x.Parameters.First(), x)  /*TODO: && x.Typestuff*/);
+                                                    && x.Parameters.Count > 0 
+                                                    && Helper.MatchReaderWriterParameter(context, x.Parameters.First(), x)  /*TODO: && x.Typestuff*/);
             bool genMethodExisted = genMethod is not null;
             if (genMethod is null)
             {

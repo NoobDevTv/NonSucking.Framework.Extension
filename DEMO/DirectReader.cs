@@ -419,12 +419,13 @@ public ref struct DirectReader
     public void ReadBytes(Span<byte> buffer)
     {
         this.buffer.Slice(offset, buffer.Length).CopyTo(buffer);
+        offset += buffer.Length;
     }
             
     public T ReadUnmanaged<T>() where T : unmanaged
     {
-        Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
-        this.buffer.Slice(offset, buffer.Length).CopyTo(buffer); // TODO: use C# 11 features?
-        return MemoryMarshal.Read<T>(buffer);
+        var res = MemoryMarshal.Read<T>(buffer.Slice(offset));
+        offset += Unsafe.SizeOf<T>();
+        return res;
     }
 }

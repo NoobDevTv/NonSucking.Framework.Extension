@@ -883,8 +883,8 @@ namespace NonSucking.Framework.Serialization
                 (GeneratedMethod? generatedMethod, _) = Helper.GetFirstMemberWithBase(context,
                     typeSymbol.BaseType,
                     (m) => generateGeneric == m.IsGenericMethod && (m.Name == Consts.Deserialize || m.OverridenName == context.GlobalContext.Config.NameOfDeserializeOnInstance)
-                                                                 && !m.IsStatic
-                                                                 && m.Parameters.Count == 1);
+                                                 && !m.IsStatic
+                                                 && m.Parameters.Count == 1);
                 if (generatedMethod is not null)
                 {
                     if (!generatedMethod.IsAbstract && !generatedMethod.IsVirtual && !generatedMethod.IsOverride)

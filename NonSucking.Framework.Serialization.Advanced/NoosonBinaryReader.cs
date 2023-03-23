@@ -103,7 +103,6 @@ public class NoosonBinaryReader : BinaryReader, IBinaryReader
     }
 
     public T ReadUnmanaged<T>() where T : unmanaged
-
     {
         Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
         ReadBytes(buffer);

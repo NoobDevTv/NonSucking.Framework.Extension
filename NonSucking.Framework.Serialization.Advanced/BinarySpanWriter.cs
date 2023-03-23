@@ -264,9 +264,8 @@ namespace NonSucking.Framework.Serialization
         }
         public void WriteUnmanaged<T>(T value) where T : unmanaged
         {
-            Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
-            MemoryMarshal.Write(buffer, ref value);
-            buffer.CopyTo(this.buffer.Slice(offset)); // TODO: use C# 11 features?
+            MemoryMarshal.Write(buffer.Slice(offset), ref value);
+            offset += Unsafe.SizeOf<T>();
         }
     }
 }

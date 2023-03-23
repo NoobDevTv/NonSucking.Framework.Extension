@@ -29,7 +29,9 @@ namespace NonSucking.Framework.Serialization
 
                 matchAdditionalParam = context.WriterTypeName is not null;
             }
-            else if (isClassAttribute || (property.Symbol is not IPropertySymbol && property.Symbol is not IFieldSymbol))
+            else if (isClassAttribute 
+                     || (property.Symbol is not IPropertySymbol 
+                         && property.Symbol is not IFieldSymbol))
             {
                 typeToCallOn = property.TypeSymbol;
             }
