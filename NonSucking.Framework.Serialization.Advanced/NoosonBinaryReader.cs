@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NonSucking.Framework.Serialization;
@@ -98,5 +100,12 @@ public class NoosonBinaryReader : BinaryReader, IBinaryReader
                 throw new EndOfStreamException();
             read += res;
         } while (read < buffer.Length);
+    }
+
+    public T ReadUnmanaged<T>() where T : unmanaged
+    {
+        Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
+        ReadBytes(buffer);
+        return MemoryMarshal.Read<T>(buffer);
     }
 }

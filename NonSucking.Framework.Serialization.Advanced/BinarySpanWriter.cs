@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using NonSucking.Framework.Serialization;
 
@@ -260,6 +261,11 @@ namespace NonSucking.Framework.Serialization
             }
 
             Write((byte)uValue);
+        }
+        public void WriteUnmanaged<T>(T value) where T : unmanaged
+        {
+            MemoryMarshal.Write(buffer.Slice(offset), ref value);
+            offset += Unsafe.SizeOf<T>();
         }
     }
 }

@@ -13,6 +13,7 @@ namespace NonSucking.Framework.Serialization
         public bool IsAbstract => Modifier.Any(x => x == Modifiers.Abstract);
         public bool IsStatic => Modifier.Any(x => x == Modifiers.Static);
         public bool IsOverride => Modifier.Any(x => x == Modifiers.Override);
+        public bool IsGenericMethod => TypeParameters.Length > 0;
         public virtual bool Equals(GeneratedMethod? other)
         {
             if (other is null)

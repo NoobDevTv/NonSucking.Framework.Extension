@@ -1,9 +1,27 @@
 using System;
+using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace NonSucking.Framework.Serialization;
 
 public class NoosonBinaryWriter : System.IO.BinaryWriter, IBinaryWriter
 {
+    public NoosonBinaryWriter(Stream input)
+        : base(input)
+    {
+    }
+
+    public NoosonBinaryWriter(Stream input, Encoding encoding)
+        : base(input, encoding)
+    {
+    }
+
+    public NoosonBinaryWriter(Stream input, Encoding encoding, bool leaveOpen)
+        : base(input, encoding, leaveOpen)
+    {
+    }
 #if NETSTANDARD2_0
     public void Write(ReadOnlySpan<byte> buffer)
     {
@@ -43,4 +61,11 @@ public class NoosonBinaryWriter : System.IO.BinaryWriter, IBinaryWriter
         Write((byte)uValue);
     }
 #endif
+
+    public void WriteUnmanaged<T>(T value) where T : unmanaged
+    {
+        Span<byte> buffer = stackalloc byte[Unsafe.SizeOf<T>()];
+        MemoryMarshal.Write(buffer, ref value);
+        Write(buffer);
+    }
 }

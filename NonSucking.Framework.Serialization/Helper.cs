@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -12,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
+using VaVare.Models;
 
 namespace NonSucking.Framework.Serialization
 {
@@ -30,6 +32,115 @@ namespace NonSucking.Framework.Serialization
         internal static void Reset()
         {
             uniqueNumber = 8;
+        }
+        
+        // TODO: better generic base method first parameter matching
+
+        internal static ITypeParameterSymbol? GetTypeParameter(IParameterSymbol parameter)
+        {
+            return parameter as ITypeParameterSymbol;
+        }
+        internal static INamedTypeSymbol? GetParameterTypeConstraint(IParameterSymbol parameter)
+        {
+            return GetTypeParameter(parameter)?.ConstraintTypes.OfType<INamedTypeSymbol>().FirstOrDefault();
+        }
+
+        internal static List<TypeParameterConstraint>? GetTypeParameterConstraints(GeneratedMethodParameter parameter, GeneratedMethod method)
+        {
+            return method.TypeParameterConstraints.FirstOrDefault(y => y.Identifier == parameter.Type)?.Constraints;
+        }
+
+        internal static TypeParameterConstraint? GetParameterTypeConstraint(GeneratedMethodParameter parameter,
+            GeneratedMethod method)
+        {
+            return GetTypeParameterConstraints(parameter, method)
+                ?.FirstOrDefault(x => x.Type == TypeParameterConstraint.ConstraintType.Type);
+        }
+
+        internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, IParameterSymbol readerParam)
+        {
+            return MatchReaderWriterParameter(context, readerParam.Type.ToDisplayString(),
+                GetParameterTypeConstraint(readerParam)?.ToDisplayString());
+        }
+        internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, GeneratedMethodParameter readerParam, GeneratedMethod method)
+        {
+            return MatchReaderWriterParameter(context, readerParam.Type,
+                GetParameterTypeConstraint(readerParam, method)?.ConstraintIdentifier);
+        }
+        internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, string baseParameterTypeName, string? typeConstraint)
+        {
+            var readerOrWriter = context.ReaderTypeName ?? context.WriterTypeName;
+            var matchGenericReader = readerOrWriter is null;
+
+            if (matchGenericReader)
+                return typeConstraint is not null && 
+                       typeConstraint == Consts.GenericParameterReaderInterfaceFull;
+            return baseParameterTypeName == readerOrWriter;
+        }
+
+        internal static BaseSerializeInformation? GetBaseSerialize(MemberInfo property, NoosonGeneratorContext context, bool checkWithOwnSignature)
+        {
+            IMethodSymbol? hasBaseSerializeSymbol = Helper.GetFirstMemberWithBase<IMethodSymbol>(property.TypeSymbol.BaseType,
+                (im) => ((!checkWithOwnSignature
+                          && im.Name == context.GlobalContext.GetConfigForSymbol(im).NameOfSerialize)
+                         || im.Name == context.GlobalContext.Config.NameOfSerialize
+                         || im.Name == Consts.Serialize)
+                        && Helper.CheckSignature(context, im, Consts.GenericParameterWriterInterfaceFull, false),
+                context);
+
+            (GeneratedMethod? generatedMethod, var generatedType) = Helper.GetFirstMemberWithBase(context, property.TypeSymbol.BaseType,
+                (m) => m.Name == context.GlobalContext.Config.NameOfSerialize
+                       && !m.IsStatic
+                       && m.Parameters.Count == 1);
+
+            return GetBaseSerializeInformation(hasBaseSerializeSymbol, generatedMethod, generatedType);
+        }
+
+        internal static BaseSerializeInformation? GetBaseSerializeInformation(
+            IMethodSymbol? baseDeserializeSymbol,
+            GeneratedMethod? generatedMethod,
+            ITypeSymbol? generatedType)
+        {
+            if (generatedMethod is not null && generatedType is not null && baseDeserializeSymbol is not null)
+            {
+                if (!baseDeserializeSymbol.ContainingType.HasBase(generatedType))
+                    return (generatedMethod.IsVirtual, generatedMethod.IsAbstract, generatedMethod.IsOverride, generatedMethod.OverridenName, null);
+                else
+                    return (baseDeserializeSymbol.IsVirtual, baseDeserializeSymbol.IsAbstract, baseDeserializeSymbol.IsOverride, baseDeserializeSymbol.Name, baseDeserializeSymbol);
+            }
+            else if (generatedMethod is not null && generatedType is not null)
+            {
+                return (generatedMethod.IsVirtual, generatedMethod.IsAbstract, generatedMethod.IsOverride, generatedMethod.OverridenName, null);
+            }
+            else if (baseDeserializeSymbol is not null)
+            {
+                return (baseDeserializeSymbol.IsVirtual, baseDeserializeSymbol.IsAbstract, baseDeserializeSymbol.IsOverride, baseDeserializeSymbol.Name, baseDeserializeSymbol);
+            }
+
+            return null;
+        }
+
+        internal static BaseDeserializeInformation? GetBaseDeserializeInformation(
+            IMethodSymbol? baseDeserializeSymbol,
+            GeneratedMethod? generatedMethod,
+            ITypeSymbol? generatedType)
+        {
+            if (generatedMethod is not null && generatedType is not null && baseDeserializeSymbol is not null)
+            {
+                if (baseDeserializeSymbol.ContainingType.HasBase(generatedType))
+                    return (baseDeserializeSymbol.Parameters.Skip(1).Select(x => (x.Type.ToDisplayString(), x.Name)).ToList(), baseDeserializeSymbol.ContainingType.ToDisplayString(), baseDeserializeSymbol.Name, baseDeserializeSymbol);
+                else
+                    return (generatedMethod.Parameters.Skip(1).Select(x => (x.Type, x.SerializerVariable!.Value.OriginalMember.Name)).ToList(), generatedType.ToDisplayString(), generatedMethod.OverridenName, null);
+            }
+            else if (generatedMethod is not null && generatedType is not null)
+            {
+                return (generatedMethod.Parameters.Skip(1).Select(x => (x.Type, x.SerializerVariable!.Value.OriginalMember.Name)).ToList(), generatedType.ToDisplayString(), generatedMethod.OverridenName, null);
+            }
+            else if (baseDeserializeSymbol is not null)
+            {
+                return (baseDeserializeSymbol.Parameters.Skip(1).Select(x => (x.Type.ToDisplayString(), x.Name)).ToList(), baseDeserializeSymbol.ContainingType.ToDisplayString(), baseDeserializeSymbol.Name, baseDeserializeSymbol);
+            }
+            return null;
         }
 
         internal static (GeneratedMethod?, ITypeSymbol?) GetFirstMemberWithBase(NoosonGeneratorContext ngc,
@@ -241,11 +352,14 @@ namespace NonSucking.Framework.Serialization
             out bool generateDefaultWriter, out INamedTypeSymbol?[] directReaders,
             out INamedTypeSymbol?[] directWriters)
         {
-            bool GetGenerateDefault(int i, bool defaultValue)
+            TypedConstant? GetNamedAttribute(string name)
             {
-                if (attributeData!.ConstructorArguments.Length <= i)
-                    return defaultValue;
-                var val = (int)(attributeData.ConstructorArguments[i].Value!);
+                return attributeData.NamedArguments.Select(x => (KeyValuePair<string, TypedConstant>?)x)
+                    .FirstOrDefault(x => x?.Key == name)?.Value;
+            }
+            bool GetGenerateDefault(string name, bool defaultValue)
+            {
+                var val = (int?)GetNamedAttribute(name)?.Value ?? -1;
                 return val switch
                 {
                     -1 => defaultValue,
@@ -255,18 +369,12 @@ namespace NonSucking.Framework.Serialization
                 };
             }
 
-            generateDefaultReader = GetGenerateDefault(0, true);
-            generateDefaultWriter = GetGenerateDefault(1, true);
-            directReaders =
-                attributeData.ConstructorArguments.Length > 2 &&
-                !attributeData.ConstructorArguments[2].Values.IsDefaultOrEmpty
-                    ? attributeData.ConstructorArguments[2].Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
-                    : Array.Empty<INamedTypeSymbol>();
-            directWriters =
-                attributeData.ConstructorArguments.Length > 3 &&
-                !attributeData.ConstructorArguments[3].Values.IsDefaultOrEmpty
-                    ? attributeData.ConstructorArguments[3].Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
-                    : Array.Empty<INamedTypeSymbol>();
+            generateDefaultReader = GetGenerateDefault("GenerateDefaultReader", true);
+            generateDefaultWriter = GetGenerateDefault("GenerateDefaultWriter", true);
+            directReaders = GetNamedAttribute("DirectReaders")?.Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
+                            ?? Array.Empty<INamedTypeSymbol>();
+            directWriters = GetNamedAttribute("DirectWriters")?.Values.Select(x => (INamedTypeSymbol?)x.Value).ToArray()
+                           ?? Array.Empty<INamedTypeSymbol>();
         }
 
 
@@ -294,9 +402,9 @@ namespace NonSucking.Framework.Serialization
             if (m.Parameters.Last().Type.TypeKind != TypeKind.TypeParameter || !m.IsGenericMethod)
                 return false;
 
-            var typeParameter = m.TypeParameters.FirstOrDefault(x => x.Name == m.Parameters.Last().Type.Name);
+            var typeParameter = GetTypeParameter(m.Parameters.Last());
 
-            return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.Name == typeName);
+            return typeParameter != null && typeParameter.ConstraintTypes.Any(x => x.ToDisplayString() == typeName);
         }
 
         internal static List<ArgumentSyntax> GetArgumentsFromGenMethod(string readerName,
@@ -392,6 +500,16 @@ namespace NonSucking.Framework.Serialization
             }
 
             return second.Count == index;
+        }
+
+        internal static Location GetExistingLocationFrom(params ISymbol?[] symbols)
+        {
+            foreach (var symbol in symbols)
+            {
+                if (symbol?.GetLocation() is { } loc)
+                    return loc;
+            }
+            return Location.None;
         }
     }
 }

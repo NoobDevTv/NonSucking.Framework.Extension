@@ -233,8 +233,7 @@ namespace NonSucking.Framework.Serialization
             }
 
             bool useAdvancedTypes =
-               source.Compilation.GetTypeByMetadataName(
-                   gc.Config.GeneratedNamespace + ".IBinaryReader") is not null;
+               source.Compilation.GetTypeByMetadataName(Consts.GenericParameterReaderInterfaceFull) is not null;
             foreach (Template template in templates)
             {
                 if (template.Kind == TemplateKind.AdditionalSource)
@@ -376,27 +375,11 @@ namespace NonSucking.Framework.Serialization
                 {
                     var exceptions = string.Join(" | ", loaderException.LoaderExceptions.Select(x => x.ToString()));
 
-                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            $"{NoosonGeneratorContext.IdPrefix}0012",
-                            "",
-                            $"Missing dependencies for generation of serializer code for '{genTypeKV.Key}'. Amount: {loaderException.LoaderExceptions.Length}, {loaderException.Message}, {exceptions}",
-                            nameof(NoosonGenerator),
-                            DiagnosticSeverity.Error,
-                            true),
-                        Location.None));
+                    sourceProductionContext.AddDiagnostic(Diagnostics.MissingDependenciesForGeneration.Format(genTypeKV.Key, loaderException.LoaderExceptions.Length, loaderException.Message, exceptions), Location.None, DiagnosticSeverity.Error);
                 }
                 catch (Exception e) when (!Debugger.IsAttached)
                 {
-                    sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                        new DiagnosticDescriptor(
-                            $"{NoosonGeneratorContext.IdPrefix}0011",
-                            "",
-                            $"Error occured while trying to generate serializer code for '{genTypeKV.Key}' type: {e.Message}\n{e.StackTrace}",
-                            nameof(NoosonGenerator),
-                            DiagnosticSeverity.Error,
-                            true),
-                        Location.None));
+                    sourceProductionContext.AddDiagnostic(Diagnostics.UnhandledException.Format(genTypeKV.Key, e.Message, e.StackTrace), Location.None, DiagnosticSeverity.Error);
                 }
             }
         }
@@ -412,8 +395,9 @@ namespace NonSucking.Framework.Serialization
 
                 var generatedType = generatedFile.GeneratedTypes.First();
 
-                if (generatedType.Methods.Count >= (gc.Config.ShouldContainMethodsCount - (generatedType.IsAbstract ? 1 : 0)))
+                if (generatedType.HasGeneratedSerialization)
                     return;
+                generatedType.HasGeneratedSerialization = true;
 
                 var attributeData = typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute);
                 if (attributeData is null)
@@ -437,19 +421,19 @@ namespace NonSucking.Framework.Serialization
 
                 if (useAdvancedTypes)
                 {
-                    if (generateDefaultReader)
+                    if (generateDefaultWriter)
                         AddSerializeMethods(generatedType, typeSymbol,
                             serializeContext with { WriterTypeName = null });
-                    if (generateDefaultWriter)
+                    if (generateDefaultReader)
                         AddDeserializeMethods(generatedType, typeSymbol,
                             deserializeContext with { ReaderTypeName = null });
                 }
                 else
                 {
-                    if (generateDefaultReader)
+                    if (generateDefaultWriter)
                         AddSerializeMethods(generatedType, typeSymbol,
                             serializeContext with { WriterTypeName = binaryWriterName });
-                    if (generateDefaultWriter)
+                    if (generateDefaultReader)
                         AddDeserializeMethods(generatedType, typeSymbol,
                             deserializeContext with { ReaderTypeName = binaryReaderName });
                 }
@@ -476,34 +460,16 @@ namespace NonSucking.Framework.Serialization
             {
                 var exceptions = string.Join(" | ", loaderException.LoaderExceptions.Select(x => x.ToString()));
 
-                sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        $"{NoosonGeneratorContext.IdPrefix}0012",
-                        "",
-                        $"Missing dependencies for generation of serializer code for '{typeSymbol.ToDisplayString()}'. Amount: {loaderException.LoaderExceptions.Length}, {loaderException.Message}, {exceptions}",
-                        nameof(NoosonGenerator),
-                        DiagnosticSeverity.Error,
-                        true),
-                    Location.None));
+                sourceProductionContext.AddDiagnostic(Diagnostics.MissingDependenciesForGeneration.Format(typeSymbol.ToDisplayString(), loaderException.LoaderExceptions.Length, loaderException.Message, exceptions),
+                                                        Location.None, DiagnosticSeverity.Error);
             }
             catch (Exception e) when (!Debugger.IsAttached)
             {
-                var location = typeSymbol.DeclaringSyntaxReferences.Length > 0
-                    ? Location.Create(
-                        typeSymbol.DeclaringSyntaxReferences[0].SyntaxTree,
-                        typeSymbol.DeclaringSyntaxReferences[0].Span)
-                    : Location.None;
+                var location = typeSymbol.GetLocation() ?? Location.None;
 
-
-                sourceProductionContext.ReportDiagnostic(Diagnostic.Create(
-                    new DiagnosticDescriptor(
-                        $"{NoosonGeneratorContext.IdPrefix}0011",
-                        "",
-                        $"Error occured while trying to generate serializer code for '{typeSymbol.ToDisplayString()}' type: {e.Message}\n{e.StackTrace}",
-                        nameof(NoosonGenerator),
-                        DiagnosticSeverity.Error,
-                        true),
-                    location));
+                sourceProductionContext.AddDiagnostic(
+                        Diagnostics.UnhandledException.Format(typeSymbol.ToDisplayString(), e.Message, e.StackTrace),
+                        location, DiagnosticSeverity.Error);
             }
         }
 
@@ -640,7 +606,7 @@ namespace NonSucking.Framework.Serialization
 
             if (config.GenerateDeserializeExtension)
             {
-                if (!context.GeneratedFile.GeneratedTypes.Any(x => x.Name == defaultGeneratedType.Name + "Extension"))
+                if (context.GeneratedFile.GeneratedTypes.All(x => x.Name != defaultGeneratedType.Name + "Extension"))
                 {
                     GeneratedType extensionType = CreateExtensionType(defaultGeneratedType, typeSymbol, context);
 
@@ -692,11 +658,6 @@ namespace NonSucking.Framework.Serialization
             return extensionType;
         }
 
-        internal static bool BaseHasNoosonAttribute(INamedTypeSymbol? typeSymbol)
-            => typeSymbol is not null
-               && (typeSymbol.GetAttribute(AttributeTemplates.GenSerializationAttribute) is not null
-                   || BaseHasNoosonAttribute(typeSymbol.BaseType));
-
         internal static void GenerateSerializeMethodNonStatic(GeneratedType generatedType, ITypeSymbol typeSymbol,
             NoosonGeneratorContext context)
         {
@@ -710,10 +671,9 @@ namespace NonSucking.Framework.Serialization
 
             if (!typeSymbol.IsValueType)
             {
-                if (BaseHasNoosonAttribute(typeSymbol.BaseType))
-                {
+                var b = Helper.GetBaseSerialize(member, context, true);
+                if (b is not null)
                     generateConstraint = false;
-                }
             }
 
             GenerateSerialize(generatedType, context.Modifiers, context, member, generateGeneric, generateConstraint,
@@ -788,6 +748,7 @@ namespace NonSucking.Framework.Serialization
         {
             var methodType = context.MethodType;
             var generateGeneric = context.ReaderTypeName is null;
+            var generateGenericConstraint = generateGeneric;
             var typeName = context.ReaderTypeName ?? Consts.GenericParameterReaderName;
             var member = new MemberInfo(typeSymbol, typeSymbol, ReturnValueBaseName);
             if (methodType == MethodType.DeserializeOnInstance)
@@ -834,7 +795,7 @@ namespace NonSucking.Framework.Serialization
             List<Modifiers> modifiers;
             if (methodType == MethodType.DeserializeSelf)
             {
-                modifiers = GetModifiersForSelfDeserialization(typeSymbol, context);
+                modifiers = GetModifiersForSelfDeserialization(typeSymbol, context, generateGeneric, ref generateGenericConstraint);
             }
             else
                 modifiers = context.Modifiers.Append(Modifiers.Static).ToList();
@@ -857,7 +818,7 @@ namespace NonSucking.Framework.Serialization
                         xmlDocumentation: "The type of the instance to deserialize.")
                 }
                 : new();
-            List<TypeParameterConstraintClause> typeConstraints = generateGeneric
+            List<TypeParameterConstraintClause> typeConstraints = generateGenericConstraint
                 ? new()
                 {
                     new TypeParameterConstraintClause(Consts.GenericParameterReaderName,
@@ -891,24 +852,22 @@ namespace NonSucking.Framework.Serialization
         }
 
         private static List<Modifiers> GetModifiersForSelfDeserialization(ITypeSymbol typeSymbol,
-            NoosonGeneratorContext context)
+            NoosonGeneratorContext context, bool generateGeneric, ref bool generateGenericConstraints)
         {
             List<Modifiers> modifiers = context.Modifiers.ToList();
             if (typeSymbol.IsValueType)
                 return modifiers;
 
             IMethodSymbol? baseSelfDeserialize = Helper.GetFirstMemberWithBase<IMethodSymbol>(typeSymbol.BaseType,
-                    (im) => im.Name == context.GlobalContext.Config.NameOfDeserializeOnInstance
+                    (im) => generateGeneric == im.IsGenericMethod && im.Name == context.GlobalContext.Config.NameOfDeserializeOnInstance
                         && im.Parameters.Length == 1
                     , context);
             if (baseSelfDeserialize is not null)
             {
                 if (!baseSelfDeserialize.IsAbstract && !baseSelfDeserialize.IsVirtual && !baseSelfDeserialize.IsOverride)
                 {
-                    context.AddDiagnostic("0014",
-                        "",
-                        "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apothecary.",
-                        NoosonGeneratorContext.GetExistingFrom(baseSelfDeserialize, typeSymbol),
+                    context.AddDiagnostic(Diagnostics.BaseWillBeShadowed,
+                        Helper.GetExistingLocationFrom(baseSelfDeserialize, typeSymbol),
                         DiagnosticSeverity.Warning
                     );
                     modifiers.Add(Modifiers.New);
@@ -916,23 +875,22 @@ namespace NonSucking.Framework.Serialization
                 else
                 {
                     modifiers.Add(Modifiers.Override);
+                    generateGenericConstraints = false;
                 }
             }
             else
             {
                 (GeneratedMethod? generatedMethod, _) = Helper.GetFirstMemberWithBase(context,
                     typeSymbol.BaseType,
-                    (m) => (m.Name == Consts.Deserialize || m.OverridenName == context.GlobalContext.Config.NameOfDeserializeOnInstance)
-                           && !m.IsStatic
-                           && m.Parameters.Count == 1);
+                    (m) => generateGeneric == m.IsGenericMethod && (m.Name == Consts.Deserialize || m.OverridenName == context.GlobalContext.Config.NameOfDeserializeOnInstance)
+                                                 && !m.IsStatic
+                                                 && m.Parameters.Count == 1);
                 if (generatedMethod is not null)
                 {
                     if (!generatedMethod.IsAbstract && !generatedMethod.IsVirtual && !generatedMethod.IsOverride)
                     {
-                        context.AddDiagnostic("0014",
-                            "",
-                            "Base Serialize is neither virtual nor abstract and therefore a shadow serialize will be implemented, which might not be wanted. Please consult your doctor or apothecary.",
-                            NoosonGeneratorContext.GetExistingFrom(typeSymbol),
+                        context.AddDiagnostic(Diagnostics.BaseWillBeShadowed,
+                            Helper.GetExistingLocationFrom(typeSymbol),
                             DiagnosticSeverity.Warning
                         );
                         modifiers.Add(Modifiers.New);
@@ -940,6 +898,7 @@ namespace NonSucking.Framework.Serialization
                     else
                     {
                         modifiers.Add(Modifiers.Override);
+                        generateGenericConstraints = false;
                     }
                 }
                 else
@@ -1056,9 +1015,7 @@ namespace NonSucking.Framework.Serialization
             }
             catch (NotSupportedException)
             {
-                context.AddDiagnostic("0006",
-                    "",
-                    "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                context.AddDiagnostic(Diagnostics.InstanceCreationImpossible,
                     member.TypeSymbol,
                     DiagnosticSeverity.Error
                 );
@@ -1101,9 +1058,7 @@ namespace NonSucking.Framework.Serialization
             var st = new StackTrace();
             if (st.FrameCount > 512)
             {
-                context.AddDiagnostic("0020",
-                    "",
-                    $"The call stack has reached it's limit, check for recursion on type {property.TypeSymbol.ToDisplayString()}.",
+                context.AddDiagnostic(Diagnostics.RecursionOnTypeDetected.Format(property.TypeSymbol.ToDisplayString()),
                     property.TypeSymbol,
                     DiagnosticSeverity.Error
                 );
@@ -1129,9 +1084,7 @@ namespace NonSucking.Framework.Serialization
             {
                 if (propSymbol.IsWriteOnly)
                 {
-                    context.AddDiagnostic("0007",
-                        "",
-                        "Properties that are write only are not supported. Implemented a custom serializer method or ignore this property.",
+                    context.AddDiagnostic(Diagnostics.WriteOnlyPropertyUnsupported,
                         property.Symbol,
                         DiagnosticSeverity.Error
                     );

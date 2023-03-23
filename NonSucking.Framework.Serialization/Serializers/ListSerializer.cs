@@ -295,9 +295,7 @@ namespace NonSucking.Framework.Serialization
                 else
                 {
                     statements.Clear();
-                    context.AddDiagnostic("0015",
-                        "",
-                        $"The type {type.ToDisplayString()} is currently not supported, no deserialization code will be generated!.",
+                    context.AddDiagnostic(Diagnostics.TypeNotSupported.Format(type.ToDisplayString()),
                         property.Symbol,
                         DiagnosticSeverity.Warning
                     );

@@ -63,7 +63,7 @@
 		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" PrivateAssets="all" GeneratePathProperty="true" />
 		<None Include="$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
-		<PackageReference Include="VaVare" Version="1.0.0.9-alpha" PrivateAssets="all" GeneratePathProperty="true" />
+		<PackageReference Include="VaVare" Version="1.0.0.10-alpha" PrivateAssets="all" GeneratePathProperty="true" />
 		<None Include="$(PkgVaVare)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
 

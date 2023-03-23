@@ -23,11 +23,16 @@ namespace NonSucking.Framework.Serialization
             var type = property.TypeSymbol;
 
             var member
-                = type.GetMembersWithBase<IMethodSymbol>((m) => (m.Name == context.GlobalContext.GetConfigForSymbol(m).NameOfStaticDeserializeWithCtor))
+                = type.GetMembersWithBase<IMethodSymbol>((m) => (m.Name == context.GlobalContext.GetConfigForSymbol(m).NameOfStaticDeserializeWithCtor)
+                        && m.Parameters.Length > 0
+                        && Helper.MatchReaderWriterParameter(context, m.Parameters.First()))
                         .FirstOrDefault();
 
             var generated = Helper.GetFirstMemberWithBase(context, type,
-                (m) => m.OverridenName == context.GlobalContext.Config.NameOfStaticDeserializeWithCtor && m.Parameters.Count == 1, 0);
+                (m) => m.OverridenName == context.GlobalContext.Config.NameOfStaticDeserializeWithCtor
+                       && m.Parameters.Count == 1
+                       && Helper.MatchReaderWriterParameter(context, m.Parameters.First(), m)
+                , 0);
 
             var baseDeserialize = PublicPropertySerializer.GetBaseDeserialize(property, context, false);
 
@@ -107,9 +112,7 @@ namespace NonSucking.Framework.Serialization
             }
             catch (NotSupportedException)
             {
-                context.AddDiagnostic("0006",
-                    "",
-                    "No instance could be created with the constructors in this type. Add a custom ctor call, property mapping or a ctor with matching arguments.",
+                context.AddDiagnostic(Diagnostics.InstanceCreationImpossible,
                     property.Symbol,
                     DiagnosticSeverity.Error
                 );
@@ -125,7 +128,7 @@ namespace NonSucking.Framework.Serialization
                 = type.GetMembersWithBase<IMethodSymbol>((m) => (m.Name == Consts.Serialize
                             || m.Name == context.MethodName
                             || m.Name == context.GlobalContext.GetConfigForSymbol(m).NameOfSerialize)
-                        && Helper.CheckSignature(context, m, "IBinaryWriter")
+                        && Helper.CheckSignature(context, m, Consts.GenericParameterWriterInterfaceFull)
                         )
                 .FirstOrDefault();
             var generated = Helper.GetFirstMemberWithBase(context, type.BaseType,
@@ -206,10 +209,9 @@ namespace NonSucking.Framework.Serialization
             var addendum = context.ReaderTypeName is null && context.WriterTypeName is null
                 ? "Generic serializer needs to be activated!"
                 : $"A direct writer for type {typeName} needs to be added";
-            context.AddDiagnostic("0013", "", $"{property.Name} can not be serialized because of serializer incompatibility.", property.Symbol, DiagnosticSeverity.Error);
-            var syntaxReference = attrData!.ApplicationSyntaxReference;
-            if (syntaxReference is not null)
-                context.AddDiagnostic("0013", "", addendum, Location.Create(syntaxReference.SyntaxTree, syntaxReference.Span), DiagnosticSeverity.Error);
+            context.AddDiagnostic(Diagnostics.SerializerIncompatibility.Format(property.Name), property.Symbol, DiagnosticSeverity.Error);
+            if (attrData.ApplicationSyntaxReference is { } syntaxReference)
+                context.AddDiagnostic(Diagnostics.General.Format(addendum), syntaxReference.GetLocation(), DiagnosticSeverity.Error);
         }
 
     }

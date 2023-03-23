@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Xml;
 
 namespace NonSucking.Framework.Serialization
 {
@@ -204,7 +202,19 @@ namespace NonSucking.Framework.Serialization
         [CLSCompliant(false)]
         ulong ReadUInt64();
 
+        /// <summary>
+        /// Read till the given span is full.
+        /// </summary>
+        /// <param name="buffer">The span of bytes to read into.</param>
         void ReadBytes(Span<byte> buffer);
+
+        /// <summary>
+        /// Read an unmanaged type <typeparamref name="T"/> from the <see cref="IBinaryReader"/>.
+        /// </summary>
+        /// <typeparam name="T">The unmanaged type to read.</typeparam>
+        /// <returns>The read unmanaged type.</returns>
+        public T ReadUnmanaged<T>()
+            where T : unmanaged;
     }
     public interface IBinaryWriter
     {
@@ -360,6 +370,14 @@ namespace NonSucking.Framework.Serialization
         /// <summary>Writes out a number 7 bits at a time.</summary>
         /// <param name="value">The value to write.</param>
         void Write7BitEncodedInt64(long value);
+
+        /// <summary>
+        /// Writes an unmanaged type <typeparamref name="T"/> to the <see cref="IBinaryWriter"/>.
+        /// </summary>
+        /// <param name="value">The unmanaged value to write.</param>
+        /// <typeparam name="T">The unmanaged type to write.</typeparam>
+        public void WriteUnmanaged<T>(T value)
+            where T : unmanaged;
     }
 
     public interface IBinaryStream : IBinaryReader, IBinaryWriter

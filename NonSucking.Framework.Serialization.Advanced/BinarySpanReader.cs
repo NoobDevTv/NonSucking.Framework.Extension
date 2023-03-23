@@ -2,6 +2,8 @@ using System;
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NonSucking.Framework.Serialization
@@ -419,6 +421,14 @@ namespace NonSucking.Framework.Serialization
         public void ReadBytes(Span<byte> buffer)
         {
             this.buffer.Slice(offset, buffer.Length).CopyTo(buffer);
+            offset += buffer.Length;
+        }
+        
+        public T ReadUnmanaged<T>() where T : unmanaged
+        {
+            var res = MemoryMarshal.Read<T>(buffer.Slice(offset));
+            offset += Unsafe.SizeOf<T>();
+            return res;
         }
     }
 }
