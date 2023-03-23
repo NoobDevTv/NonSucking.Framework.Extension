@@ -999,7 +999,7 @@ namespace NonSucking.Framework.Serialization
 
                 if (methodType == MethodType.DeserializeWithCtor)
                 {
-                    var retVar = propCode.VariableDeclarations.Single().UniqueName;
+                    var retVar = propCode.VariableDeclarations.Last().UniqueName;
                     var returnStatement
                         = SyntaxFactory.ReturnStatement(SyntaxFactory.IdentifierName(retVar));
 

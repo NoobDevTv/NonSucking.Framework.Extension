@@ -155,13 +155,13 @@ namespace NonSucking.Framework.Serialization
             if (count > -1)
             {
                 PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, SerializerMask.All, count);
-                listName = preIterationStatements.VariableDeclarations.Single().UniqueName;
+                listName = preIterationStatements.VariableDeclarations.First().UniqueName; // TODO: Single
             }
             else
             {
                 listName = property.CreateUniqueName();
             }
-            var listVariableName = itemDeserialization.VariableDeclarations.Single().UniqueName;
+            var listVariableName = itemDeserialization.VariableDeclarations.Last().UniqueName;
 
 
             if (type is IArrayTypeSymbol arrayType)

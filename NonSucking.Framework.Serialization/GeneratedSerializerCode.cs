@@ -17,6 +17,8 @@ public class GeneratedSerializerCode
     {
         foreach (var declaration in VariableDeclarations)
         {
+            if (declaration.IsAlreadyDeclared)
+                continue;
             if (declaration.UniqueName != Consts.InstanceParameterName)
                 yield return declaration.ToDeclarationAndAssignment();
         }
@@ -36,9 +38,9 @@ public class GeneratedSerializerCode
                                     ? declaration.TypeSyntax
                                     : variableTransformer(declaration);
 
-            other.VariableDeclarations.Add(new SerializerVariable(newDeclaration, declaration.OriginalMember, declaration.UniqueName, null));
+            other.VariableDeclarations.Add(new SerializerVariable(newDeclaration, declaration.OriginalMember, declaration.UniqueName, null, declaration.IsAlreadyDeclared));
         }
-        return VariableDeclarations.Where(x => x.InitialValue is not null).Select(x => x.GetAssignment()).Concat(Statements);
+        return VariableDeclarations.Where(x => x.InitialValue is not null && !x.IsAlreadyDeclared).Select(x => x.GetAssignment()).Concat(Statements);
     }
 
     public void MergeWith(GeneratedSerializerCode other, bool emitVariables = true)
@@ -52,7 +54,7 @@ public class GeneratedSerializerCode
         {
             foreach (var d in other.VariableDeclarations)
             {
-                VariableDeclarations.Add(new SerializerVariable(d.TypeSyntax, d.OriginalMember, d.UniqueName, null));
+                VariableDeclarations.Add(new SerializerVariable(d.TypeSyntax, d.OriginalMember, d.UniqueName, null, d.IsAlreadyDeclared));
                 Statements.Add(d.GetAssignment());
             }
         }
@@ -60,7 +62,7 @@ public class GeneratedSerializerCode
         {
             foreach (var d in other.VariableDeclarations)
             {
-                Statements.Add(d.ToDeclarationAndAssignment());
+                Statements.Add(d.IsAlreadyDeclared ? d.GetAssignment() : d.ToDeclarationAndAssignment());
             }
         }
         foreach (var s in other.Statements)
@@ -79,13 +81,14 @@ public class GeneratedSerializerCode
         {
             VariableDeclarations.Add(
                 new SerializerVariable(typeSyntax, member, memberName,
-                        valueExpression is null ? null : SyntaxFactory.EqualsValueClause(valueExpression)
+                        valueExpression is null ? null : SyntaxFactory.EqualsValueClause(valueExpression),
+                        false
                     )
                 );
         }
         else
         {
-            VariableDeclarations.Add(new SerializerVariable(typeSyntax, member, memberName, null));
+            VariableDeclarations.Add(new SerializerVariable(typeSyntax, member, memberName, null, false));
             if (valueExpression is not null)
                 Statements.Add(Statement.Declaration.Assign(memberName, valueExpression));
         }
@@ -99,15 +102,16 @@ public class GeneratedSerializerCode
 
     public readonly struct SerializerVariable
     {
-        public SerializerVariable(TypeSyntax typeSyntax, MemberInfo originalMember, string uniqueName, EqualsValueClauseSyntax? initialValue)
+        public SerializerVariable(TypeSyntax typeSyntax, MemberInfo originalMember, string uniqueName, EqualsValueClauseSyntax? initialValue, bool isAlreadyDeclared)
         {
             Declaration = Statement.Declaration.Declare(uniqueName, typeSyntax);
             TypeSyntax = typeSyntax;
             OriginalMember = originalMember;
             UniqueName = uniqueName;
             InitialValue = initialValue;
+            IsAlreadyDeclared = isAlreadyDeclared;
         }
-
+        public bool IsAlreadyDeclared { get; }
         public LocalDeclarationStatementSyntax Declaration { get; }
         public TypeSyntax TypeSyntax { get; }
         public MemberInfo OriginalMember { get; }

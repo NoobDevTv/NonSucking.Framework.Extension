@@ -155,9 +155,9 @@ namespace NonSucking.Framework.Serialization
             string typeName = context.ReaderTypeName ?? Consts.GenericParameterReaderName;
 
             if (context.MethodType == MethodType.DeserializeIntoInstance)
-                statements.VariableDeclarations.Add(new GeneratedSerializerCode.SerializerVariable(SyntaxFactory.ParseTypeName(property.TypeSymbol.ToDisplayString()), property, Consts.InstanceParameterName, null));
+                statements.VariableDeclarations.Add(new GeneratedSerializerCode.SerializerVariable(SyntaxFactory.ParseTypeName(property.TypeSymbol.ToDisplayString()), property, Consts.InstanceParameterName, null, false));
 
-            var declerationNames = GenerateStatements(
+            GenerateStatements(
                 property,
                 context,
                 readerName,
@@ -173,7 +173,9 @@ namespace NonSucking.Framework.Serialization
 
                 GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
                     (INamedTypeSymbol)property.TypeSymbol,
-                    declerationNames, property, name, initializer);
+                    statements, property, name, initializer);
+                if (context.MethodType == MethodType.DeserializeWithCtor)
+                    statements.VariableDeclarations.Clear();
                 statements.MergeWith(ctorSyntax);
             }
             catch (NotSupportedException)
@@ -264,7 +266,7 @@ namespace NonSucking.Framework.Serialization
             }).ThenByDescending(x => x.depth);
         }
 
-        internal static List<string> GenerateStatements(
+        internal static void GenerateStatements(
             MemberInfo property,
             NoosonGeneratorContext context,
             string readerName,
@@ -274,7 +276,6 @@ namespace NonSucking.Framework.Serialization
             BaseDeserializeInformation? hasBaseDeserialize)
         {
             Dictionary<string, string> scopeVariableNameMappings = new();
-            List<string> declerationNames = new();
             List<MemberInfo> filteredProps = new();
             var propCodes = GetPropCodes(property, context, props, hasBaseDeserialize, scopeVariableNameMappings, filteredProps);
 
@@ -304,7 +305,7 @@ namespace NonSucking.Framework.Serialization
                         List<ArgumentSyntax> arguments = Helper.GetArgumentsFromGenMethod(
                             readerName,
                             property,
-                            declerationNames,
+                            statements,
                             genMethod.Parameters.Skip(1).Select(x => x.SerializerVariable!.Value.OriginalMember.Name));
                         Helper.ConvertToStatement(statements, typeSymbol.ToDisplayString(), genMethod.OverridenName, arguments);
 
@@ -323,18 +324,27 @@ namespace NonSucking.Framework.Serialization
                 foreach ((bool _, GeneratedSerializerCode propCode) in propCodes)
                 {
                     statements.Statements.AddRange(propCode.ToMergedBlock());
+                    foreach (var v in propCode.VariableDeclarations)
+                    {
+                        statements.VariableDeclarations.Add(new GeneratedSerializerCode.SerializerVariable(
+                            v.TypeSyntax,
+                            v.OriginalMember,
+                            v.UniqueName,
+                            v.InitialValue,
+                            true
+                            ));
+                    }
                 }
-                declerationNames.AddRange(statements.Statements
-                    .OfType<LocalDeclarationStatementSyntax>()
-                    .Concat(
-                        statements.Statements
-                            .OfType<BlockSyntax>()
-                            .SelectMany(x => x.Statements.OfType<LocalDeclarationStatementSyntax>())
-                    )
-                    .SelectMany(declaration => declaration.Declaration.Variables)
-                    .Select(variable => variable.Identifier.Text));
+                // declarationNames.AddRange(statements.Statements
+                //     .OfType<LocalDeclarationStatementSyntax>()
+                //     .Concat(
+                //         statements.Statements
+                //             .OfType<BlockSyntax>()
+                //             .SelectMany(x => x.Statements.OfType<LocalDeclarationStatementSyntax>())
+                //     )
+                //     .SelectMany(declaration => declaration.Declaration.Variables)
+                //     .Select(variable => variable.Identifier.Text));
             }
-            return declerationNames;
         }
 
 
@@ -452,7 +462,7 @@ namespace NonSucking.Framework.Serialization
 
                 foreach ((bool assign, GeneratedSerializerCode propCode) in propCodes)
                 {
-                    GeneratedSerializerCode.SerializerVariable variable = propCode.VariableDeclarations[0];
+                    GeneratedSerializerCode.SerializerVariable variable = propCode.VariableDeclarations.Last();
                     string outVarName = variable.UniqueName; // + "_out";
                     if (!SymbolEqualityComparer.Default.Equals(typeSymbol, variable.OriginalMember.TypeSymbol))
                         ApplyApplicableModifier(GetCommonAccessibility(variable.OriginalMember.TypeSymbol));
@@ -545,7 +555,7 @@ namespace NonSucking.Framework.Serialization
                         var uniqueName = redirects[index] = scopeVariableNameMappings[mi.Symbol.Name] = mi.CreateUniqueName();
 
                         var code = new GeneratedSerializerCode();
-                        code.VariableDeclarations.Add(new GeneratedSerializerCode.SerializerVariable(SyntaxFactory.ParseTypeName(localTypeName), mi, uniqueName, null));
+                        code.VariableDeclarations.Add(new GeneratedSerializerCode.SerializerVariable(SyntaxFactory.ParseTypeName(localTypeName), mi, uniqueName, null, false));
                         propCodes.Insert(insertedIndex++, (false, code));
                         if (filterPropIndex == index)
                             notMatched--;

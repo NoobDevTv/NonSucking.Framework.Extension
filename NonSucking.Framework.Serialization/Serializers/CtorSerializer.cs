@@ -28,10 +28,10 @@ namespace NonSucking.Framework.Serialization.Serializers
 
     internal static class CtorSerializer
     {
-        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, List<string> localVariableNames, MemberInfo instance, string instanceName, Initializer initializer)
+        
+        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, GeneratedSerializerCode localVariableNames, MemberInfo instance, string instanceName, Initializer initializer)
         {
-            List<string> localDeclarations = GetLocalDeclarations(localVariableNames, instanceName);
-
+            var localDeclarations = GetLocalDeclarations(localVariableNames, instanceName);
             if (instanceName != Consts.InstanceParameterName && (typeSymbol.TypeKind == TypeKind.Interface || typeSymbol.IsAbstract))
             {
                 var r = new GeneratedSerializerCode();
@@ -90,36 +90,43 @@ namespace NonSucking.Framework.Serialization.Serializers
             return constructors;
         }
 
-        private static List<string> GetLocalDeclarations(List<string> localVariableNames, string instanceName)
+        private static List<string> GetLocalDeclarations(GeneratedSerializerCode localVariableNames, string instanceName)
         {
             var indexOf = instanceName.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
+            IEnumerable<GeneratedSerializerCode.SerializerVariable> vars;
             if (indexOf < 0)
-                return localVariableNames;
-            var shouldContain = instanceName.Substring(0, indexOf);
+            {
+                vars = localVariableNames.VariableDeclarations;
+            }
+            else
+            {
+                var shouldContain = instanceName.Substring(0, indexOf);
 
-            var localDeclarations
-                = localVariableNames
-                .Where(text =>
-                {
-                    int firstIndex = text.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
-                    if (firstIndex == -1)
-                        return false;
-                    firstIndex += Consts.LocalVariableSuffix.Length;
-                    int secondIndex = text.IndexOf(Consts.LocalVariableSuffix, firstIndex, StringComparison.Ordinal);
-                    if (secondIndex == -1)
-                        return false;
-                    if (text.Substring(firstIndex, secondIndex - firstIndex) != shouldContain)
-                        return false;
-                    return true;
-                })
-                .ToList();
-            return localDeclarations;
+                vars
+                    = localVariableNames.VariableDeclarations
+                        .Where(v =>
+                               {
+                                   var text = v.UniqueName;
+                                   int firstIndex = text.IndexOf(Consts.LocalVariableSuffix, StringComparison.Ordinal);
+                                   if (firstIndex == -1)
+                                       return false;
+                                   firstIndex += Consts.LocalVariableSuffix.Length;
+                                   int secondIndex = text.IndexOf(Consts.LocalVariableSuffix, firstIndex, StringComparison.Ordinal);
+                                   if (secondIndex == -1)
+                                       return false;
+                                   if (text.Substring(firstIndex, secondIndex - firstIndex) != shouldContain)
+                                       return false;
+                                   return true;
+                               })
+                        .ToList();
+            }
+            return vars.Select(x => x.UniqueName).ToList();
         }
 
         internal static List<ExpressionStatementSyntax> AssignMissingSetterProperties(string instanceName, ITypeSymbol typeSymbol, List<string> localDeclarations,
             List<string> ctorArguments)
         {
-            List<(ITypeSymbol type, ISymbol symbol)> properties = GetPropertiesForDecleration(typeSymbol, ref localDeclarations, ctorArguments, false);
+            List<(ITypeSymbol type, ISymbol symbol)> properties = GetPropertiesForDeclaration(typeSymbol, ref localDeclarations, ctorArguments, false);
 
             var assignments = new List<ExpressionStatementSyntax>();
 
@@ -148,7 +155,7 @@ namespace NonSucking.Framework.Serialization.Serializers
         internal static InitializerExpressionSyntax? AssignMissingInitializerProperties(ITypeSymbol typeSymbol, List<string> localDeclarations,
             List<string> ctorArguments)
         {
-            List<(ITypeSymbol type, ISymbol symbol)> properties = GetPropertiesForDecleration(typeSymbol, ref localDeclarations, ctorArguments);
+            List<(ITypeSymbol type, ISymbol symbol)> properties = GetPropertiesForDeclaration(typeSymbol, ref localDeclarations, ctorArguments);
 
             var initializers = new List<ExpressionSyntax>();
 
@@ -181,7 +188,7 @@ namespace NonSucking.Framework.Serialization.Serializers
             return objectInitializer;
         }
 
-        private static List<(ITypeSymbol type, ISymbol symbol)> GetPropertiesForDecleration(ITypeSymbol typeSymbol, ref List<string> localDeclarations, List<string> ctorArguments, bool includeInitOnly = true)
+        private static List<(ITypeSymbol type, ISymbol symbol)> GetPropertiesForDeclaration(ITypeSymbol typeSymbol, ref List<string> localDeclarations, List<string> ctorArguments, bool includeInitOnly = true)
         {
             localDeclarations
                 = localDeclarations
@@ -279,7 +286,8 @@ namespace NonSucking.Framework.Serialization.Serializers
                  currentType,
                 instance, instanceName,
                 SyntaxFactory.EqualsValueClause(SyntaxFactory.ObjectCreationExpression(currentType)
-                    .WithArgumentList(arguments).WithInitializer(initializer).WithNewKeyword(SyntaxFactory.Token(SyntaxKind.NewKeyword)))
+                    .WithArgumentList(arguments).WithInitializer(initializer).WithNewKeyword(SyntaxFactory.Token(SyntaxKind.NewKeyword))),
+                 false
                 );
         }
 

@@ -96,8 +96,7 @@ namespace NonSucking.Framework.Serialization
 
         private static void CreateInvocationForOutDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, BaseDeserializeInformation baseDeserialize)
         {
-            List<string> declerationNames = new();
-            List<ArgumentSyntax> arguments = Helper.GetArgumentsFromGenMethod(readerName, property, declerationNames, baseDeserialize.Parameters.Select(x => x.parameterName));
+            List<ArgumentSyntax> arguments = Helper.GetArgumentsFromGenMethod(readerName, property, statements, baseDeserialize.Parameters.Select(x => x.parameterName));
             Helper.ConvertToStatement(statements, baseDeserialize.typeName, baseDeserialize.methodName, arguments);
 
             try
@@ -107,7 +106,7 @@ namespace NonSucking.Framework.Serialization
 
                 GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
                     (INamedTypeSymbol)property.TypeSymbol,
-                    declerationNames, property, name, initializer);
+                    statements, property, name, initializer);
                 statements.MergeWith(ctorSyntax);
             }
             catch (NotSupportedException)

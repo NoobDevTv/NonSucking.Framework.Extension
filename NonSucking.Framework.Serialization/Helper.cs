@@ -409,7 +409,7 @@ namespace NonSucking.Framework.Serialization
 
         internal static List<ArgumentSyntax> GetArgumentsFromGenMethod(string readerName,
             MemberInfo memberInfo,
-            List<string> declerationNames,
+            GeneratedSerializerCode statements,
             IEnumerable<string> parameters)
         {
             List<ArgumentSyntax> arguments = new()
@@ -418,7 +418,14 @@ namespace NonSucking.Framework.Serialization
             foreach (var item in parameters)
             {
                 string variableName = Helper.GetRandomNameFor(item, memberInfo.Name);
-                declerationNames.Add(variableName);
+                statements.VariableDeclarations.Add(
+                    new GeneratedSerializerCode.SerializerVariable(
+                            SyntaxFactory.ParseTypeName("void"),
+                            new MemberInfo(null!, null!, item, memberInfo.Name),
+                            variableName,
+                            null,
+                            true
+                        ));
                 arguments.Add(SyntaxFactory
                     .Argument(null,
                         SyntaxFactory.Token(SyntaxKind.OutKeyword),
