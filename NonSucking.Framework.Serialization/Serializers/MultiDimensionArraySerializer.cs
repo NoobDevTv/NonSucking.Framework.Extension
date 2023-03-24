@@ -18,12 +18,12 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(59)]
     internal static class MultiDimensionArraySerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             if (type is not IArrayTypeSymbol arrayTypeSymbol || arrayTypeSymbol.Rank < 2)
-                return false;
+                return Continuation.NotExecuted;
             var rank = arrayTypeSymbol.Rank;
 
             var genericArgument = arrayTypeSymbol.ElementType;
@@ -89,7 +89,7 @@ namespace NonSucking.Framework.Serialization
             statements.MergeWith(preIterationStatements);
             statements.Statements.Add(currentForLoop!);
 
-            return true;
+            return Continuation.Done;
         }
 
         private static ForEachStatementSyntax ForEach(string variableName, string varialeType, string enumerableName,
@@ -101,12 +101,12 @@ namespace NonSucking.Framework.Serialization
                 body);
 
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             if (type is not IArrayTypeSymbol arrayTypeSymbol || arrayTypeSymbol.Rank < 2)
-                return false;
+                return Continuation.NotExecuted;
             var rank = arrayTypeSymbol.Rank;
 
             var genericArgument = arrayTypeSymbol.ElementType;
@@ -182,7 +182,7 @@ namespace NonSucking.Framework.Serialization
             statements.MergeWith(preIterationStatements);
             statements.Statements.Add(currentForLoop!);
 
-            return true;
+            return Continuation.Done;
         }
     }
 }

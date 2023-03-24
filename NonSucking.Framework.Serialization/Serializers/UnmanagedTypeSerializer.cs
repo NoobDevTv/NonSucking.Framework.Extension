@@ -37,13 +37,13 @@ internal static class UnmanagedTypeSerializer
         return SyntaxFactory.InvocationExpression(access);
     }
 
-    internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-        GeneratedSerializerCode statements, SerializerMask includedSerializers)
+    internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+        GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
     {
         var typeSymbol = property.TypeSymbol;
         if (IsManagedType(typeSymbol))
         {
-            return false;
+            return Continuation.NotExecuted;
         }
 
         context.GeneratedFile.Usings.Add(context.GlobalContext.Config.GeneratedNamespace);
@@ -58,16 +58,16 @@ internal static class UnmanagedTypeSerializer
                             SyntaxFactory.IdentifierName(argument)))));
 
         statements.Statements.Add(SyntaxFactory.ExpressionStatement(invocation));
-        return true;
+        return Continuation.Done;
     }
 
-    internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-        GeneratedSerializerCode statements, SerializerMask includedSerializers)
+    internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
     {
         var typeSymbol = property.TypeSymbol;
         if (IsManagedType(typeSymbol))
         {
-            return false;
+            return Continuation.NotExecuted;
         }
 
         context.GeneratedFile.Usings.Add(context.GlobalContext.Config.GeneratedNamespace);
@@ -75,6 +75,6 @@ internal static class UnmanagedTypeSerializer
         var readMethod = GetGenericMethodSyntax(readerName, "ReadUnmanaged", typeSymbol);
 
         statements.DeclareAndAssign(property, property.CreateUniqueName(), typeSymbol, readMethod);
-        return true;
+        return Continuation.Done;
     }
 }

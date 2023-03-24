@@ -14,14 +14,14 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(30)]
     internal static class EnumSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
 
             var type = property.TypeSymbol;
 
             if (type.TypeKind != TypeKind.Enum)
             {
-                return false;
+                return Continuation.NotExecuted;
             }
 
             if (type is INamedTypeSymbol typeSymbol)
@@ -32,22 +32,22 @@ namespace NonSucking.Framework.Serialization
                         .Expression
                         .Invoke(writerName, "Write", arguments: new[] { argument })
                         .AsStatement());
-                return true;
+                return Continuation.Done;
             }
             else
             {
-                return false;
+                return Continuation.NotExecuted;
             }
 
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             
             var type = property.TypeSymbol;
 
             if (type.TypeKind != TypeKind.Enum)
             {
-                return false;
+                return Continuation.NotExecuted;
             }
 
             if (type is INamedTypeSymbol typeSymbol)
@@ -70,11 +70,11 @@ namespace NonSucking.Framework.Serialization
 
                 statements.DeclareAndAssign(property, property.CreateUniqueName(), typeSymbol, invocationExpression);
 
-                return true;
+                return Continuation.Done;
             }
             else
             {
-                return false;
+                return Continuation.NotExecuted;
             }
 
         }

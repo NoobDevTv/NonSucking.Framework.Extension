@@ -7,8 +7,14 @@ public class StaticSerializerAttribute : Attribute
 {
     public StaticSerializerAttribute(int priority = 0)
     {
-        Priority = priority;
+        SerializerPriority = priority;
+    }
+    public StaticSerializerAttribute(int serializerPriority, int deserializerPriority)
+    {
+        SerializerPriority = serializerPriority;
+        DeserializerPriority = deserializerPriority;
     }
 
-    public int Priority { get; }
+    public int SerializerPriority { get; }
+    public int DeserializerPriority { get; }
 }

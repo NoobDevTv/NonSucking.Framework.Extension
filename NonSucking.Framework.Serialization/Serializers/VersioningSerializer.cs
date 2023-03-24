@@ -17,12 +17,12 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(-1)]
     internal static class VersioningSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers,
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Versioning, out var versioningAttribute))
-                return false;
+                return Continuation.NotExecuted;
 
             var methodName = versioningAttribute!.ConstructorArguments[0].Value!.ToString();
 
@@ -47,14 +47,14 @@ namespace NonSucking.Framework.Serialization
             statements.Statements.Add(SyntaxFactory.IfStatement(isNotNullCheck, b));
 
 
-            return true;
+            return Continuation.Done;
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers,
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             if (!property.Symbol.TryGetAttribute(AttributeTemplates.Versioning, out var versioningAttribute))
-                return false;
+                return Continuation.NotExecuted;
 
 
             var elementType = property.TypeSymbol;
@@ -95,7 +95,7 @@ namespace NonSucking.Framework.Serialization
             }
 
             statements.Statements.Add(ifClause);
-            return true;
+            return Continuation.Done;
         }
     }
 }

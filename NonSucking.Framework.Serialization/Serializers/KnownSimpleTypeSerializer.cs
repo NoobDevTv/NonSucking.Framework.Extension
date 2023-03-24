@@ -146,8 +146,8 @@ internal static class KnownSimpleTypeSerializer
             SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[] { SyntaxFactory.Argument(size) })));
     }
 
-    internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-        GeneratedSerializerCode statements, SerializerMask includedSerializers)
+    internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+        GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
     {
         var type = property.TypeSymbol;
         if (type is INamedTypeSymbol typeSymbol)
@@ -202,7 +202,7 @@ internal static class KnownSimpleTypeSerializer
                     bufferName = AddBuffer(statements, propNameEscaped, SyntaxFactory.IdentifierName(sizeName), CreateSerializeFallback(propName, "ToByteArray"));
                     break;
                 default:
-                    return false;
+                    return Continuation.NotExecuted;
             }
 
             var tryWriteParams = new List<SyntaxNodeOrToken>
@@ -235,14 +235,14 @@ internal static class KnownSimpleTypeSerializer
                 .Expression
                 .Invoke(writerName, "Write", arguments: new[] { new VariableArgument(bufferName) })
                 .AsStatement());
-            return true;
+            return Continuation.Done;
         }
 
-        return false;
+        return Continuation.NotExecuted;
     }
 
-    internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-        GeneratedSerializerCode statements, SerializerMask includedSerializers)
+    internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
     {
         var type = property.TypeSymbol;
 
@@ -291,7 +291,7 @@ internal static class KnownSimpleTypeSerializer
                     bufferName = AddBuffer(statements, propName, bigIntSizeId, CreateDeserializeFallback(readerName, bigIntSizeId));
                     break;
                 default:
-                    return false;
+                    return Continuation.NotExecuted;
             }
 
             context.GeneratedFile.Usings.Add(context.GlobalContext.Config.GeneratedNamespace);
@@ -307,8 +307,8 @@ internal static class KnownSimpleTypeSerializer
                     null);
 
             statements.DeclareAndAssign(property, propName, typeSymbol, createObj);
-            return true;
+            return Continuation.Done;
         }
-        return false;
+        return Continuation.NotExecuted;
     }
 }
