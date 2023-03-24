@@ -17,7 +17,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(-1)]
     internal static class VersioningSerializer
     {
-        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
@@ -26,8 +26,9 @@ namespace NonSucking.Framework.Serialization
 
             var methodName = versioningAttribute!.ConstructorArguments[0].Value!.ToString();
 
+            var variableMappings = property.ScopeVariableNameMappings;
             var parameters = versioningAttribute.ConstructorArguments[2].Values
-                .Select(x => property.ScopeVariableNameMappings![x.Value!.ToString()]);
+                .Select(x => variableMappings![x.Value!.ToString()]);
 
             var isNotNullCheck = Statement.Expression.Invoke(
                     methodName,
@@ -49,7 +50,7 @@ namespace NonSucking.Framework.Serialization
 
             return Continuation.Done;
         }
-        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        internal static Continuation TryDeserialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
@@ -69,8 +70,9 @@ namespace NonSucking.Framework.Serialization
 
             var methodName = versioningAttribute!.ConstructorArguments[0].Value!.ToString();
 
+            var variableMappings = property.ScopeVariableNameMappings;
             var parameters = versioningAttribute.ConstructorArguments[2].Values
-                .Select(x => property.ScopeVariableNameMappings![x.Value!.ToString()]);
+                .Select(x => variableMappings![x.Value!.ToString()]);
 
             var isNotNullCheck = Statement.Expression.Invoke(
                     methodName,

@@ -13,6 +13,19 @@ public class GeneratedSerializerCode
     public List<SerializerVariable> VariableDeclarations { get; } = new();
     public List<StatementSyntax> Statements { get; } = new();
 
+    public void Merge()
+    {
+        for (var index = VariableDeclarations.Count - 1; index >= 0; index--)
+        {
+            var declaration = VariableDeclarations[index];
+            if (declaration.UniqueName != Consts.InstanceParameterName)
+            {
+                Statements.Insert(0, declaration.ToDeclarationAndAssignment());
+                VariableDeclarations.RemoveAt(index);
+            }
+        }
+    }
+
     public IEnumerable<StatementSyntax> ToMergedBlock()
     {
         foreach (var declaration in VariableDeclarations)

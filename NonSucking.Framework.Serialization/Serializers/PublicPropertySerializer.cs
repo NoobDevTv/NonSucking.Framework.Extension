@@ -23,18 +23,19 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(100)]
     internal static class PublicPropertySerializer
     {
-        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             BaseSerializeInformation? hasBaseSerialize = Helper.GetBaseSerialize(property, context, false);
 
+            var propertyFullName = property.FullName;
             var props
                 = Helper.GetMembersWithBase(property.TypeSymbol,
                         hasBaseSerialize is null ? baseTypesLevelProperties : 0)
                     .Where(property =>
                         property.memberInfo.Name != "this[]")
-                    .Select(x => (memberInfo: x.memberInfo with { Parent = property.FullName }, x.depth));
+                    .Select(x => (memberInfo: x.memberInfo with { Parent = propertyFullName }, x.depth));
 
             IEnumerable<IPropertySymbol> writeOnlies = props
                 .Select(x => x.memberInfo.Symbol).OfType<IPropertySymbol>()
@@ -125,7 +126,7 @@ namespace NonSucking.Framework.Serialization
         }
 
         internal static Continuation TryDeserialize(
-            MemberInfo property,
+            ref MemberInfo property,
             NoosonGeneratorContext context,
             string readerName,
             GeneratedSerializerCode statements,
@@ -134,11 +135,12 @@ namespace NonSucking.Framework.Serialization
         {
             var hasBaseDeserialize = GetBaseDeserialize(property, context, false);
 
+            var propertyName = property.Name;
             IEnumerable<(MemberInfo memberInfo, int depth)> props
                 = Helper.GetMembersWithBase(property.TypeSymbol, baseTypesLevelProperties)
                     .Where(property =>
                         property.memberInfo.Name != "this[]")
-                    .Select(x => (memberInfo: x.memberInfo with { Parent = property.Name }, x.depth));
+                    .Select(x => (memberInfo: x.memberInfo with { Parent = propertyName }, x.depth));
 
             IEnumerable<IPropertySymbol> writeOnlies = props.Select(x => x.memberInfo.Symbol).OfType<IPropertySymbol>()
                 .Where(x => x.IsWriteOnly || x.GetMethod is null);

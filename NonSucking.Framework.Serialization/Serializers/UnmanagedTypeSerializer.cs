@@ -37,7 +37,7 @@ internal static class UnmanagedTypeSerializer
         return SyntaxFactory.InvocationExpression(access);
     }
 
-    internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+    internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string writerName,
         GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
     {
         var typeSymbol = property.TypeSymbol;
@@ -61,7 +61,7 @@ internal static class UnmanagedTypeSerializer
         return Continuation.Done;
     }
 
-    internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+    internal static Continuation TryDeserialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
         GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
     {
         var typeSymbol = property.TypeSymbol;

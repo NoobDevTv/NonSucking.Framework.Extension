@@ -5,9 +5,9 @@ namespace NonSucking.Framework.Serialization.Serializers;
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 public class StaticSerializerAttribute : Attribute
 {
-    public StaticSerializerAttribute(int priority = 0)
+    public StaticSerializerAttribute(int priority)
+        : this(priority, priority)
     {
-        SerializerPriority = priority;
     }
     public StaticSerializerAttribute(int serializerPriority, int deserializerPriority)
     {
@@ -17,4 +17,5 @@ public class StaticSerializerAttribute : Attribute
 
     public int SerializerPriority { get; }
     public int DeserializerPriority { get; }
+    public bool IsFinalizer { get; set; }
 }

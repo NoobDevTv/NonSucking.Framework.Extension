@@ -21,6 +21,7 @@ namespace NonSucking.Framework.Serialization
         internal static readonly NoosonIncludeAttributeTemplate Include = new();
         internal static readonly NoosonDynamicTypeAttributeTemplate DynamicType = new();
         internal static readonly NoosonVersioningAttributeTemplate Versioning = new();
+        internal static readonly NoosonConversionAttributeTemplate NoosonConversion = new();
 
 
         public static AttributeData? GetAttribute(this ISymbol symbol, Template attributeTemplate)

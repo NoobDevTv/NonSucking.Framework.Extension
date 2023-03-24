@@ -62,7 +62,7 @@ namespace NonSucking.Framework.Serialization
             return ThrowException($"{nameof(System)}.{nameof(InvalidCastException)}");
         }
 
-        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+        internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string writerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
@@ -80,7 +80,7 @@ namespace NonSucking.Framework.Serialization
             {
                 typeId++;
 
-                if (!IsAssignable(property.TypeSymbol, t))
+                if (!Helper.IsAssignable(property.TypeSymbol, t))
                     continue;
 
                 var newMemberInfo =
@@ -130,18 +130,7 @@ namespace NonSucking.Framework.Serialization
             return resolvedType;
         }
 
-        private static bool IsAssignable(ITypeSymbol typeToAssignTo, ITypeSymbol? typeToAssignFrom)
-        {
-            if (typeToAssignFrom is null)
-                return false;
-            if (SymbolEqualityComparer.Default.Equals(typeToAssignFrom, typeToAssignTo))
-                return true;
-            var assignable = IsAssignable(typeToAssignTo, typeToAssignFrom.BaseType);
-            if (!assignable && typeToAssignTo.IsAbstract)
-                return typeToAssignFrom.Interfaces.Any(x => IsAssignable(typeToAssignTo, x));
-            return assignable;
-        }
-        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        internal static Continuation TryDeserialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
@@ -168,7 +157,7 @@ namespace NonSucking.Framework.Serialization
             {
                 typeId++;
 
-                if (!IsAssignable(property.TypeSymbol, t))
+                if (!Helper.IsAssignable(property.TypeSymbol, t))
                 {
                     switchSections.Add(SyntaxFactory.SwitchSection(
                         SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
