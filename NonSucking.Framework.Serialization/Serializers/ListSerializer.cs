@@ -20,8 +20,8 @@ namespace NonSucking.Framework.Serialization
     internal static class ListSerializer
     {
         const string readonlyName = "System.Collections.Generic.IReadOnlyCollection<";
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             var collectionInterface
@@ -32,7 +32,7 @@ namespace NonSucking.Framework.Serialization
 
             if (collectionInterface is null)
             {
-                return false;
+                return Continuation.NotExecuted;
             }
 
             ITypeSymbol genericArgument = GetGenericTypeOf(collectionInterface, out _);
@@ -63,7 +63,10 @@ namespace NonSucking.Framework.Serialization
 
             var count = GetIterationAmount(property.TypeSymbol);
             if (count > -1)
-                PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, SerializerMask.All, count);
+            {
+                var includedNestedSerializers = SerializerMask.All;
+                PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, ref includedNestedSerializers, count);
+            }
 
             preIterationStatements.Statements.Add(
                 Statement
@@ -92,7 +95,7 @@ namespace NonSucking.Framework.Serialization
             statements.Statements.Add(iterationStatement);
 
 
-            return true;
+            return Continuation.Done;
         }
 
         private static ForEachStatementSyntax ForEach(string variableName, string varialeType, string enumerableName,
@@ -104,8 +107,8 @@ namespace NonSucking.Framework.Serialization
                 body);
 
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             // Ctor Analyze for Count 
@@ -120,7 +123,7 @@ namespace NonSucking.Framework.Serialization
             if (collectionInterface is null)
             {
                 if (property.TypeSymbol is not IArrayTypeSymbol arrType2)
-                    return false;
+                    return Continuation.NotExecuted;
 
                 arrType = arrType2;
             }
@@ -154,7 +157,8 @@ namespace NonSucking.Framework.Serialization
             string listName;
             if (count > -1)
             {
-                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, SerializerMask.All, count);
+                var includedNestedSerializers = SerializerMask.All;
+                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, ref includedNestedSerializers, count);
                 listName = preIterationStatements.VariableDeclarations.Single().UniqueName;
             }
             else
@@ -299,7 +303,7 @@ namespace NonSucking.Framework.Serialization
                         property.Symbol,
                         DiagnosticSeverity.Warning
                     );
-                    return false;
+                    return Continuation.NotExecuted;
                 }
 
 
@@ -348,7 +352,7 @@ namespace NonSucking.Framework.Serialization
                 statements.Statements.Add(iterationStatement);
             }
 
-            return true;
+            return Continuation.Done;
         }
 
         private static bool HasOrIsInterfaces(ITypeSymbol symbol, params string[] interfaces)

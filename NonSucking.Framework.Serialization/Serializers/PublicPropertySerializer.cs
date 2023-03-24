@@ -23,8 +23,8 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(100)]
     internal static class PublicPropertySerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers,
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             BaseSerializeInformation? hasBaseSerialize = Helper.GetBaseSerialize(property, context, false);
@@ -121,15 +121,15 @@ namespace NonSucking.Framework.Serialization
                 statements.Statements.AddRange(propCode.ToMergedBlock());
             }
 
-            return true;
+            return Continuation.Done;
         }
 
-        internal static bool TryDeserialize(
+        internal static Continuation TryDeserialize(
             MemberInfo property,
             NoosonGeneratorContext context,
             string readerName,
             GeneratedSerializerCode statements,
-            SerializerMask includedSerializers,
+            ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             var hasBaseDeserialize = GetBaseDeserialize(property, context, false);
@@ -184,7 +184,7 @@ namespace NonSucking.Framework.Serialization
                 );
             }
 
-            return true;
+            return Continuation.Done;
         }
 
         internal static BaseDeserializeInformation? GetBaseDeserialize(MemberInfo property, NoosonGeneratorContext context, bool compareWithOwnSignature, List<GeneratedMethodParameter>? requiredParameter = null)

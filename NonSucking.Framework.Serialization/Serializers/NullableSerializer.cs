@@ -54,10 +54,10 @@ namespace NonSucking.Framework.Serialization
                                => p.memberInfo.Name == "Value");
             return p.memberInfo with { Parent = property.FullName };
         }
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             if (!CanBeNull(property))
-                return false;
+                return Continuation.NotExecuted;
 
             var nullLiteral = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
             var propertyAccessorName = Helper.GetMemberAccessString(property);
@@ -80,14 +80,14 @@ namespace NonSucking.Framework.Serialization
             statements.Statements.Add(SyntaxFactory.IfStatement(isNotNullCheck, b));
             
 
-            return true;
+            return Continuation.Done;
 
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers, int baseTypesLevelProperties = int.MaxValue)
         {
             if (!CanBeNull(property))
-                return false;
+                return Continuation.NotExecuted;
 
             var elementType = GetNonNullableTypeSymbol(property.TypeSymbol);
             var m = new MemberInfo(elementType, property.Symbol, property.Name + (elementType.IsValueType ? "ValueType" : ""), property.Parent);
@@ -123,7 +123,7 @@ namespace NonSucking.Framework.Serialization
                 .Invoke(readerName, "ReadBoolean");
 
             statements.Statements.Add(SyntaxFactory.IfStatement(nullableRead.AsExpression(), b));
-            return true;
+            return Continuation.Done;
         }
     }
 }

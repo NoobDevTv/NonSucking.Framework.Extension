@@ -62,12 +62,12 @@ namespace NonSucking.Framework.Serialization
             return ThrowException($"{nameof(System)}.{nameof(InvalidCastException)}");
         }
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers,
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             if (!IsValidType(property, out var possibleTypes))
-                return false;
+                return Continuation.NotExecuted;
 
 
             int typeId = 0;
@@ -115,7 +115,7 @@ namespace NonSucking.Framework.Serialization
                 .WithSections(new SyntaxList<SwitchSectionSyntax>(
                     switchSections
                 )));
-            return true;
+            return Continuation.Done;
         }
 
         private static INamedTypeSymbol ResolveType(Compilation compilation, Type? type)
@@ -141,12 +141,12 @@ namespace NonSucking.Framework.Serialization
                 return typeToAssignFrom.Interfaces.Any(x => IsAssignable(typeToAssignTo, x));
             return assignable;
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
-            GeneratedSerializerCode statements, SerializerMask includedSerializers,
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+            GeneratedSerializerCode statements, ref SerializerMask includedSerializers,
             int baseTypesLevelProperties = int.MaxValue)
         {
             if (!IsValidType(property, out var possibleTypes))
-                return false;
+                return Continuation.NotExecuted;
 
             var invocationExpression
                 = Statement
@@ -203,7 +203,7 @@ namespace NonSucking.Framework.Serialization
                 .WithSections(new SyntaxList<SwitchSectionSyntax>(
                     switchSections
                 )));
-            return true;
+            return Continuation.Done;
         }
     }
 }

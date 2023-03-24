@@ -50,7 +50,7 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
         return null;
     }
 
-    private static int GetPriority(Compilation compilation, ClassDeclarationSyntax classDeclaration)
+    private static (int, int) GetPriority(Compilation compilation, ClassDeclarationSyntax classDeclaration)
     {
         foreach (var attrList in classDeclaration.AttributeLists)
         {
@@ -66,9 +66,26 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
 
                 if (fullName == StaticSerializerAttribute)
                 {
-                    return attr.ArgumentList is { Arguments.Count: > 0 }
-                        ? int.Parse(attr.ArgumentList.Arguments[0].ToFullString())
-                        : 0;
+                    static int GetPriorityFromArgument(AttributeArgumentSyntax argument)
+                    {
+                        return int.Parse(argument.ToFullString());
+                    }
+
+                    var list = attr.ArgumentList?.Arguments;
+                    if (list is { Count: 1 })
+                    {
+                        var serializerPriority = GetPriorityFromArgument(list.Value[0]);
+                        return (serializerPriority, serializerPriority);
+                    }
+
+                    if (list is { Count: 1 })
+                    {
+                        var serializerPriority = GetPriorityFromArgument(list.Value[0]);
+                        var deserializerPriority = GetPriorityFromArgument(list.Value[1]);
+                        return (serializerPriority, deserializerPriority);
+                    }
+
+                    return (0, 0);
                 }
             }
         }
@@ -92,19 +109,19 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
             location));
     }
 
-    private static void WriteSerialize(IndentedTextWriter tw, (ClassDeclarationSyntax, int)[] serializers)
+    private static void WriteSerialize(IndentedTextWriter tw, (ClassDeclarationSyntax, (int, int))[] serializers)
     {
         tw.WriteLine("internal static GeneratedSerializerCode CreateStatementForSerializing(MemberInfo property, NoosonGeneratorContext context, string writerName, SerializerMask includedSerializers = SerializerMask.All, SerializerMask excludedSerializers = SerializerMask.None)");
         WriteBody(tw, serializers, true);
     }
 
-    private static void WriteDeserialize(IndentedTextWriter tw, (ClassDeclarationSyntax, int)[] serializers)
+    private static void WriteDeserialize(IndentedTextWriter tw, (ClassDeclarationSyntax, (int, int))[] serializers)
     {
         tw.WriteLine("internal static GeneratedSerializerCode CreateStatementForDeserializing(MemberInfo property, NoosonGeneratorContext context, string readerName, SerializerMask includedSerializers = SerializerMask.All, SerializerMask excludedSerializers = SerializerMask.None)");
         WriteBody(tw, serializers, false);
     }
 
-    private static void WriteBody(IndentedTextWriter tw, (ClassDeclarationSyntax declaration, int priority)[] serializers, bool isSerializer)
+    private static void WriteBody(IndentedTextWriter tw, (ClassDeclarationSyntax declaration, (int, int) priority)[] serializers, bool isSerializer)
     {
         string methodName = "TryDeserialize";
         string paramName = "readerName";
@@ -118,29 +135,66 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
         tw.WriteLine("GeneratedSerializerCode statements = new();");
         
         tw.WriteLine("includedSerializers &= ~excludedSerializers;");
+        
+        tw.WriteLine("bool cont = false;");
 
-        tw.Write("_ = ");
+        tw.WriteLine("do");
+        tw.WriteLine("{");
         tw.Indent++;
-
+        tw.WriteLine("cont = false;");
         for (int i = 0; i < serializers.Length; i++)
         {
-            if (i > 0)
-            {
-                tw.Write("|| ");
-            }
             var s = serializers[i];
             var serializerName = s.declaration.Identifier.ToFullString().Trim();
-            tw.WriteLine($"(includedSerializers & SerializerMask.{serializerName}) != SerializerMask.None && {serializerName}.{methodName}(property, context, {paramName}, statements, includedSerializers)");
+            tw.WriteLine($"if ((includedSerializers & SerializerMask.{serializerName}) != SerializerMask.None)");
+            tw.WriteLine("{");
+            tw.Indent++;
+            tw.WriteLine($"switch ({serializerName}.{methodName}(property, context, {paramName}, statements, ref includedSerializers))");
+            tw.WriteLine("{");
+            tw.Indent++;
+            tw.WriteLine("case Continuation.Done:");
+            tw.Indent++;
+            tw.WriteLine("return statements;");
+            tw.Indent--;
+            tw.WriteLine("case Continuation.NotExecuted:");
+            tw.WriteLine("case Continuation.Continue:");
+            tw.Indent++;
+            tw.WriteLine("break;");
+            tw.Indent--;
+            tw.WriteLine("case Continuation.Retry:");
+            tw.Indent++;
+            tw.WriteLine("cont = true;");
+            tw.WriteLine("continue;");
+            tw.Indent--;
+            tw.Indent--;
+            
+            tw.WriteLine("}");
+            tw.Indent--;
+            tw.WriteLine("}");
         }
-        tw.WriteLine(";");
-
         tw.Indent--;
+        tw.WriteLine("} while(cont);");
+
         tw.WriteLine("return statements;");
         tw.Indent--;
         tw.WriteLine("}");
     }
 
-    private static void WriteEnum(IndentedTextWriter tw, (ClassDeclarationSyntax declaration, int priority)[] serializers)
+    private static void WriteSerializerContinuationEnum(IndentedTextWriter tw)
+    {
+        tw.WriteLine("public enum Continuation");
+        tw.WriteLine("{");
+        tw.Indent++;
+        
+        tw.WriteLine("NotExecuted,");
+        tw.WriteLine("Continue,");
+        tw.WriteLine("Retry,");
+        tw.WriteLine("Done");
+        
+        tw.Indent--;
+        tw.WriteLine("}");
+    }
+    private static void WriteSerializerMaskEnum(IndentedTextWriter tw, (ClassDeclarationSyntax declaration, (int, int) priority)[] serializers)
     {
         tw.WriteLine("[Flags]");
         tw.WriteLine("public enum SerializerMask : ulong");
@@ -177,7 +231,8 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
 
         var sortedSerializers
             = classDeclarations.OfType<ClassDeclarationSyntax>()
-                .Select(x => (x, GetPriority(compilation, x!))).OrderBy(x => x.Item2).ToArray();
+                .Select(x => (x, GetPriority(compilation, x!))).OrderBy(x => x.Item2.Item1).ToArray();
+        var sortedDeserializers = sortedSerializers.OrderBy(x => x.Item2.Item1).ToArray();
 
         var sb = new StringBuilder();
         using var sw = new StringWriter(sb);
@@ -188,14 +243,15 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
         tw.WriteLine("namespace NonSucking.Framework.Serialization;");
         tw.WriteLine("");
 
-        WriteEnum(tw, sortedSerializers);
+        WriteSerializerContinuationEnum(tw);
+        WriteSerializerMaskEnum(tw, sortedSerializers);
         
         tw.WriteLine("public partial class NoosonGenerator");
         tw.WriteLine("{");
 
         tw.Indent++;
         WriteSerialize(tw, sortedSerializers);
-        WriteDeserialize(tw, sortedSerializers);
+        WriteDeserialize(tw, sortedDeserializers);
 
         tw.Indent--;
         

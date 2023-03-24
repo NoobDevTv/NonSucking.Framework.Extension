@@ -15,7 +15,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(20)]
     internal static class SpecialTypeSerializer
     {
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
             switch ((int)type.SpecialType)
@@ -27,14 +27,14 @@ namespace NonSucking.Framework.Serialization
                         .Expression
                         .Invoke(writerName, "Write", arguments: new[] { argument })
                         .AsStatement());
-                    return true;
+                    return Continuation.Done;
                 default:
 
-                    return false;
+                    return Continuation.NotExecuted;
             }
         }
 
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
 
@@ -50,10 +50,10 @@ namespace NonSucking.Framework.Serialization
                     
                     statements.DeclareAndAssign(property, property.CreateUniqueName(), type, invocationExpression);
 
-                    return true;
+                    return Continuation.Done;
                 default:
 
-                    return false;
+                    return Continuation.NotExecuted;
             }
         }
     }

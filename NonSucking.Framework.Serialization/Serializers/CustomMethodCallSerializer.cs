@@ -48,7 +48,7 @@ namespace NonSucking.Framework.Serialization
                 .FirstOrDefault(m => (!matchAdditionalParam && m.Parameters.Length == 1) ||
                                      (matchAdditionalParam && m.Parameters.Length == 2 && SymbolEqualityComparer.Default.Equals(property.TypeSymbol, m.Parameters[1].Type)));
         }
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var methodName = Consts.Deserialize;
             bool isClassAttribute = false;
@@ -56,14 +56,14 @@ namespace NonSucking.Framework.Serialization
             {
                 isClassAttribute = property.TypeSymbol.TryGetAttribute(AttributeTemplates.Custom, out propAttrData);
                 if (!isClassAttribute)
-                    return false;
+                    return Continuation.NotExecuted;
 
             }
 
             if (propAttrData!.NamedArguments.IsEmpty)
             {
                 context.AddDiagnostic(Diagnostics.CustomMethodParameterNeeded, property.Symbol, DiagnosticSeverity.Error);
-                return true;
+                return Continuation.Done;
             }
 
             var customMethodName = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "DeserializeMethodName").Value.Value as string;
@@ -78,7 +78,7 @@ namespace NonSucking.Framework.Serialization
             if (methodToCall is null)
             {
                 context.AddDiagnostic(Diagnostics.IncompatibleCustomSerializer.Format(context.ReaderTypeName ?? Consts.GenericParameterReaderInterfaceFull), propAttrData.ApplicationSyntaxReference?.GetLocation() ?? property.Symbol.GetLocation() ?? Location.None, DiagnosticSeverity.Warning);
-                return false;
+                return Continuation.NotExecuted;
             }
             
             InvocationExpressionSyntax invocationExpression;
@@ -113,13 +113,13 @@ namespace NonSucking.Framework.Serialization
 
             statements.DeclareAndAssign(property, property.CreateUniqueName(), property.TypeSymbol, invocationExpression);
 
-            return true;
+            return Continuation.Done;
         }
 
 
 
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             
             var methodName = Consts.Serialize;
@@ -128,14 +128,14 @@ namespace NonSucking.Framework.Serialization
             {
                 isClassAttribute = property.TypeSymbol.TryGetAttribute(AttributeTemplates.Custom, out propAttrData);
                 if (!isClassAttribute)
-                    return false;
+                    return Continuation.NotExecuted;
 
             }
 
             if (propAttrData!.NamedArguments.IsEmpty)
             {
                 context.AddDiagnostic(Diagnostics.CustomMethodParameterNeeded, property.Symbol, DiagnosticSeverity.Error);
-                return true;
+                return Continuation.Done;
             }
 
             var customMethodName = propAttrData.NamedArguments.FirstOrDefault(x => x.Key == "SerializeMethodName").Value.Value as string;
@@ -149,7 +149,7 @@ namespace NonSucking.Framework.Serialization
             if (methodToCall is null)
             {
                 context.AddDiagnostic(Diagnostics.IncompatibleCustomSerializer.Format(context.WriterTypeName ?? Consts.GenericParameterWriterInterfaceFull), propAttrData.ApplicationSyntaxReference?.GetLocation() ?? property.Symbol.GetLocation() ?? Location.None, DiagnosticSeverity.Warning);
-                return false;
+                return Continuation.NotExecuted;
             }
             if (customType is not null)
             {
@@ -190,7 +190,7 @@ namespace NonSucking.Framework.Serialization
 
             statements.Statements.Add(statement);
 
-            return true;
+            return Continuation.Done;
 
         }
     }

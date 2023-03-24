@@ -17,7 +17,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(40)]
     internal static class MethodCallSerializer
     {
-        internal static bool TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var generateGeneric = context.ReaderTypeName is null;
             var type = property.TypeSymbol;
@@ -85,13 +85,15 @@ namespace NonSucking.Framework.Serialization
                 {
                     CreateInvocationForOutDeserialize(property, context, readerName, statements, baseDeserialize.Value);
                 }
+
+                return Continuation.Done;
             }
             else if (hasAttribute)
             {
                 ReportMissingCompatibility(context, property, attrData!, context.ReaderTypeName ?? "");
             }
 
-            return isUsable;
+            return Continuation.NotExecuted;
         }
 
         private static void CreateInvocationForOutDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, BaseDeserializeInformation baseDeserialize)
@@ -119,7 +121,7 @@ namespace NonSucking.Framework.Serialization
             }
         }
 
-        internal static bool TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var generateGeneric = context.WriterTypeName is null;
             var type = property.TypeSymbol;
@@ -195,13 +197,15 @@ namespace NonSucking.Framework.Serialization
                         .Invoke(Helper.GetMemberAccessString(property), member.Name, arguments: new[] { new ValueArgument((object)writerName) })
                         .AsStatement());
                 }
+
+                return Continuation.Done;
             }
             else if (hasAttribute)
             {
                 ReportMissingCompatibility(context, property, attrData!, context.WriterTypeName ?? "");
             }
 
-            return isUsable;
+            return Continuation.NotExecuted;
         }
 
         private static void ReportMissingCompatibility(NoosonGeneratorContext context, MemberInfo property, AttributeData attrData, string typeName)
