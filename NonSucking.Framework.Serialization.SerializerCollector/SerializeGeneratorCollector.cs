@@ -93,7 +93,7 @@ public class SerializeGeneratorCollector : IIncrementalGenerator
                         return new(serializerPriority, serializerPriority, isFinalizer);
                     }
 
-                    if (list is { Count: 1 })
+                    if (list is { Count: 2 })
                     {
                         var serializerPriority = GetPriorityFromArgument(list[0]);
                         var deserializerPriority = GetPriorityFromArgument(list[1]);
