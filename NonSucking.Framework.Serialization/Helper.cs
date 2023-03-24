@@ -511,5 +511,16 @@ namespace NonSucking.Framework.Serialization
             }
             return Location.None;
         }
+        internal static bool IsAssignable(ITypeSymbol typeToAssignTo, ITypeSymbol? typeToAssignFrom)
+        {
+            if (typeToAssignFrom is null)
+                return false;
+            if (SymbolEqualityComparer.Default.Equals(typeToAssignFrom, typeToAssignTo))
+                return true;
+            var assignable = IsAssignable(typeToAssignTo, typeToAssignFrom.BaseType);
+            if (!assignable && typeToAssignTo.IsAbstract)
+                return typeToAssignFrom.Interfaces.Any(x => IsAssignable(typeToAssignTo, x));
+            return assignable;
+        }
     }
 }

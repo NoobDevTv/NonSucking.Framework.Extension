@@ -60,6 +60,24 @@ public static class Diagnostics
         "The call stack has reached it's limit, check for recursion on type {0}."
     );
 
+    public static readonly DiagnosticInfo SingletonImplementationRequired = new(
+        0021,
+        "",
+        "Singleton property or field 'Instance' required for type converters."
+    );
+
+    public static readonly DiagnosticInfo NoValidConverter = new(
+        0022,
+        "",
+        "No valid converter that can convert {0} '{1}'"
+    );
+
+    public static readonly DiagnosticInfo ConverterConvertToNeeded = new(
+        0022,
+        "",
+        "Type to convert to can not be determined, 'ConvertTo' needs to be set explicitely."
+    );
+
     public static readonly DiagnosticInfo IncompatibleCustomSerializer = new(
         0327,
         "",

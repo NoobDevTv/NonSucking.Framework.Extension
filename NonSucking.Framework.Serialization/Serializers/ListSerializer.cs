@@ -20,7 +20,7 @@ namespace NonSucking.Framework.Serialization
     internal static class ListSerializer
     {
         const string readonlyName = "System.Collections.Generic.IReadOnlyCollection<";
-        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+        internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string writerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
@@ -65,7 +65,8 @@ namespace NonSucking.Framework.Serialization
             if (count > -1)
             {
                 var includedNestedSerializers = SerializerMask.All;
-                PublicPropertySerializer.TrySerialize(property, context, writerName, preIterationStatements, ref includedNestedSerializers, count);
+                var propertyCopy = property with { };
+                PublicPropertySerializer.TrySerialize(ref propertyCopy, context, writerName, preIterationStatements, ref includedNestedSerializers, count);
             }
 
             preIterationStatements.Statements.Add(
@@ -107,7 +108,7 @@ namespace NonSucking.Framework.Serialization
                 body);
 
 
-        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        internal static Continuation TryDeserialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
@@ -158,7 +159,8 @@ namespace NonSucking.Framework.Serialization
             if (count > -1)
             {
                 var includedNestedSerializers = SerializerMask.All;
-                PublicPropertySerializer.TryDeserialize(property, context, readerName, preIterationStatements, ref includedNestedSerializers, count);
+                var propertyCopy = property with { };
+                PublicPropertySerializer.TryDeserialize(ref propertyCopy, context, readerName, preIterationStatements, ref includedNestedSerializers, count);
                 listName = preIterationStatements.VariableDeclarations.Single().UniqueName;
             }
             else

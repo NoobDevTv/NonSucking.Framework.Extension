@@ -18,7 +18,7 @@ namespace NonSucking.Framework.Serialization
     [StaticSerializer(59)]
     internal static class MultiDimensionArraySerializer
     {
-        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName,
+        internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string writerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;
@@ -101,7 +101,7 @@ namespace NonSucking.Framework.Serialization
                 body);
 
 
-        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName,
+        internal static Continuation TryDeserialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName,
             GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var type = property.TypeSymbol;

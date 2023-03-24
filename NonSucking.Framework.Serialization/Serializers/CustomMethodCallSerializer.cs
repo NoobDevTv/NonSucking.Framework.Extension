@@ -48,7 +48,7 @@ namespace NonSucking.Framework.Serialization
                 .FirstOrDefault(m => (!matchAdditionalParam && m.Parameters.Length == 1) ||
                                      (matchAdditionalParam && m.Parameters.Length == 2 && SymbolEqualityComparer.Default.Equals(property.TypeSymbol, m.Parameters[1].Type)));
         }
-        internal static Continuation TryDeserialize(MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
+        internal static Continuation TryDeserialize(ref MemberInfo property, NoosonGeneratorContext context, string readerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             var methodName = Consts.Deserialize;
             bool isClassAttribute = false;
@@ -119,7 +119,7 @@ namespace NonSucking.Framework.Serialization
 
 
 
-        internal static Continuation TrySerialize(MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
+        internal static Continuation TrySerialize(ref MemberInfo property, NoosonGeneratorContext context, string writerName, GeneratedSerializerCode statements, ref SerializerMask includedSerializers)
         {
             
             var methodName = Consts.Serialize;
