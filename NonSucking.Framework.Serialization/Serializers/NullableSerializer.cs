@@ -60,22 +60,29 @@ namespace NonSucking.Framework.Serialization
                 return Continuation.NotExecuted;
 
             var nullLiteral = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
-            var propertyAccessorName = Helper.GetMemberAccessString(property);
+            var needsTemp = property.Parent != "";
+            var tempVariable = !needsTemp ? property : property with { Name = Helper.GetRandomNameFor(property.Name, property.Parent), Parent = "" };
+            var tempVariableAccessorName = Helper.GetMemberAccessString(tempVariable);
+            var tempVariableIdentifier = SyntaxFactory.IdentifierName(tempVariableAccessorName);
+            var setTempVariable = Statement.Declaration.DeclareAndAssign(
+                tempVariableAccessorName,
+                SyntaxFactory.IdentifierName(Helper.GetMemberAccessString(property)));
 
             var isNotNullCheck = SyntaxFactory.IsPatternExpression(
-                SyntaxFactory.IdentifierName(propertyAccessorName),
+                tempVariableIdentifier,
                 SyntaxFactory.UnaryPattern(SyntaxFactory.ConstantPattern(nullLiteral)));
 
-            var m = property.TypeSymbol.IsValueType
-                ? GetNullableValue(property, baseTypesLevelProperties)
-                : new MemberInfo(GetNonNullableTypeSymbol(property.TypeSymbol), property.Symbol, property.Name,
-                    property.Parent);
+            var m = tempVariable.TypeSymbol.IsValueType
+                ? GetNullableValue(tempVariable, baseTypesLevelProperties)
+                : new MemberInfo(GetNonNullableTypeSymbol(tempVariable.TypeSymbol), tempVariable.Symbol, tempVariable.Name,
+                    tempVariable.Parent);
             var innerSerialize = NoosonGenerator.CreateStatementForSerializing(m, context, readerName, includedSerializers, SerializerMask.NullableSerializer);
             var b = BodyGenerator.Create(innerSerialize.ToMergedBlock().ToArray());
 
             var writeNullable = Statement.Expression.Invoke(writerName, "Write",
                 new[] { new InvocationArgument(isNotNullCheck) });
-                
+            if (needsTemp)
+                statements.Statements.Add(setTempVariable);
             statements.Statements.Add(writeNullable.AsStatement());
             statements.Statements.Add(SyntaxFactory.IfStatement(isNotNullCheck, b));
             
