@@ -47,6 +47,10 @@ namespace NonSucking.Framework.Extension.IoC
                         next = true;
                         break;
                     }
+                    else if (parameter.IsOptional && parameter.HasDefaultValue)
+                    {
+                        tmpList.Add(parameter.DefaultValue);
+                    }
                 }
 
                 if (next)
