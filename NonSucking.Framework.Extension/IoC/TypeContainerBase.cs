@@ -23,6 +23,8 @@ namespace NonSucking.Framework.Extension.IoC
         public abstract void Register<TRegistrar, T>(object singelton) where T : class;
         public abstract bool TryResolve(Type type, out object instance);
         public abstract bool TryResolve<T>(out T instance) where T : class;
+        public abstract void Remove<T>() where T : class;
+        public abstract void Remove(Type type);
 
         public virtual object CreateObject(Type type)
         {
@@ -105,5 +107,6 @@ namespace NonSucking.Framework.Extension.IoC
                 yield return info;
             }
         }
+
     }
 }

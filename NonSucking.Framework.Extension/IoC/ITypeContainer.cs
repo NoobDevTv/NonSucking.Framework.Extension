@@ -25,5 +25,16 @@ namespace NonSucking.Framework.Extension.IoC
 
         object GetOrNull(Type type);
         T GetOrNull<T>() where T : class;
+
+        /// <summary>
+        /// Removes the type from the type container, so it my not be resolved anymore
+        /// </summary>
+        /// <typeparam name="T">The type to remove</typeparam>
+        void Remove<T>() where T : class;
+        /// <summary>
+        /// Removes the type from the type container, so it my not be resolved anymore
+        /// </summary>
+        /// <param name="type">The type to remove</param>
+        void Remove(Type type);
     }
 }

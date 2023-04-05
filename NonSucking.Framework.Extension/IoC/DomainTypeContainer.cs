@@ -82,5 +82,11 @@ namespace NonSucking.Framework.Extension.IoC
 
         internal override void BuildCtorInformation(CtorInformation info)
             => internalTypeContainer.BuildCtorInformation(info);
+
+        public override void Remove<T>() 
+            => internalTypeContainer.Remove<T>();
+
+        public override void Remove(Type type) 
+            => internalTypeContainer.Remove(type);
     }
 }
