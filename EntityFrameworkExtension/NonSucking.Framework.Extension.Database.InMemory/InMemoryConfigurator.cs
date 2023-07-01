@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace NonSucking.Framework.Extension.Database.InMemory;
 public class InMemoryConfigurator : IDatabaseConfigurator
 {
+    public string Name => "InMemory";
     public class MigrationContext : MigrationDatabaseContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

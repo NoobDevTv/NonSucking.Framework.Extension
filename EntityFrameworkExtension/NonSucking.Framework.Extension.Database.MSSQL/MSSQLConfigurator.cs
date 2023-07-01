@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace NonSucking.Framework.Extension.Database.MSSQL;
 public class MSSQLConfigurator : IDatabaseConfigurator
 {
+    public string Name => "MSSQL";
     public class MigrationContext : MigrationDatabaseContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

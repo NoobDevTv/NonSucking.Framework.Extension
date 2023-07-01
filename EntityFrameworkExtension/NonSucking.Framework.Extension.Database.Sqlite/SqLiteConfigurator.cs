@@ -7,6 +7,8 @@ using NonSucking.Framework.Extension.EntityFrameworkCore.Migrations;
 namespace NonSucking.Framework.Extension.Database.Sqlite;
 public class SqLiteConfigurator : IDatabaseConfigurator
 {
+    public string Name => "SQLite";
+
     public class MigrationContext : MigrationDatabaseContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

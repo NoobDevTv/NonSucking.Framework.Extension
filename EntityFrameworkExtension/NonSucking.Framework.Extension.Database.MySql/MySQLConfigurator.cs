@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace NonSucking.Framework.Extension.Database.MySql;
 public class MySQLConfigurator : IDatabaseConfigurator
 {
+    public string Name => "MySQL";
     public class MigrationContext : MigrationDatabaseContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

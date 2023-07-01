@@ -6,6 +6,8 @@ namespace NonSucking.Framework.Extension.EntityFrameworkCore
 
     public static class DatabaseFactory
     {
+        private static AssemblyLoadContext? assemblyLoadContext;
+
         public static List<IDatabaseConfigurator> DatabaseConfigurators { get; } = new();
 
         /// <summary>
@@ -14,13 +16,16 @@ namespace NonSucking.Framework.Extension.EntityFrameworkCore
         /// <param name="source">Path to the dll which contains the <see cref="IDatabaseConfigurator"/> implementation(s)</param>
         public static void Initialize(string source)
         {
-            if (DatabaseConfigurators.Count >= 1)
+            if (DatabaseConfigurators.Any(x => source.Contains(x.Name, StringComparison.OrdinalIgnoreCase)))
                 return;
 
-            var dbAss2 = AssemblyLoadContext.GetLoadContext(typeof(IDatabaseConfigurator).Assembly);
-            dbAss2.Resolving += Default_Resolving;
+            if (assemblyLoadContext is null)
+            {
+                assemblyLoadContext = AssemblyLoadContext.GetLoadContext(typeof(IDatabaseConfigurator).Assembly);
+                assemblyLoadContext.Resolving += Default_Resolving;
+            }
             var fullName = new FileInfo(source).FullName;
-            var databasePlugin = dbAss2.LoadFromAssemblyPath(fullName);
+            var databasePlugin = assemblyLoadContext.LoadFromAssemblyPath(fullName);
 
             //Get All IDatabaseConfigurator
             DatabaseConfigurators
