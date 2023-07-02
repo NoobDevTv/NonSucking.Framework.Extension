@@ -1,0 +1,23 @@
+<Project>
+	<PropertyGroup>
+		<Version>${VERSION_FULL}</Version>
+		<AssemblyVersion>${VERSION_LONG}</AssemblyVersion>
+		<Authors>${AUTHORS}</Authors>
+		<Copyright>${COPYRIGHT}</Copyright>
+		<Company>${COMPANY}</Company>
+		<Title>${TITLE_MYSQL}</Title>
+		<Description>${DESCRIPTION_MYSQL}</Description>
+		<PackageReleaseNotes>
+			This is a first preview version and not intended for productive use. Not everything has been tested or commented yet.
+		</PackageReleaseNotes>
+		<PackageTags>
+			${TAGS_MYSQL}
+		</PackageTags>
+		<!-- <PackageIconUrl>${ICON_URL}</PackageIconUrl> -->
+		<RepositoryUrl>${REPO_URL}</RepositoryUrl>
+		<PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<NeutralLanguage>en-US</NeutralLanguage>
+	</PropertyGroup>
+</Project>
