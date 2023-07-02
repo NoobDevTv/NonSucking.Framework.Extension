@@ -4,9 +4,9 @@ using NonSucking.Framework.Extension.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore;
 
 namespace NonSucking.Framework.Extension.Database.PostrgeSQL;
-public class PostgresConfigurator : IDatabaseConfigurator
+public class PostgreSQLConfigurator : IDatabaseConfigurator
 {
-    public string Name => "PostrgeSQL";
+    public string Name => "PostgreSQL";
     public class MigrationContext : MigrationDatabaseContext
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
