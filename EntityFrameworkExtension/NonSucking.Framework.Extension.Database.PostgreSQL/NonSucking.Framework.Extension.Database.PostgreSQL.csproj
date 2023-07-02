@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<!-- !#USE_Nuget -->
-	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.Database.PostrgeSQL.props" Condition="'$(Configuration)'=='Release'" />
+	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.Database.PostgreSQL.props" Condition="'$(Configuration)'=='Release'" />
 
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
