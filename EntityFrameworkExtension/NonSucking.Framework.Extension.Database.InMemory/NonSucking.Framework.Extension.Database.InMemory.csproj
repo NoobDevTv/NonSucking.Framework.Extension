@@ -1,9 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+	<!-- !#USE_Nuget -->
+	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.Database.InMemory.props" Condition="'$(Configuration)'=='Release'" />
+	
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<NeutralLanguage>en</NeutralLanguage>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.8" />
