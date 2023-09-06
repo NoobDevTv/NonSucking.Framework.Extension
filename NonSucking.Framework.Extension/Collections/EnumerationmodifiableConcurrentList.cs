@@ -264,11 +264,14 @@ namespace NonSucking.Framework.Extension.Collections
                     Enumerator item;
                     using (var __ = scopeSemaphore.EnterExclusivScope())
                     {
-                        item = pool.Pop();
-                        item.Reset();
-                        gottem.Add(item);
+                        if (pool.Count > 0)
+                        {
+                            item = pool.Pop();
+                            item.Reset();
+                            gottem.Add(item);
+                            return item;
+                        }
                     }
-                    return item;
                 }
 
                 var e = new Enumerator(list);
