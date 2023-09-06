@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Serial
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DEMO.Base", "DEMO.Base\DEMO.Base.csproj", "{B1A1B2D7-A54A-4FDE-BED9-48DCB702F418}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.EntityFrameworkCore", "NonSucking.Framework.Extension.EntityFrameworkCore\NonSucking.Framework.Extension.EntityFrameworkCore.csproj", "{9531439E-BA92-4457-A30C-6C707DEE4EF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.EntityFrameworkCore", "NonSucking.Framework.Extension.EntityFrameworkCore\NonSucking.Framework.Extension.EntityFrameworkCore.csproj", "{9531439E-BA92-4457-A30C-6C707DEE4EF6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EntityFrameworkExtension", "EntityFrameworkExtension", "{88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}"
 EndProject
@@ -31,9 +31,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extens
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Database.MySql", "EntityFrameworkExtension\NonSucking.Framework.Extension.Database.MySql\NonSucking.Framework.Extension.Database.MySql.csproj", "{56EBC6DE-7D58-4FB9-B696-28C4C7335A97}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Database.PostrgeSQL", "EntityFrameworkExtension\NonSucking.Framework.Extension.Database.PostrgeSQL\NonSucking.Framework.Extension.Database.PostrgeSQL.csproj", "{0DD295C6-648C-4D8F-8FC8-942959D5A007}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Database.Sqlite", "EntityFrameworkExtension\NonSucking.Framework.Extension.Database.Sqlite\NonSucking.Framework.Extension.Database.Sqlite.csproj", "{65FA58CE-BD18-45F3-9A70-B500D419C45D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Database.PostgreSQL", "EntityFrameworkExtension\NonSucking.Framework.Extension.Database.PostgreSQL\NonSucking.Framework.Extension.Database.PostgreSQL.csproj", "{3B88FE46-6E96-4597-AC05-60984F3B4FD0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -93,14 +93,14 @@ Global
 		{56EBC6DE-7D58-4FB9-B696-28C4C7335A97}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56EBC6DE-7D58-4FB9-B696-28C4C7335A97}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56EBC6DE-7D58-4FB9-B696-28C4C7335A97}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0DD295C6-648C-4D8F-8FC8-942959D5A007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0DD295C6-648C-4D8F-8FC8-942959D5A007}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0DD295C6-648C-4D8F-8FC8-942959D5A007}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0DD295C6-648C-4D8F-8FC8-942959D5A007}.Release|Any CPU.Build.0 = Release|Any CPU
 		{65FA58CE-BD18-45F3-9A70-B500D419C45D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{65FA58CE-BD18-45F3-9A70-B500D419C45D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65FA58CE-BD18-45F3-9A70-B500D419C45D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65FA58CE-BD18-45F3-9A70-B500D419C45D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,8 +109,8 @@ Global
 		{E1DEA45A-A4BB-4A88-8FD9-20061CD3B014} = {88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}
 		{ED5663F3-A355-4586-A30A-68E6CE3F2FC7} = {88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}
 		{56EBC6DE-7D58-4FB9-B696-28C4C7335A97} = {88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}
-		{0DD295C6-648C-4D8F-8FC8-942959D5A007} = {88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}
 		{65FA58CE-BD18-45F3-9A70-B500D419C45D} = {88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}
+		{3B88FE46-6E96-4597-AC05-60984F3B4FD0} = {88C91CBB-4FFD-4A3E-BD44-FFDC1C202BE6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2938EA08-9C94-425B-81F3-434AF51FFBCE}
