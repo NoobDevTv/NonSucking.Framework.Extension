@@ -35,6 +35,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extens
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NonSucking.Framework.Extension.Database.PostgreSQL", "EntityFrameworkExtension\NonSucking.Framework.Extension.Database.PostgreSQL\NonSucking.Framework.Extension.Database.PostgreSQL.csproj", "{3B88FE46-6E96-4597-AC05-60984F3B4FD0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NonSucking.Framework.Extension.EntityFrameworkCore.MigrationBuilder", "NonSucking.Framework.Extension.EntityFrameworkCore.MigrationBuilder\NonSucking.Framework.Extension.EntityFrameworkCore.MigrationBuilder.csproj", "{93086D2B-A9CC-461C-A9C7-6EDEA0635753}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCoreExtension", "TestCoreExtension\TestCoreExtension.csproj", "{143FA061-260E-4EAB-A208-725342061E81}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +105,14 @@ Global
 		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3B88FE46-6E96-4597-AC05-60984F3B4FD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93086D2B-A9CC-461C-A9C7-6EDEA0635753}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93086D2B-A9CC-461C-A9C7-6EDEA0635753}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93086D2B-A9CC-461C-A9C7-6EDEA0635753}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93086D2B-A9CC-461C-A9C7-6EDEA0635753}.Release|Any CPU.Build.0 = Release|Any CPU
+		{143FA061-260E-4EAB-A208-725342061E81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{143FA061-260E-4EAB-A208-725342061E81}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{143FA061-260E-4EAB-A208-725342061E81}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{143FA061-260E-4EAB-A208-725342061E81}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
