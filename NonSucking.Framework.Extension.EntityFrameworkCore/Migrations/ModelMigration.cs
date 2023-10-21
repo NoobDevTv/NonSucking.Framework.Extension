@@ -10,18 +10,23 @@ namespace NonSucking.Framework.Extension.EntityFrameworkCore.Migrations;
 
 public static class ModelMigration
 {
-    public static void BuildCurrent(this ModelBuilder modelBuilder)
+    public static void BuildCurrent(this ModelBuilder modelBuilder, string assemblyRootName)
     {
-        foreach (var type in AssemblyLoadContext
-                                    .Default
-                                    .Assemblies
-                                    .SelectMany(x => x.GetTypes())
-                                    .Where(type => !type.IsAbstract && !type.IsInterface && type.IsAssignableTo(typeof(IEntity)))
-                                    .Where(type => type.GetCustomAttribute<HistoryAttribute>() is null)
-        )
+        HashSet<Assembly> assemblies = new HashSet<Assembly>();
+        foreach (var type in GetEntityTypes(assemblyRootName)
+                                    .Where(type =>
+                                        type.GetCustomAttribute<HistoryAttribute>() is null
+                                        && type.DeclaringType?.GetCustomAttribute<HistoryAttribute>() is null))
         {
-            if (modelBuilder.Model.FindEntityType(type) is null)
-                _ = modelBuilder.Model.AddEntityType(type);
+            if (modelBuilder.Model.FindEntityType(type) is not null)
+                continue;
+            
+            _ = modelBuilder.Model.AddEntityType(type);
+            assemblies.Add(type.Assembly);
+        }
+        foreach (var item in assemblies)
+        {
+            modelBuilder.ApplyConfigurationsFromAssembly(item);
         }
     }
 
@@ -29,23 +34,21 @@ public static class ModelMigration
     {
         static bool HasCorrectVersion(Type type, string version)
         {
-            var attribute = type.GetCustomAttribute<HistoryAttribute>();
-
-            return attribute is not null && attribute.Version == version;
+            var attribute
+                = type.GetCustomAttribute<HistoryAttribute>()
+                    ?? type.DeclaringType?.GetCustomAttribute<HistoryAttribute>();
+            return attribute is not null
+                && attribute.Version == version;
         }
 
-        foreach (var type in AssemblyLoadContext
-                                    .Default
-                                    .Assemblies
-                                    .SelectMany(x => x.GetTypes())
-                                    .Where(type => !type.IsAbstract && !type.IsInterface && type.IsAssignableTo(typeof(IEntity)))
-                                    .Where(type => HasCorrectVersion(type, version))
-        )
+        foreach (var type in GetEntityTypes(null)
+                                    .Where<Type>(type => HasCorrectVersion(type, version)))
         {
             if (modelBuilder.Model.FindEntityType(type) is null)
                 _ = modelBuilder.Model.AddEntityType(type);
         }
     }
+
 
     public static void BuildVersion(this ModelBuilder modelBuilder, IAutoMigrationTypeProvider typeProvider)
     {
@@ -75,6 +78,16 @@ public static class ModelMigration
         migrationBuilder.Operations.AddRange(diff);
     }
 
+    private static IEnumerable<Type> GetEntityTypes(string? assemblyRootName)
+    {
+        return AssemblyLoadContext
+            .Default
+            .Assemblies
+            .Where(x => string.IsNullOrWhiteSpace(assemblyRootName)
+                                || x.FullName.Contains(assemblyRootName))
+            .SelectMany(x => x.GetTypes())
+            .Where(type => !type.IsAbstract && !type.IsInterface && type.IsAssignableTo(typeof(IEntity)));
+    }
     private static void GetMigrationClasses(Migration migration, out IAutoMigrationContextBuilder providerContextBuilder, out IModel target, out IModel? source)
     {
         var migrationType = migration.GetType();

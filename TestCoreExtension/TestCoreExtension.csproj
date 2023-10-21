@@ -8,7 +8,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EntityFrameworkExtension\NonSucking.Framework.Extension.Database.Sqlite\NonSucking.Framework.Extension.Database.Sqlite.csproj" />
     <ProjectReference Include="..\NonSucking.Framework.Extension.EntityFrameworkCore\NonSucking.Framework.Extension.EntityFrameworkCore.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Test.db">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
