@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<Import Project="..\NonSucking.Framework.Serialization.Advanced\NonSucking.Advanced.props" />
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net7.0</TargetFramework>
@@ -16,11 +17,12 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DEMO.Base\DEMO.Base.csproj" />
-<!--		<ProjectReference Include="..\NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj" />-->
+		
+		<ProjectReference Include="..\NonSucking.Framework.Serialization.Advanced\NonSucking.Framework.Serialization.Advanced.csproj" />
+
 		<ProjectReference Include="..\NonSucking.Framework.Serialization\NonSucking.Framework.Serialization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
 		<ProjectReference Include="..\NonSucking.Framework.Extension\NonSucking.Framework.Extension.csproj" />
 
 	</ItemGroup>
 
-	
 </Project>

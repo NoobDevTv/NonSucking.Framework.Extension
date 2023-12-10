@@ -33,7 +33,7 @@ public partial class DynamicTypes
     private int Bab { get; set; }
 
     [NoosonDynamicType(typeof(int), typeof(string))]
-    public object SomeOther { get; set; }
+    public object? SomeOther { get; set; }
 }
 //     
 //     void Test(System.IO.BinaryReader br)

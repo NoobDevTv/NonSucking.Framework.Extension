@@ -60,13 +60,8 @@ namespace NonSucking.Framework.Serialization
                 return Continuation.NotExecuted;
 
             var nullLiteral = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
-            var needsTemp = property.Parent != "";
-            var tempVariable = !needsTemp ? property : property with { Name = Helper.GetRandomNameFor(property.Name, property.Parent), Parent = "" };
-            var tempVariableAccessorName = Helper.GetMemberAccessString(tempVariable);
+            var (tempVariable, tempVariableAccessorName) = Helper.CreateTempIfNeeded(property, statements);
             var tempVariableIdentifier = SyntaxFactory.IdentifierName(tempVariableAccessorName);
-            var setTempVariable = Statement.Declaration.DeclareAndAssign(
-                tempVariableAccessorName,
-                SyntaxFactory.IdentifierName(Helper.GetMemberAccessString(property)));
 
             var isNotNullCheck = SyntaxFactory.IsPatternExpression(
                 tempVariableIdentifier,
@@ -81,8 +76,7 @@ namespace NonSucking.Framework.Serialization
 
             var writeNullable = Statement.Expression.Invoke(writerName, "Write",
                 new[] { new InvocationArgument(isNotNullCheck) });
-            if (needsTemp)
-                statements.Statements.Add(setTempVariable);
+
             statements.Statements.Add(writeNullable.AsStatement());
             statements.Statements.Add(SyntaxFactory.IfStatement(isNotNullCheck, b));
             
