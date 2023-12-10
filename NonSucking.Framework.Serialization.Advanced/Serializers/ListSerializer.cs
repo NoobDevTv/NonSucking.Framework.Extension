@@ -264,7 +264,7 @@ internal static class ListSerializer
             if (type.GetInterfaces().Any(x => x == typeof(IEnumerable)))
                 return lastAmount;
             type = type.BaseType;
-            lastAmount = ++lastAmount;
+            ++lastAmount;
         }
 
         return lastAmount;

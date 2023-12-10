@@ -184,7 +184,7 @@ internal class BaseGenerator
         if (getCurrent is null)
             throw new ArgumentException(
                 $"Not a valid enumerator(no valid Current get method found): '{enumeratorType.FullName}'");
-        var dispose = Helper.GetMethodIncludingInterfaces(enumeratorType, "Dispose", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+        var dispose = Helper.GetMethodInInterfaces(enumeratorType, "Dispose", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
         if (dispose is null)
             throw new ArgumentException(
                 $"Not a valid enumerator(no valid Dispose method found): '{enumeratorType.FullName}'");
@@ -213,14 +213,20 @@ internal class BaseGenerator
             },
             (gen, exitLabel) =>
             {
-                // if (!enumeratorVariable.LocalType.IsValueType)
-                // {
-                //     gen.EmitLoadLocRef(enumeratorVariable);
-                //     gen.IL.Emit(OpCodes.Brfalse, exitLabel);
-                // }
-                //
-                // gen.EmitLoadLocRef(enumeratorVariable);
-                // gen.IL.Emit(OpCodes.Callvirt, dispose);
+                bool isValueType = enumeratorVariable.LocalType.IsValueType;
+                if (!isValueType)
+                {
+                    gen.EmitLoadLocRef(enumeratorVariable);
+                    gen.Il.Emit(OpCodes.Brfalse, exitLabel);
+                }
+                
+                gen.EmitLoadLocRef(enumeratorVariable);
+                
+                if (isValueType)
+                {
+                    gen.Il.Emit(OpCodes.Constrained, enumeratorVariable.LocalType);
+                }
+                gen.Il.Emit(OpCodes.Callvirt, dispose);
             });
     }
 

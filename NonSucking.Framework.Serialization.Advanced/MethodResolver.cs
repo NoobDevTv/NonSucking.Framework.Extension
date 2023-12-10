@@ -49,12 +49,8 @@ internal class MethodResolver
     static MethodResolver()
     {
         // Default resolve extension methods
-        Stopwatch st = new();
-        st.Start();
         AnalyzeExtensionMethodsRecurse(Assembly.GetCallingAssembly());
         AnalyzeExtensionMethodsRecurse(Assembly.GetEntryAssembly());
-        st.Stop();
-        Console.WriteLine($"Took {st.ElapsedMilliseconds}ms to load");
     }
     internal static IEnumerable<MethodInfo> GetRegisteredExtensionMethods(string name)
     {

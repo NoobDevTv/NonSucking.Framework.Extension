@@ -258,9 +258,15 @@ public static class Helper
         var res = type.GetMethod(name, bindingFlags);
         if (res is not null)
             return res;
+        
+        return GetMethodInInterfaces(type, name, bindingFlags);
+    }
+
+    internal static MethodInfo? GetMethodInInterfaces(Type type, string name, BindingFlags bindingFlags)
+    {
         foreach (var i in type.GetInterfaces())
         {
-            res = i.GetMethod(name, bindingFlags);
+            var res = i.GetMethod(name, bindingFlags);
             if (res is not null)
                 return res;
         }
