@@ -27,6 +27,12 @@ namespace NonSucking.Framework.Serialization.Attributes
             text = reader.ReadToEnd();
         }
 
+        public virtual bool CheckConditionalInclude(GlobalContext context)
+        {
+            var typeSymbol = context.Compilation.GetTypeByMetadataName("NonSucking.Framework.Serialization.Advanced.Generating`2");
+            return true;
+        }
+
         public override string ToString()
             => text;
     }

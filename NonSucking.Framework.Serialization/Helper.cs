@@ -14,6 +14,7 @@ using System.Threading;
 
 using VaVare.Generators.Common.Arguments.ArgumentTypes;
 using VaVare.Models;
+using VaVare.Statements;
 
 namespace NonSucking.Framework.Serialization
 {
@@ -38,11 +39,11 @@ namespace NonSucking.Framework.Serialization
 
         internal static ITypeParameterSymbol? GetTypeParameter(IParameterSymbol parameter)
         {
-            return parameter as ITypeParameterSymbol;
+            return parameter.Type as ITypeParameterSymbol;
         }
-        internal static INamedTypeSymbol? GetParameterTypeConstraint(IParameterSymbol parameter)
+        internal static IEnumerable<INamedTypeSymbol>? GetParameterTypeConstraints(IParameterSymbol parameter)
         {
-            return GetTypeParameter(parameter)?.ConstraintTypes.OfType<INamedTypeSymbol>().FirstOrDefault();
+            return GetTypeParameter(parameter)?.ConstraintTypes.OfType<INamedTypeSymbol>();
         }
 
         internal static List<TypeParameterConstraint>? GetTypeParameterConstraints(GeneratedMethodParameter parameter, GeneratedMethod method)
@@ -50,31 +51,41 @@ namespace NonSucking.Framework.Serialization
             return method.TypeParameterConstraints.FirstOrDefault(y => y.Identifier == parameter.Type)?.Constraints;
         }
 
-        internal static TypeParameterConstraint? GetParameterTypeConstraint(GeneratedMethodParameter parameter,
+        internal static IEnumerable<TypeParameterConstraint>? GetParameterTypeConstraints(GeneratedMethodParameter parameter,
             GeneratedMethod method)
         {
-            return GetTypeParameterConstraints(parameter, method)
-                ?.FirstOrDefault(x => x.Type == TypeParameterConstraint.ConstraintType.Type);
+            return GetTypeParameterConstraints(parameter, method)?
+                .Where(x => x.Type == TypeParameterConstraint.ConstraintType.Type);
         }
 
         internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, IParameterSymbol readerParam)
         {
             return MatchReaderWriterParameter(context, readerParam.Type.ToDisplayString(),
-                GetParameterTypeConstraint(readerParam)?.ToDisplayString());
+                readerParam.ContainingSymbol is IMethodSymbol { IsGenericMethod: true }, 
+                GetParameterTypeConstraints(readerParam)?.Select(x => x.ToDisplayString()));
         }
         internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, GeneratedMethodParameter readerParam, GeneratedMethod method)
         {
-            return MatchReaderWriterParameter(context, readerParam.Type,
-                GetParameterTypeConstraint(readerParam, method)?.ConstraintIdentifier);
+            return MatchReaderWriterParameter(context, readerParam.Type, method.IsGenericMethod,
+                GetParameterTypeConstraints(readerParam, method)?.Select(x => x.ConstraintIdentifier));
         }
-        internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, string baseParameterTypeName, string? typeConstraint)
+        internal static bool MatchReaderWriterParameter(NoosonGeneratorContext context, string baseParameterTypeName, bool isGeneric, IEnumerable<string>? typeConstraints)
         {
-            var readerOrWriter = context.ReaderTypeName ?? context.WriterTypeName;
+            var readerOrWriter = context.MethodType == MethodType.Serialize ? context.WriterTypeName : context.ReaderTypeName;
             var matchGenericReader = readerOrWriter is null;
 
             if (matchGenericReader)
-                return typeConstraint is not null && 
-                       typeConstraint == Consts.GenericParameterReaderInterfaceFull;
+            {
+                readerOrWriter = (context.MethodType == MethodType.Serialize
+                    ? Consts.GenericParameterWriterInterfaceFull
+                    : Consts.GenericParameterReaderInterfaceFull);
+                if (isGeneric)
+                    return typeConstraints is null || typeConstraints.Any(x => x == readerOrWriter);
+
+            }
+            // TODO: match generic other way round
+            // Serialize(IBinaryWriter) should also be applicable for Serialize<T>(T) where T : IBinaryWriter
+            
             return baseParameterTypeName == readerOrWriter;
         }
 
@@ -517,10 +528,56 @@ namespace NonSucking.Framework.Serialization
                 return false;
             if (SymbolEqualityComparer.Default.Equals(typeToAssignFrom, typeToAssignTo))
                 return true;
+            if (typeToAssignTo is ITypeParameterSymbol typeParameterSymbol)
+            {
+                if (typeParameterSymbol.HasValueTypeConstraint && !typeToAssignFrom.IsValueType
+                    || typeParameterSymbol.HasReferenceTypeConstraint && !typeToAssignFrom.IsReferenceType
+                    || typeParameterSymbol.HasUnmanagedTypeConstraint && !typeToAssignFrom.IsUnmanagedType
+                    || typeParameterSymbol.HasNotNullConstraint && typeToAssignFrom.NullableAnnotation == NullableAnnotation.Annotated)
+                    return false;
+                foreach (var constraintType in typeParameterSymbol.ConstraintTypes)
+                {
+                    if (!IsAssignable(constraintType, typeToAssignFrom))
+                        return false;
+                }
+
+                if (typeParameterSymbol.HasConstructorConstraint && !typeToAssignFrom.GetMembers()
+                        .Any(x => x is IMethodSymbol { Parameters.Length: 0, Name: ".ctor" }))
+                    return false;
+                return true;
+            }
             var assignable = IsAssignable(typeToAssignTo, typeToAssignFrom.BaseType);
             if (!assignable && typeToAssignTo.IsAbstract)
                 return typeToAssignFrom.Interfaces.Any(x => IsAssignable(typeToAssignTo, x));
             return assignable;
+        }
+
+        internal static (MemberInfo tempVariable, string tempVariableAccessorName) CreateTempIfNeeded(MemberInfo property, GeneratedSerializerCode statements)
+        {
+            var needsTemp = property.Parent != "";
+            var tempVariable = needsTemp
+                ? property with { Name = Helper.GetRandomNameFor(property.Name, property.Parent), Parent = "" }
+                : property;
+            var tempVariableAccessorName = Helper.GetMemberAccessString(tempVariable);
+            var setTempVariable = Statement.Declaration.DeclareAndAssign(
+                tempVariableAccessorName,
+                SyntaxFactory.IdentifierName(Helper.GetMemberAccessString(property)));
+            if (needsTemp)
+                statements.Statements.Add(setTempVariable);
+            return (tempVariable, tempVariableAccessorName);
+        }
+
+        internal static bool CheckSingleton(NoosonGeneratorContext context, ITypeSymbol type)
+        {
+            var instanceAccessor = Helper.GetFirstMemberWithBase<ISymbol>(type,
+                (x) => x is IPropertySymbol or IFieldSymbol { Name: "Instance", IsStatic: true }
+                       && x.DeclaredAccessibility is Accessibility.Internal or Accessibility.Public or Accessibility.ProtectedOrInternal, context);
+            if (instanceAccessor is null)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }

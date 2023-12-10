@@ -56,17 +56,17 @@ namespace DEMO
             this.valueNever = valueNever;
         }
 
-        public void FirstSerialize(BinaryWriter bw)
+        public void FirstSerialize(IBinaryWriter bw)
         {
             bw.Write(FirstCustom);
         }
 
-        public static void FirstSerialize(BinaryWriter bw, string first)
+        public static void FirstSerialize(IBinaryWriter bw, string first)
         {
             bw.Write(first);
         }
 
-        public static string FirstDeserialize(BinaryReader br)
+        public static string FirstDeserialize(IBinaryReader br)
         {
             return br.ReadString();
         }
@@ -111,6 +111,9 @@ namespace DEMO
         public int X { get; set; }
 
         public int countPositions { get; set; }
+        
+        public ContainingClass RuntimeValue { get; set; }
+        public Generic<ContainingClass> GenericRuntimeValue { get; set; }
 
         [NoosonInclude]
         private int randomField = new Random().Next();
@@ -147,6 +150,7 @@ namespace DEMO
         }
 
         public override bool Equals(object obj) => Equals(obj as SUTMessage);
+
         public bool Equals(SUTMessage other) =>
             other is not null
             && Positions.SequenceEqual(other.Positions)
@@ -170,7 +174,9 @@ namespace DEMO
             && countPositions == other.countPositions
             && randomField == other.randomField
             && forCtor == other.forCtor
-            && UnmanagedTypes == other.UnmanagedTypes;
+            && UnmanagedTypes == other.UnmanagedTypes
+            && RuntimeValue.Equals(other.RuntimeValue)
+            && GenericRuntimeValue.Equals(other.GenericRuntimeValue);
         /*
          EqualityComparer<List<User>>.Default.Equals(UsersList, other.UsersList) && EqualityComparer<List<ComplainBase>>.Default.Equals(ComplainsBases, other.ComplainsBases) && EqualityComparer<List<short>>.Default.Equals(Countings, other.Countings) && EqualityComparer<Dictionary<short, ComplainBase>>.Default.Equals(CountingDic, other.CountingDic) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountings, other.ReadOnlyCountings) && EqualityComparer<IReadOnlyList<short>>.Default.Equals(ReadOnlyCountingsButSetable, other.ReadOnlyCountingsButSetable)         
         */
@@ -199,6 +205,8 @@ namespace DEMO
             hash.Add(countPositions);
             hash.Add(randomField);
             hash.Add(forCtor);
+            hash.Add(RuntimeValue);
+            hash.Add(GenericRuntimeValue);
             return hash.ToHashCode();
         }
 
@@ -211,25 +219,30 @@ namespace DEMO
             public int DoSomething()
                 => 12;
 
-            public void Serialize(BinaryWriter writer)
+            public void Serialize<T>(T writer)
+                where T : IBinaryWriter
             {
                 writer.Write(Name);
             }
 
-            public void SerializeMe(BinaryWriter bw)
+            public void SerializeMe<T>(T bw)
+                where T : IBinaryWriter
             {
                 bw.Write(Name);
             }
 
-            public static void SerializeMe(BinaryWriter bw, IUser user)
+            public static void SerializeMe<T>(T bw, IUser user)
+                where T : IBinaryWriter
             {
                 bw.Write(user.Name);
             }
-            public static User Deserialize(BinaryReader reader)
+            public static User Deserialize<T>(T reader)
+                where T : IBinaryReader
             {
                 return new User() { Name = reader.ReadString() };
             }
-            public static User DeserializeMe(BinaryReader reader)
+            public static User DeserializeMe<T>(T reader)
+                where T : IBinaryReader
             {
                 return new User() { Name = reader.ReadString() };
             }

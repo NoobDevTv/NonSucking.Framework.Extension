@@ -57,12 +57,9 @@ internal static class TypeConverterSerializer
                                                                                && x.OriginalDefinition.ToDisplayString() == "NonSucking.Framework.Serialization.INoosonConverter<, >").ToArray();
         if (genericConverterInterfaces.Length > 0)
         {
-            var instanceAccessor = Helper.GetFirstMemberWithBase<ISymbol>(conversionType,
-                (x) => x is IPropertySymbol or IFieldSymbol { Name: "Instance", IsStatic: true }
-                       && x.DeclaredAccessibility is Accessibility.Internal or Accessibility.Public or Accessibility.ProtectedOrInternal, context);
-            if (instanceAccessor is null)
+            if (!Helper.CheckSingleton(context, conversionType))
             {
-                context.AddDiagnostic(Diagnostics.SingletonImplementationRequired, conversionType, DiagnosticSeverity.Error);
+                context.AddDiagnostic(Diagnostics.SingletonImplementationRequired.Format("type converters"), conversionType, DiagnosticSeverity.Error);
                 return false;
             }
 

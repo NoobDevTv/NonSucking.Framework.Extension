@@ -28,7 +28,7 @@ namespace NonSucking.Framework.Serialization.Serializers
 
     internal static class CtorSerializer
     {
-        internal static GeneratedSerializerCode CallCtorAndSetProps(INamedTypeSymbol typeSymbol, List<string> localVariableNames, MemberInfo instance, string instanceName, Initializer initializer)
+        internal static GeneratedSerializerCode? CallCtorAndSetProps(ITypeSymbol typeSymbol, List<string> localVariableNames, MemberInfo instance, string instanceName, Initializer initializer, NoosonGeneratorContext context)
         {
             List<string> localDeclarations = GetLocalDeclarations(localVariableNames, instanceName);
 
@@ -46,9 +46,11 @@ namespace NonSucking.Framework.Serialization.Serializers
             ArgumentListSyntax? ctorArguments = null;
             if ((initializer & Initializer.Ctor) > 0)
             {
-                List<IMethodSymbol> constructors = GetCtors(typeSymbol);
+                List<IMethodSymbol>? constructors = GetCtors(typeSymbol, context);
                 ctorArguments
                     = GetStatementForCtorCall(constructors, localDeclarations, out ctorArgumentNames);
+                if (ctorArguments is null)
+                    return null;
             }
 
 
@@ -78,15 +80,33 @@ namespace NonSucking.Framework.Serialization.Serializers
             return ret;
         }
 
-        private static List<IMethodSymbol> GetCtors(INamedTypeSymbol typeSymbol)
+        private static List<IMethodSymbol>? GetCtors(ITypeSymbol typeSymbol, NoosonGeneratorContext context)
         {
-            var constructors
-                = typeSymbol
-                .Constructors
-                .OrderByDescending(constructor =>
-                    (constructor.TryGetAttribute(AttributeTemplates.PreferredCtor, out _) ? 0xFFFF1 : 0) //0xFFFF is the maximum amount of Parameters, so we add an additional one
-                    + constructor.Parameters.Length)
-                .ToList();
+            List<IMethodSymbol> constructors;
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            {
+                constructors = namedTypeSymbol
+                    .Constructors
+                    .OrderByDescending(constructor =>
+                                           (constructor.TryGetAttribute(AttributeTemplates.PreferredCtor, out _) ? 0xFFFF1 : 0) //0xFFFF is the maximum amount of Parameters, so we add an additional one
+                                           + constructor.Parameters.Length)
+                    .ToList();
+            }
+            else if (typeSymbol is ITypeParameterSymbol { HasConstructorConstraint: true } typeParameterSymbol && context.GlobalContext.Compilation.GetTypeByMetadataName("System.Activator") is {} activator)
+            {
+                var createI = activator.GetMembers("CreateInstance")
+                    .Where(x => x is IMethodSymbol { TypeParameters.Length: 1 } m).OfType<IMethodSymbol>().FirstOrDefault();
+                if (createI is not null)
+                {
+                    return new List<IMethodSymbol>() { createI.Construct(typeParameterSymbol) };
+                }
+
+                return null;
+            }
+            else
+            {
+                constructors = new List<IMethodSymbol>();
+            }
             return constructors;
         }
 
@@ -217,9 +237,11 @@ namespace NonSucking.Framework.Serialization.Serializers
             return properties;
         }
 
-        internal static ArgumentListSyntax GetStatementForCtorCall(List<IMethodSymbol> constructors, List<string> localDeclarations, out List<string> ctorArguments)
+        internal static ArgumentListSyntax? GetStatementForCtorCall(List<IMethodSymbol>? constructors, List<string> localDeclarations, out List<string> ctorArguments)
         {
             ctorArguments = new List<string>();
+            if (constructors is null)
+                return null;
             if (constructors.Count == 0)
             {
                 return SyntaxFactory.ArgumentList();
