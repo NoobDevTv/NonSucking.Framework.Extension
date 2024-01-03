@@ -223,7 +223,7 @@ namespace NonSucking.Framework.Serialization
         private static void InternalExecute(SourceProductionContext sourceProductionContext, (Compilation Compilation,
             ImmutableArray<ITypeSymbol?> VisitInfos) source, List<Template> templates, GlobalContext gc)
         {
-
+            gc = gc with { Compilation = source.Compilation };
             var configAttribute
                 = source.Compilation.Assembly.GetAttribute(AttributeTemplates.NoosonConfiguration);
 
@@ -236,16 +236,17 @@ namespace NonSucking.Framework.Serialization
                source.Compilation.GetTypeByMetadataName(Consts.GenericParameterReaderInterfaceFull) is not null;
             foreach (Template template in templates)
             {
-                if (template.Kind == TemplateKind.AdditionalSource)
+                if (template.Kind == TemplateKind.AdditionalSource && template.CheckConditionalInclude(gc))
+                {
                     //&& source.Compilation.GetTypeByMetadataName(template.FullName) is ITypeSymbol ts TODO: Needs work, detecting existing public, same namespace and more
 
                     sourceProductionContext.AddSource(template.Name, template.ToString());
+                }
             }
 
             //TODO: When caching somewhere somehow than this bad
             gc.Clean();
             Helper.Reset();
-            gc = gc with { Compilation = source.Compilation };
 
             static int CountBaseTypes(ITypeSymbol symbol, int counter = 0)
             {
@@ -423,19 +424,19 @@ namespace NonSucking.Framework.Serialization
                 {
                     if (generateDefaultWriter)
                         AddSerializeMethods(generatedType, typeSymbol,
-                            serializeContext with { WriterTypeName = null });
+                            serializeContext with { WriterTypeName = null, ReaderTypeName = null });
                     if (generateDefaultReader)
                         AddDeserializeMethods(generatedType, typeSymbol,
-                            deserializeContext with { ReaderTypeName = null });
+                            deserializeContext with { WriterTypeName = null, ReaderTypeName = null });
                 }
                 else
                 {
                     if (generateDefaultWriter)
                         AddSerializeMethods(generatedType, typeSymbol,
-                            serializeContext with { WriterTypeName = binaryWriterName });
+                            serializeContext with { WriterTypeName = binaryWriterName, ReaderTypeName = binaryReaderName });
                     if (generateDefaultReader)
                         AddDeserializeMethods(generatedType, typeSymbol,
-                            deserializeContext with { ReaderTypeName = binaryReaderName });
+                            deserializeContext with { WriterTypeName = binaryWriterName, ReaderTypeName = binaryReaderName });
                 }
 
                 foreach (var directWriter in directWriters)

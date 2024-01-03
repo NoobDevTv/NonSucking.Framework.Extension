@@ -27,7 +27,7 @@ namespace NonSucking.Framework.Serialization
             {
                 typeToCallOn = customType;
 
-                matchAdditionalParam = context.WriterTypeName is not null;
+                matchAdditionalParam = context.MethodType == MethodType.Serialize;
             }
             else if (isClassAttribute 
                      || (property.Symbol is not IPropertySymbol 

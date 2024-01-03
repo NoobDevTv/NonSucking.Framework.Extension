@@ -5,7 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using NonSucking.Framework.Serialization;
+using NonSucking.Framework.Serialization.Advanced;
 using static DEMO.SUTMessage;
 
 namespace DEMO
@@ -28,6 +32,8 @@ namespace DEMO
             bll.NameOfList = "ABC";
 
             var conv = Newtonsoft.Json.JsonConvert.SerializeObject(bll, new JsonSerializerSettings { });
+            var containerType = new ContainingClass()
+                                { RuntimeValue = new RuntimeTypeTestA("huhu") { SomeValue = 1234 } };
             var sutMessage = new SUTMessage()
             {
                 AlternativUser = new User { Name = "Okay" },
@@ -58,7 +64,9 @@ namespace DEMO
                 Type = 897987414,
                 UsersList = new List<User>() { new User() { Name = "1User" }, new User() { Name = "2User" }, new User() { Name = "3User" }, new User() { Name = "4User" } },
                 X = 123123,
-                UnmanagedTypes = new() { SomePos = new Point(1, 2), SomeTime = DateTime.Parse("2022-02-22 12:34")}
+                UnmanagedTypes = new() { SomePos = new Point(1, 2), SomeTime = DateTime.Parse("2022-02-22 12:34")},
+                RuntimeValue = containerType,
+                GenericRuntimeValue = new Generic<ContainingClass>() { Prop = new[] { containerType, new ContainingClass() { RuntimeValue = new RuntimeTypeTestB(12)  { SomeValue = 12345} }} }
             };
 
             //var sut = new SinglePropTest
@@ -69,13 +77,13 @@ namespace DEMO
             //};
             using (var ms = new FileStream("sut.save", FileMode.OpenOrCreate))
             {
-                using var bw = new BinaryWriter(ms);
+                using var bw = new NoosonBinaryWriter(ms);
                 sutMessage.Serialize(bw);
             }
 
             using (var ms = new FileStream("sut.save", FileMode.Open))
             {
-                using var br = new BinaryReader(ms);
+                using var br = new NoosonBinaryReader(ms);
                 var sutMessageDes = SUTMessage.Deserialize(br);
 
                 if (sutMessageDes == sutMessage)

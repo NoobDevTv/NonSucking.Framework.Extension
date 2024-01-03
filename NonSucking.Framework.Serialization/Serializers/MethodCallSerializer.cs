@@ -107,9 +107,11 @@ namespace NonSucking.Framework.Serialization
                 Initializer initializer = Initializer.InitializerList;
                 string name = property.CreateUniqueName();
 
-                GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
+                var ctorSyntax = CtorSerializer.CallCtorAndSetProps(
                     (INamedTypeSymbol)property.TypeSymbol,
-                    declerationNames, property, name, initializer);
+                    declerationNames, property, name, initializer, context);
+                if (ctorSyntax is null)
+                    return;
                 statements.MergeWith(ctorSyntax);
             }
             catch (NotSupportedException)

@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<!-- !#USE_Nuget -->
-	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Serialization.props" Condition="'$(Configuration)'=='Release'" />
+<!--	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Serialization.props" Condition="'$(Configuration)'=='Release'" />-->
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<LangVersion>11.0</LangVersion>

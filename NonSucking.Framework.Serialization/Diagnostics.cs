@@ -63,7 +63,7 @@ public static class Diagnostics
     public static readonly DiagnosticInfo SingletonImplementationRequired = new(
         0021,
         "",
-        "Singleton property or field 'Instance' required for type converters."
+        "Singleton property or field 'Instance' required for {0}."
     );
 
     public static readonly DiagnosticInfo NoValidConverter = new(
@@ -82,6 +82,18 @@ public static class Diagnostics
         0327,
         "",
         "Custom method call is not compatible with serializer of type '{0}'"
+    );
+
+    public static readonly DiagnosticInfo InvalidDynamicResolver = new(
+        0024,
+        "",
+        "Resolver of '{0}' does not implement necessary {1} interface and is not a valid dynamic resolver."
+    );
+
+    public static readonly DiagnosticInfo InvalidOpenGenericResolver = new(
+        0025,
+        "",
+        "Resolver of '{0}' is a open generic type{1} which is not supported for resolvers."
     );
     
     public record DiagnosticInfo(int Id, string Title, string FormatString)

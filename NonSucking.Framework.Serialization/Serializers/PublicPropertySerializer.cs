@@ -173,9 +173,11 @@ namespace NonSucking.Framework.Serialization
                 Initializer initializer = context.MethodType == MethodType.DeserializeWithCtor ? Initializer.InitializerList : Initializer.Properties;
                 string name = context.MethodType == MethodType.DeserializeWithCtor ? property.CreateUniqueName() : Consts.InstanceParameterName;
 
-                GeneratedSerializerCode ctorSyntax = CtorSerializer.CallCtorAndSetProps(
-                    (INamedTypeSymbol)property.TypeSymbol,
-                    declerationNames, property, name, initializer);
+                var ctorSyntax = CtorSerializer.CallCtorAndSetProps(
+                    property.TypeSymbol,
+                    declerationNames, property, name, initializer, context);
+                if (ctorSyntax is null)
+                    return Continuation.Continue;
                 statements.MergeWith(ctorSyntax);
             }
             catch (NotSupportedException)
@@ -454,6 +456,8 @@ namespace NonSucking.Framework.Serialization
 
                 foreach ((bool assign, GeneratedSerializerCode propCode) in propCodes)
                 {
+                    if (propCode.VariableDeclarations.Count == 0)
+                        continue;
                     GeneratedSerializerCode.SerializerVariable variable = propCode.VariableDeclarations[0];
                     string outVarName = variable.UniqueName; // + "_out";
                     if (!SymbolEqualityComparer.Default.Equals(typeSymbol, variable.OriginalMember.TypeSymbol))

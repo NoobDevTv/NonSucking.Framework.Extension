@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<!-- !#USE_Nuget -->
-	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.props" Condition="'$(Configuration)'=='Release'" />
+<!--	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.props" Condition="'$(Configuration)'=='Release'" />-->
 	<PropertyGroup>
 		<TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
