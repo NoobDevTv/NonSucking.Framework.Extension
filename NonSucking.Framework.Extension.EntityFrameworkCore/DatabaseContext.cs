@@ -11,7 +11,6 @@ using System.Runtime.Loader;
 
 namespace NonSucking.Framework.Extension.EntityFrameworkCore
 {
-
     public abstract class DatabaseContext : DbContext, IAutoMigrationContext
     {
         public bool EnableUseLazyLoading { get; set; } = true;
@@ -63,31 +62,11 @@ namespace NonSucking.Framework.Extension.EntityFrameworkCore
             base.OnConfiguring(optionsBuilder);
         }
 
-        static Type[] onModelCreatingMethodTypes = new[] { typeof(ModelBuilder) };
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             if (AddAllEntities)
             {
-
-                foreach (var type in AssemblyLoadContext
-                                            .Default
-                                            .Assemblies
-                                            .Where(x => string.IsNullOrWhiteSpace(AssemblyRootName)
-                                                || x.FullName.Contains(AssemblyRootName))
-                                            .SelectMany(x => x.GetTypes())
-                                            .Where(type => !type.IsAbstract
-                                                && !type.IsInterface
-                                                && typeof(IEntity).IsAssignableFrom(type))
-                                            .Where(x => x.Namespace is not null && !x.Namespace.Contains("Migration")))
-                {
-                    if (modelBuilder.Model.FindEntityType(type) is null)
-                    {
-                        _ = modelBuilder.Model.AddEntityType(type);
-                    }
-                    var method = type.GetMethod(nameof(OnModelCreating), System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public, onModelCreatingMethodTypes);
-                    if (method is not null)
-                        method.Invoke(null, new[] { modelBuilder });
-                }
+                modelBuilder.BuildCurrent(AssemblyRootName);
             }
 
             base.OnModelCreating(modelBuilder);

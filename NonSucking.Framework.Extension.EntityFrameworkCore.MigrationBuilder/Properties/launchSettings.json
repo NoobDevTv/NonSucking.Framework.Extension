@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NonSucking.Framework.Extension.EntityFrameworkCore.MigrationBuilder": {
+      "commandName": "Project",
+      "commandLineArgs": "-s \"F:\\Projekte\\Visual 2019\\NonSucking.Framework.Extension\\TestCoreExtension\\bin\\Debug\\net7.0\\TestCoreExtension.dll\" -t \"F:\\Projekte\\Visual 2019\\NonSucking.Framework.Extension\\TestCoreExtension\\Migration\""
+    }
+  }
+}
