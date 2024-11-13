@@ -128,11 +128,12 @@ namespace NonSucking.Framework.Extension.IoC
         public override void Dispose()
         {
             typeRegister.Clear();
-            typeInformationRegister.Values
-                .Where(t => t.Behaviour == InstanceBehaviour.Singleton && t.Instance != this)
-                .Select(t => t.Instance as IDisposable)
-                .ToList()
-                .ForEach(i => i?.Dispose());
+
+            typeInformationRegister.Remove(typeof(StandaloneTypeContainer));
+            typeInformationRegister.Remove(typeof(ITypeContainer));
+
+            foreach (var item in typeInformationRegister.Values)
+                item.TryDispose();
 
             typeInformationRegister.Clear();
             typeInformationSemaphore.Dispose();
@@ -144,7 +145,7 @@ namespace NonSucking.Framework.Extension.IoC
 
         public override void Remove<T>()
             => Remove(typeof(T));
-        
+
 
         public override void Remove(Type type)
             => typeInformationRegister.Remove(type);

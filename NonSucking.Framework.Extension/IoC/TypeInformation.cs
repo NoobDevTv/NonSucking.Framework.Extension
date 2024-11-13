@@ -57,6 +57,19 @@ namespace NonSucking.Framework.Extension.IoC
 
             Completed = !ctors.Any(c => !c.IsComplete);
         }
+
+        /// <summary>
+        /// Disposed the singleton instance, if existing and required
+        /// </summary>
+        public void TryDispose()
+        {
+            if (Behaviour != InstanceBehaviour.Singleton
+                || singeltonInstance is not null)
+                return;
+            if (singeltonInstance is IDisposable disposable)
+                disposable.Dispose();
+
+        }
     }
 
 }
