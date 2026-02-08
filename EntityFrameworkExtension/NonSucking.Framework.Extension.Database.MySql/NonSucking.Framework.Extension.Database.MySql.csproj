@@ -3,17 +3,13 @@
 	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.Database.MySql.props" Condition="'$(Configuration)'=='Release'" />
 
 	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<NeutralLanguage>en</NeutralLanguage>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
-	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\NonSucking.Framework.Extension.EntityFrameworkCore\NonSucking.Framework.Extension.EntityFrameworkCore.csproj" />
 	</ItemGroup>
@@ -23,5 +19,9 @@
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.1" />
 	</ItemGroup>
 </Project>

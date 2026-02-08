@@ -2,11 +2,10 @@
 	<!-- !#USE_Nuget -->
 <!--	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.props" Condition="'$(Configuration)'=='Release'" />-->
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp3.1;net6.0</TargetFrameworks>
+		<TargetFramework>net10.0</TargetFramework>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<RepositoryType>git</RepositoryType>
 		<NeutralLanguage>en</NeutralLanguage>
-		<LangVersion>10</LangVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

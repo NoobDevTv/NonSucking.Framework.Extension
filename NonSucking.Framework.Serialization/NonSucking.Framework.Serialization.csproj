@@ -57,7 +57,7 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.0.1" PrivateAssets="all" GeneratePathProperty="true" />
 		<None Include="$(PkgMicrosoft_CodeAnalysis_Workspaces_Common)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
-		<PackageReference Include="Humanizer.Core" Version="2.13.14" PrivateAssets="all" GeneratePathProperty="true" />
+		<PackageReference Include="Humanizer.Core" Version="3.0.1" PrivateAssets="all" GeneratePathProperty="true" />
 		<None Include="$(PkgHumanizer_Core)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
 		<PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="5.0.0" PrivateAssets="all" GeneratePathProperty="true" />
@@ -72,6 +72,7 @@
 
 	<PropertyGroup>
 		<GetTargetPathDependsOn>$(GetTargetPathDependsOn);nooson-GetDependencyTargetPaths</GetTargetPathDependsOn>
+		<UserSecretsId>4e01d51c-4a59-45d5-8e31-1fbf9ce4a9df</UserSecretsId>
 	</PropertyGroup>
 
 	<Target Name="nooson-GetDependencyTargetPaths">

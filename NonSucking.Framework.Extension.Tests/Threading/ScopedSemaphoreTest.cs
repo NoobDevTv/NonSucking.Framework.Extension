@@ -25,7 +25,7 @@ namespace NonSucking.Framework.Extension.Tests.Threading
                 else
                     throw new NotSupportedException();
 
-                Assert.AreEqual(count, semaphore.CurrentCount);
+                Assert.That(count, Is.EqualTo(semaphore.CurrentCount));
             }
             finally
             {
@@ -49,7 +49,7 @@ namespace NonSucking.Framework.Extension.Tests.Threading
             {
                 using SemaphoreLock l = semaphore.Wait();
 
-                Assert.IsTrue(l.HasEntered);
+                Assert.That(l.HasEntered, Is.True);
                 flagOne = true;
                 manualReset.WaitOne();
             });
@@ -61,7 +61,7 @@ namespace NonSucking.Framework.Extension.Tests.Threading
                 if (tokenSource.Token.IsCancellationRequested)
                     return;
                 flagTwo = true;
-                Assert.IsFalse(l.HasEntered);
+                Assert.That(l.HasEntered, Is.False);
             });
 
             await Task.Delay(TimeSpan.FromSeconds(10));
@@ -69,8 +69,8 @@ namespace NonSucking.Framework.Extension.Tests.Threading
             manualReset.Set();
             await task;
             await task2;
-            Assert.IsTrue(flagOne);
-            Assert.IsFalse(flagTwo);
+            Assert.That(flagOne, Is.True);
+            Assert.That(flagTwo, Is.False);
 
         }
     }

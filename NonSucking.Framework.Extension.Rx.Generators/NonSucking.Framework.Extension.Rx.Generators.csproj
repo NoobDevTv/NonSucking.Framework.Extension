@@ -8,11 +8,13 @@
     <IncludeSymbols>false</IncludeSymbols>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <UseNETCoreGenerator>true</UseNETCoreGenerator>
+	<EnforeExtendAnalyzerRules>true</EnforeExtendAnalyzerRules>
+	  
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.10.0-1.final" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.2" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
     <!--<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="3.8.0" PrivateAssets="all" />-->
     <!--<PackageReference Include="System.Interactive" Version="4.1.1" />
     <PackageReference Include="System.Interactive.Async" Version="4.1.1" />-->
