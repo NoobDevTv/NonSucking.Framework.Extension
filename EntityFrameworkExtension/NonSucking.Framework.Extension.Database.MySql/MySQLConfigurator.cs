@@ -11,7 +11,7 @@ public class MySQLConfigurator : IDatabaseConfigurator
     {
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            _ = optionsBuilder.UseMySql("server=none;userid=none;password=none;database=none", ServerVersion.Create(10, 9, 3, Pomelo.EntityFrameworkCore.MySql.Infrastructure.ServerType.MariaDb));
+            _ = optionsBuilder.UseMySQL("server=none;userid=none;password=none;database=none");
             base.OnConfiguring(optionsBuilder);
         }
 
@@ -24,7 +24,7 @@ public class MySQLConfigurator : IDatabaseConfigurator
 
     public DbContextOptionsBuilder OnConfiguring(DbContextOptionsBuilder optionsBuilder, string connectionString)
     {
-        return optionsBuilder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+        return optionsBuilder.UseMySQL(connectionString);
     }
 }
 

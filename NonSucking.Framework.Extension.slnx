@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/EntityFrameworkExtension/">
+    <Project Path="EntityFrameworkExtension/NonSucking.Framework.Extension.Database.InMemory/NonSucking.Framework.Extension.Database.InMemory.csproj" />
+    <Project Path="EntityFrameworkExtension/NonSucking.Framework.Extension.Database.MSSQL/NonSucking.Framework.Extension.Database.MSSQL.csproj" />
+    <Project Path="EntityFrameworkExtension/NonSucking.Framework.Extension.Database.MySql/NonSucking.Framework.Extension.Database.MySql.csproj" />
+    <Project Path="EntityFrameworkExtension/NonSucking.Framework.Extension.Database.PostgreSQL/NonSucking.Framework.Extension.Database.PostgreSQL.csproj" />
+    <Project Path="EntityFrameworkExtension/NonSucking.Framework.Extension.Database.Sqlite/NonSucking.Framework.Extension.Database.Sqlite.csproj" />
+  </Folder>
+  <Project Path="DEMO.Base/DEMO.Base.csproj" />
+  <Project Path="DEMO/DEMO.csproj" />
+  <Project Path="NonSucking.Framework.Extension.EntityFrameworkCore.Tests/NonSucking.Framework.Extension.EntityFrameworkCore.Tests.csproj" Id="e737c528-5a80-4eb4-832f-e56ea937bc89" />
+  <Project Path="NonSucking.Framework.Extension.EntityFrameworkCore/NonSucking.Framework.Extension.EntityFrameworkCore.csproj" />
+  <Project Path="NonSucking.Framework.Extension.Rx/NonSucking.Framework.Extension.Rx.csproj" />
+  <Project Path="NonSucking.Framework.Extension.Tests/NonSucking.Framework.Extension.Tests.csproj" />
+  <Project Path="NonSucking.Framework.Extension/NonSucking.Framework.Extension.csproj" />
+  <Project Path="NonSucking.Framework.Serialization.Advanced/NonSucking.Framework.Serialization.Advanced.csproj" />
+  <Project Path="NonSucking.Framework.Serialization.SerializerCollector/NonSucking.Framework.Serialization.SerializerCollector.csproj" />
+  <Project Path="NonSucking.Framework.Serialization/NonSucking.Framework.Serialization.csproj" />
+</Solution>

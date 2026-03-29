@@ -3,7 +3,7 @@
 	<Import Project="$(MSBuildThisFileDirectory)NonSucking.Framework.Extension.EntityFrameworkCore.props" Condition="'$(Configuration)'=='Release'" />
 	<PropertyGroup>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<NeutralLanguage>en</NeutralLanguage>
@@ -17,8 +17,8 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.8" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="7.0.8" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="10.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
 	</ItemGroup>
 </Project>

@@ -38,8 +38,10 @@ namespace NonSucking.Framework.Extension.EntityFrameworkCore
             migration = null;
             id = "";
             TypeInfo? migrationType = null;
-            var assembly = Database.GetService<IMigrationsAssembly>();
+
             var migrationsInDb = Database.GetAppliedMigrations().OrderByDescending(id => id);
+            
+            var assembly = Database.GetService<IMigrationsAssembly>();
             foreach (var item in migrationsInDb)
             {
                 if (assembly.Migrations.TryGetValue(item, out migrationType))
