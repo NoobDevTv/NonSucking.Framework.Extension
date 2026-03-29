@@ -8,10 +8,10 @@ jobs:
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       - name: check line endings
-        uses: erclu/check-crlf@v1
+        uses: erclu/check-crlf@master
 
       - name: notify 
         if: failure()
